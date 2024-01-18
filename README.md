@@ -13,7 +13,7 @@ Microservice for tenants and leases in Yggdrasil.
 7. Start database engine (SQL Server): `docker compose up -d &`
 8. Create a database called `tenants-leases`
 9. Create database structure: `npm run migrate:up`
-0Create test data: `npm run seed`
+10. Create test data: `npm run seed`
 
 ## Development
 
