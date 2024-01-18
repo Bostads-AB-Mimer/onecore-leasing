@@ -1,4 +1,4 @@
-import { Lease, LeaseStatus, Contact } from '../../../common/types'
+import { Lease, Contact } from '../../../common/types'
 import knex from 'knex'
 import Config from '../../../common/config'
 
@@ -8,7 +8,7 @@ const db = knex({
 })
 
 const transformFromDbContact = (row: any): Contact => {
-  const contact = {
+  return {
     contactId: row.ContactId,
     firstName: row.FirstName,
     lastName: row.LastName,
@@ -29,8 +29,6 @@ const transformFromDbContact = (row: any): Contact => {
     emailAddress: row.EmailAddress,
     lastUpdated: row.ContactLastUpdated,
   }
-
-  return contact
 }
 
 const transformFromDbLease = (
@@ -38,7 +36,7 @@ const transformFromDbLease = (
   tenantContactIds: string[] | undefined,
   tenants: Contact[] | undefined
 ): Lease => {
-  const lease = {
+  return {
     leaseId: row.LeaseLeaseId,
     leaseNumber: row.LeaseNumber,
     leaseStartDate: row.LeaseStartDate,
@@ -52,12 +50,10 @@ const transformFromDbLease = (
     lastUpdated: row.LeaseLastUpdated,
     rentInfo: undefined,
   }
-
-  return lease
 }
 
 const transformToDbLease = (lease: Lease) => {
-  const dbLease = {
+  return {
     LeaseId: lease.leaseId,
     LeaseNumber: lease.leaseNumber,
     LeaseStartDate: lease.leaseStartDate,
@@ -67,12 +63,10 @@ const transformToDbLease = (lease: Lease) => {
     Type: lease.type,
     LastUpdated: lease.lastUpdated,
   }
-
-  return dbLease
 }
 
 const transformToDbContact = (contact: Contact) => {
-  const dbContact = {
+  return {
     ContactId: contact.contactId,
     FirstName: contact.firstName,
     LastName: contact.lastName,
@@ -90,8 +84,6 @@ const transformToDbContact = (contact: Contact) => {
     EmailAddress: contact.emailAddress,
     LastUpdated: contact.lastUpdated,
   }
-
-  return dbContact
 }
 
 const getLease = async (leaseId: string): Promise<Lease | undefined> => {
