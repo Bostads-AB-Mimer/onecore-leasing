@@ -36,10 +36,12 @@ const getAccessToken = async () => {
 }
 
 const createXpandHeaders = (accessToken: string) => {
-  return {
+  const xpandHeaders = {
     Authorization: 'Bearer ' + accessToken,
     'Ocp-Apim-Subscription-Key': process.env.XPAND__SUBSCRIPTION_KEY,
   }
+
+  return xpandHeaders
 }
 
 const getFromXpand = async (url: string): Promise<AxiosResponse<any, any>> => {
@@ -161,13 +163,15 @@ const syncContractToTenantsLeases = async (contract: any) => {
     rentInfo: undefined,
   }
 
-  return await axios.post(
+  const result = axios.post(
     `${tenantLeasesUrl}/leases`,
     transformedContract,
     {
       headers: tenantsLeasesHeaders,
     }
   )
+
+  return result
 }
 
 const syncContacts = async () => {
