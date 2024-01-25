@@ -1,8 +1,8 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
-import dotenv from 'dotenv'
-dotenv.config()
+import { config } from 'dotenv'
+config()
 import { Contact, LeaseStatus, Lease } from './types'
-import qs from 'qs'
+import * as qs from 'qs'
 
 const xpandUrl = process.env.XPAND__URL
 
@@ -163,13 +163,9 @@ const syncContractToTenantsLeases = async (contract: any) => {
     rentInfo: undefined,
   }
 
-  const result = axios.post(
-    `${tenantLeasesUrl}/leases`,
-    transformedContract,
-    {
-      headers: tenantsLeasesHeaders,
-    }
-  )
+  const result = axios.post(`${tenantLeasesUrl}/leases`, transformedContract, {
+    headers: tenantsLeasesHeaders,
+  })
 
   return result
 }
