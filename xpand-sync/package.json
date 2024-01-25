@@ -8,12 +8,18 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon -e ts,js --exec ts-node index"
+    "dev": "nodemon -e ts,js --exec ts-node index",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.6",
+    "typescript": "^5.3.3"
+  },
   "dependencies": {
     "axios": "^1.4.0",
+    "dotenv": "^16.3.2",
     "qs": "^6.11.2"
   }
 }
