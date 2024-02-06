@@ -1,4 +1,4 @@
-import { Lease, Contact } from '../../../common/types'
+import { Lease, Contact, Address } from '../../../common/types'
 import knex from 'knex'
 import Config from '../../../common/config'
 
@@ -20,12 +20,7 @@ const transformFromDbContact = (row: any): Contact => {
     birthDate: row.BirthDate, //does not exist hy_contact
     //address does not exist in default hy_contact, needs to be joined
     //address should correspond to the postal address of the contact
-    address: {
-      street: row.Street,
-      number: row.StreetNumber,
-      postalCode: row.PostalCode,
-      city: row.City,
-    },
+    address: transformAddressFromDb(row),
     mobilePhone: row.phonemobile,
     phoneNumber: row.phonehome, //phonehome or phonework
     emailAddress: row.email,
@@ -33,6 +28,35 @@ const transformFromDbContact = (row: any): Contact => {
   }
 
   return contact
+}
+
+const transformAddressFromDb = (row: any): Address => {
+  if(row.LeaseType.startsWith('Bostadskontrakt')) {
+    return {
+      city: row.DwellingCity,
+      number: '',
+      postalCode: row.DwellingPostalCode,
+      street: row.DwellingStreet
+    }
+  }
+  if(row.LeaseType.startsWith('P-Platskontrakt') ||  row.LeaseType.startsWith('Garagekontrakt')) {
+    return {
+      city: row.VehicleSpaceCity,
+      number: '',
+      postalCode: row.VehicleSpacePostalCode,
+      street: row.VehicleSpaceStreet
+    }
+  }
+
+  //todo: handle other types of leases
+  //todo: default case (get contact)
+
+  return {
+    street: row.Street,
+    number: row.StreetNumber,
+    postalCode: row.PostalCode,
+    city: row.City,
+  }
 }
 
 const transformFromDbLease = (
@@ -97,6 +121,7 @@ const transformToDbContact = (contact: Contact) => {
 }
 
 const getLease = async (leaseId: string): Promise<Lease | undefined> => {
+  //todo: handle garage, parking spot etc in query
   const rows = await db('hy_contract')
     .select(
       '*',
@@ -104,14 +129,27 @@ const getLease = async (leaseId: string): Promise<Lease | undefined> => {
       'hy_contract.contractid as LeaseLeaseId',
       'hy_contact.category as ContactType',
       'hy_contract.contracttype as LeaseType',
+      'ba_dwelling.postaladdress as DwellingStreet',
+      //'ba_dwelling.StreetNumber as StreetNumber', todo: split street number from street?
+      'ba_dwelling.zipcode as DwellingPostalCode',
+      'ba_dwelling.city as DwellingCity',
+      'ba_vehiclespace.postaladdress as VehicleSpaceStreet',
+      //'ba_vechiclespace.StreetNumber as StreetNumber', todo: split street number from street?
+      'ba_vehiclespace.zipcode as VehicleSpacePostalCode',
+      'ba_vehiclespace.city as VehicleSpaceCity',
       //timestamps do not exist in xpand db
       //'Lease.LastUpdated as LeaseLastUpdated',
       //'Contact.LastUpdated as ContactLastUpdated',
     )
     .innerJoin('hy_contact', 'hy_contract.contractid', 'hy_contact.contractid')
+    .leftJoin('ba_dwelling', 'ba_dwelling.rentalpropertyid', 'hy_contract.rentalpropertyid')
+    .leftJoin('ba_vehiclespace', 'ba_vehiclespace.rentalpropertyid', 'hy_contract.rentalpropertyid')
     .where({ 'hy_contract.contractid': leaseId })
 
+  //debug
+  console.log("-----'")
   console.log('contract rows: ', rows)
+  console.log("-----'")
 
   if (rows && rows.length > 0) {
     const tenantPersonIds: string[] = []
