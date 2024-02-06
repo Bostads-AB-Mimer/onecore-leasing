@@ -9,25 +9,27 @@ const db = knex({
 
 const transformFromDbContact = (row: any): Contact => {
   const contact = {
-    contactId: row.ContactId,
-    firstName: row.FirstName,
-    lastName: row.LastName,
-    fullName: row.FullName,
-    type: row.ContactType,
-    leaseId: row.ContactLeaseId,
+    contactId: row.contactid,
+    firstName: row.firstname,
+    lastName: row.lastname,
+    fullName: row.fullname,
+    type: row.contractrelation,
+    leaseId: row.contractid,
     lease: undefined,
-    nationalRegistrationNumber: row.NationalRegistrationNumber,
-    birthDate: row.BirthDate,
+    nationalRegistrationNumber: row.socsecno,
+    birthDate: row.BirthDate, //does not exist hy_contact
+    //address does not exist in default hy_contact, needs to be joined
+    //address should correspond to the postal address of the contact
     address: {
       street: row.Street,
       number: row.StreetNumber,
       postalCode: row.PostalCode,
       city: row.City,
     },
-    mobilePhone: row.MobilePhone,
-    phoneNumber: row.PhoneNumber,
-    emailAddress: row.EmailAddress,
-    lastUpdated: row.ContactLastUpdated,
+    mobilePhone: row.phonemobile,
+    phoneNumber: row.phonehome, //phonehome or phonework
+    emailAddress: row.email,
+    lastUpdated: row.ContactLastUpdated, //does not exist hy_contact
   }
 
   return contact
@@ -36,7 +38,7 @@ const transformFromDbContact = (row: any): Contact => {
 const transformFromDbLease = (
   row: any,
   tenantContactIds: string[] | undefined,
-  tenants: Contact[] | undefined
+  tenants: Contact[] | undefined,
 ): Lease => {
   const lease = {
     leaseId: row.LeaseLeaseId,
@@ -95,18 +97,21 @@ const transformToDbContact = (contact: Contact) => {
 }
 
 const getLease = async (leaseId: string): Promise<Lease | undefined> => {
-  const rows = await db('Lease')
+  const rows = await db('hy_contract')
     .select(
       '*',
-      'Contact.LeaseId as ContactLeaseId',
-      'Lease.LeaseId as LeaseLeaseId',
-      'Contact.Type as ContactType',
-      'Lease.Type as LeaseType',
-      'Lease.LastUpdated as LeaseLastUpdated',
-      'Contact.LastUpdated as ContactLastUpdated'
+      'hy_contact.contractid as ContactLeaseId',
+      'hy_contract.contractid as LeaseLeaseId',
+      'hy_contact.category as ContactType',
+      'hy_contract.contracttype as LeaseType',
+      //timestamps do not exist in xpand db
+      //'Lease.LastUpdated as LeaseLastUpdated',
+      //'Contact.LastUpdated as ContactLastUpdated',
     )
-    .innerJoin('Contact', 'Lease.LeaseId', 'Contact.LeaseId')
-    .where({ 'Lease.LeaseId': leaseId })
+    .innerJoin('hy_contact', 'hy_contract.contractid', 'hy_contact.contractid')
+    .where({ 'hy_contract.contractid': leaseId })
+
+  console.log('contract rows: ', rows)
 
   if (rows && rows.length > 0) {
     const tenantPersonIds: string[] = []
@@ -121,10 +126,10 @@ const getLease = async (leaseId: string): Promise<Lease | undefined> => {
 
     return lease
   }
-
   return undefined
 }
 
+//todo: map to xpand db
 const getLeases = async (leaseIds?: string[] | undefined): Promise<Lease[]> => {
   const leases: Lease[] = []
 
@@ -136,7 +141,7 @@ const getLeases = async (leaseIds?: string[] | undefined): Promise<Lease[]> => {
       'Contact.Type as ContactType',
       'Lease.Type as LeaseType',
       'Lease.LastUpdated as LeaseLastUpdated',
-      'Contact.LastUpdated as ContactLastUpdated'
+      'Contact.LastUpdated as ContactLastUpdated',
     )
     .innerJoin('Contact', 'Lease.LeaseId', 'Contact.LeaseId')
     .modify((queryBuilder) => {
@@ -168,13 +173,13 @@ const getLeases = async (leaseIds?: string[] | undefined): Promise<Lease[]> => {
 }
 
 const getLeasesFor = async (nationalRegistrationNumber: string) => {
-  const rows = await db('Contact').where({
-    NationalRegistrationNumber: nationalRegistrationNumber,
+  const rows = await db('hy_contact').where({
+    socsecno: nationalRegistrationNumber,
   })
 
   if (rows && rows.length > 0) {
     const leaseIds = rows.map((row) => {
-      return row.LeaseId
+      return row.contractid
     })
 
     const uniqueLeaseIds = Array.from(new Set(leaseIds))
@@ -242,8 +247,8 @@ const updateLeases = async (leases: Lease[]) => {
 }
 
 const getContact = async (nationalRegistrationNumber: string) => {
-  const rows = await db('contact').where({
-    NationalRegistrationNumber: nationalRegistrationNumber,
+  const rows = await db('hy_contact').where({
+    socsecno: nationalRegistrationNumber,
   })
 
   if (rows && rows.length > 0) {
