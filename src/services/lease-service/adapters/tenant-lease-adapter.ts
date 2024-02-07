@@ -20,7 +20,7 @@ const transformFromDbContact = (row: any): Contact => {
     birthDate: row.BirthDate, //does not exist hy_contact
     //address does not exist in default hy_contact, needs to be joined
     //address should correspond to the postal address of the contact
-    address: transformAddressFromDb(row),
+    address: undefined,
     mobilePhone: row.phonemobile,
     phoneNumber: row.phonehome, //phonehome or phonework
     emailAddress: row.email,
@@ -52,10 +52,10 @@ const transformAddressFromDb = (row: any): Address => {
   //todo: default case (get contact)
 
   return {
-    street: row.Street,
-    number: row.StreetNumber,
-    postalCode: row.PostalCode,
-    city: row.City,
+    street: row.street,
+    number: row.streetNumber,
+    postalCode: row.postalCode,
+    city: row.city,
   }
 }
 
@@ -77,6 +77,7 @@ const transformFromDbLease = (
     rentalProperty: undefined,
     lastUpdated: row.LeaseLastUpdated,
     rentInfo: undefined,
+    address: undefined
   }
 
   return lease
@@ -120,6 +121,45 @@ const transformToDbContact = (contact: Contact) => {
   return dbContact
 }
 
+const getAddressOfRentalObject = async (rentalPropertyId: string, leaseType: string): Promise<Address | undefined> => {
+  let rows: any[] = []
+  console.log("rentalpropertyid : lease type: ", rentalPropertyId, leaseType)
+  if(leaseType.startsWith('Bostadskontrakt')) {
+
+  rows = await db('ba_dwelling').select(
+
+      'ba_dwelling.postaladdress as street',
+      //'ba_dwelling.StreetNumber as StreetNumber', todo: split street number from street?
+      'ba_dwelling.zipcode as postalCode',
+      'ba_dwelling.city as city',
+    )
+      .where({ 'ba_dwelling.rentalpropertyid': rentalPropertyId })
+  }
+
+  else if(leaseType.startsWith('P-Platskontrakt') ||  leaseType.startsWith('Garagekontrakt')) {
+    console.log("Platskontrakt / Garagekontrakt: ", rentalPropertyId, leaseType)
+    rows = await db('ba_vehiclespace').select(
+      '*',
+      'ba_vehiclespace.postaladdress as street',
+      //'ba_dwelling.StreetNumber as StreetNumber', todo: split street number from street?
+      'ba_vehiclespace.zipcode as postalCode',
+      'ba_vehiclespace.city as city',
+    )
+      .where({ 'ba_vehiclespace.rentalpropertyid': rentalPropertyId })
+  }
+
+  if(rows.length >= 1){
+    return {
+      city: rows[0].city,
+      number: '',
+      postalCode: rows[0].postalCode,
+      street: rows[0].street
+    }
+  }
+
+  return undefined
+}
+
 const getLease = async (leaseId: string): Promise<Lease | undefined> => {
   //todo: handle garage, parking spot etc in query
   const rows = await db('hy_contract')
@@ -129,27 +169,27 @@ const getLease = async (leaseId: string): Promise<Lease | undefined> => {
       'hy_contract.contractid as LeaseLeaseId',
       'hy_contact.category as ContactType',
       'hy_contract.contracttype as LeaseType',
-      'ba_dwelling.postaladdress as DwellingStreet',
+      //'ba_dwelling.postaladdress as DwellingStreet',
       //'ba_dwelling.StreetNumber as StreetNumber', todo: split street number from street?
-      'ba_dwelling.zipcode as DwellingPostalCode',
-      'ba_dwelling.city as DwellingCity',
-      'ba_vehiclespace.postaladdress as VehicleSpaceStreet',
-      //'ba_vechiclespace.StreetNumber as StreetNumber', todo: split street number from street?
-      'ba_vehiclespace.zipcode as VehicleSpacePostalCode',
-      'ba_vehiclespace.city as VehicleSpaceCity',
+      // 'ba_dwelling.zipcode as DwellingPostalCode',
+      // 'ba_dwelling.city as DwellingCity',
+      // 'ba_vehiclespace.postaladdress as VehicleSpaceStreet',
+      // //'ba_vechiclespace.StreetNumber as StreetNumber', todo: split street number from street?
+      // 'ba_vehiclespace.zipcode as VehicleSpacePostalCode',
+      // 'ba_vehiclespace.city as VehicleSpaceCity',
       //timestamps do not exist in xpand db
       //'Lease.LastUpdated as LeaseLastUpdated',
       //'Contact.LastUpdated as ContactLastUpdated',
     )
     .innerJoin('hy_contact', 'hy_contract.contractid', 'hy_contact.contractid')
-    .leftJoin('ba_dwelling', 'ba_dwelling.rentalpropertyid', 'hy_contract.rentalpropertyid')
-    .leftJoin('ba_vehiclespace', 'ba_vehiclespace.rentalpropertyid', 'hy_contract.rentalpropertyid')
+    // .leftJoin('ba_dwelling', 'ba_dwelling.rentalpropertyid', 'hy_contract.rentalpropertyid')
+    // .leftJoin('ba_vehiclespace', 'ba_vehiclespace.rentalpropertyid', 'hy_contract.rentalpropertyid')
     .where({ 'hy_contract.contractid': leaseId })
 
   //debug
-  console.log("-----'")
-  console.log('contract rows: ', rows)
-  console.log("-----'")
+  // console.log("-----'")
+  // console.log('contract rows: ', rows)
+  // console.log("-----'")
 
   if (rows && rows.length > 0) {
     const tenantPersonIds: string[] = []
@@ -157,13 +197,23 @@ const getLease = async (leaseId: string): Promise<Lease | undefined> => {
 
     const lease = transformFromDbLease(rows[0], tenantPersonIds, tenants)
 
+
+    const getAddressPromises: Promise<void>[] = []
     rows.forEach((row) => {
-      lease.tenantContactIds?.push(row.ContactId)
-      lease.tenants?.push(transformFromDbContact(row))
+      getAddressPromises.push(getAddressOfRentalObject(row.rentalpropertyid, row.LeaseType)
+        .then((address) => {
+          lease.address = address
+          lease.tenantContactIds?.push(row.ContactId)
+          lease.tenants?.push(transformFromDbContact(row))
+        })
+      )
     })
 
-    return lease
+    // Wait for all getAddressOfRentalObject calls to complete
+    return Promise.all(getAddressPromises)
+      .then(() => lease)
   }
+
   return undefined
 }
 
@@ -285,12 +335,25 @@ const updateLeases = async (leases: Lease[]) => {
 }
 
 const getContact = async (nationalRegistrationNumber: string) => {
-  const rows = await db('hy_contact').where({
+  //wip: to get a contact address we need to join contracts
+  //todo: find the "main" contract of a contact
+  //if no main contract is found, the contact is not a tenant
+  const rows = await db('hy_contact').select(
+    '*',
+    'hy_contact.contractid as ContactLeaseId',
+    'hy_contract.contractid as LeaseLeaseId',
+    'hy_contact.category as ContactType',
+    'hy_contract.contracttype as LeaseType'
+    )
+    .innerJoin('hy_contract', 'hy_contract.contractid', 'hy_contact.contractid')
+    .where({
     socsecno: nationalRegistrationNumber,
   })
 
   if (rows && rows.length > 0) {
-    return transformFromDbContact(rows[0])
+    var contact = transformFromDbContact(rows[0])
+    contact.address = await getAddressOfRentalObject(rows[0].rentalpropertyid, rows[0].LeaseType)
+    return contact
   }
 
   return null

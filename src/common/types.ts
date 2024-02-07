@@ -28,6 +28,7 @@ interface Lease {
   type: string
   rentInfo: RentInfo | undefined
   lastUpdated: Date | undefined
+  address: Address | undefined
 }
 
 interface RentalProperty {
