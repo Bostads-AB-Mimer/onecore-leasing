@@ -7,23 +7,26 @@ const db = knex({
   connection: Config.database,
 })
 
-const transformFromDbContact = (row: any): Contact => {
+const transformFromDbContact = (row: any, phoneNumbers: any, isTenant: boolean): Contact => {
   const contact = {
-    contactId: row.contactid,
-    firstName: row.firstname,
-    lastName: row.lastname,
-    fullName: row.fullname,
+    contactId: row.contactId,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    fullName: row.fullName,
     type: row.contractrelation,
     leaseId: row.contractid,
     lease: undefined,
-    nationalRegistrationNumber: row.socsecno,
-    birthDate: row.BirthDate, //does not exist hy_contact
-    //address does not exist in default hy_contact, needs to be joined
-    //address should correspond to the postal address of the contact
-    address: undefined,
-    mobilePhone: row.phonemobile,
-    phoneNumber: row.phonehome, //phonehome or phonework
-    emailAddress: row.email,
+    nationalRegistrationNumber: row.nationalRegistrationNumber,
+    birthDate: row.birthDate, //does not exist hy_contact
+    address: {
+      street: row.street,
+      number: '',
+      postalCode: row.postalCode,
+      city: row.city,
+    },
+    phoneNumbers: phoneNumbers,
+    emailAddress: row.emailAddress,
+    isTenant: isTenant,
     lastUpdated: row.ContactLastUpdated, //does not exist hy_contact
   }
 
@@ -31,20 +34,20 @@ const transformFromDbContact = (row: any): Contact => {
 }
 
 const transformAddressFromDb = (row: any): Address => {
-  if(row.LeaseType.startsWith('Bostadskontrakt')) {
+  if (row.LeaseType.startsWith('Bostadskontrakt')) {
     return {
       city: row.DwellingCity,
       number: '',
       postalCode: row.DwellingPostalCode,
-      street: row.DwellingStreet
+      street: row.DwellingStreet,
     }
   }
-  if(row.LeaseType.startsWith('P-Platskontrakt') ||  row.LeaseType.startsWith('Garagekontrakt')) {
+  if (row.LeaseType.startsWith('P-Platskontrakt') || row.LeaseType.startsWith('Garagekontrakt')) {
     return {
       city: row.VehicleSpaceCity,
       number: '',
       postalCode: row.VehicleSpacePostalCode,
-      street: row.VehicleSpaceStreet
+      street: row.VehicleSpaceStreet,
     }
   }
 
@@ -77,7 +80,7 @@ const transformFromDbLease = (
     rentalProperty: undefined,
     lastUpdated: row.LeaseLastUpdated,
     rentInfo: undefined,
-    address: undefined
+    address: undefined,
   }
 
   return lease
@@ -112,8 +115,8 @@ const transformToDbContact = (contact: Contact) => {
     StreetNumber: contact.address?.number,
     PostalCode: contact.address?.postalCode,
     City: contact.address?.city,
-    MobilePhone: contact.mobilePhone,
-    PhoneNumber: contact.phoneNumber,
+    // MobilePhone: contact.mobilePhone,
+    // PhoneNumber: contact.phoneNumber,
     EmailAddress: contact.emailAddress,
     LastUpdated: contact.lastUpdated,
   }
@@ -123,21 +126,18 @@ const transformToDbContact = (contact: Contact) => {
 
 const getAddressOfRentalObject = async (rentalPropertyId: string, leaseType: string): Promise<Address | undefined> => {
   let rows: any[] = []
-  console.log("rentalpropertyid : lease type: ", rentalPropertyId, leaseType)
-  if(leaseType.startsWith('Bostadskontrakt')) {
+  console.log('rentalpropertyid : lease type: ', rentalPropertyId, leaseType)
+  if (leaseType.startsWith('Bostadskontrakt')) {
 
-  rows = await db('ba_dwelling').select(
-
+    rows = await db('ba_dwelling').select(
       'ba_dwelling.postaladdress as street',
       //'ba_dwelling.StreetNumber as StreetNumber', todo: split street number from street?
       'ba_dwelling.zipcode as postalCode',
       'ba_dwelling.city as city',
     )
       .where({ 'ba_dwelling.rentalpropertyid': rentalPropertyId })
-  }
-
-  else if(leaseType.startsWith('P-Platskontrakt') ||  leaseType.startsWith('Garagekontrakt')) {
-    console.log("Platskontrakt / Garagekontrakt: ", rentalPropertyId, leaseType)
+  } else if (leaseType.startsWith('P-Platskontrakt') || leaseType.startsWith('Garagekontrakt')) {
+    console.log('Platskontrakt / Garagekontrakt: ', rentalPropertyId, leaseType)
     rows = await db('ba_vehiclespace').select(
       '*',
       'ba_vehiclespace.postaladdress as street',
@@ -148,12 +148,12 @@ const getAddressOfRentalObject = async (rentalPropertyId: string, leaseType: str
       .where({ 'ba_vehiclespace.rentalpropertyid': rentalPropertyId })
   }
 
-  if(rows.length >= 1){
+  if (rows.length >= 1) {
     return {
       city: rows[0].city,
       number: '',
       postalCode: rows[0].postalCode,
-      street: rows[0].street
+      street: rows[0].street,
     }
   }
 
@@ -204,8 +204,8 @@ const getLease = async (leaseId: string): Promise<Lease | undefined> => {
         .then((address) => {
           lease.address = address
           lease.tenantContactIds?.push(row.ContactId)
-          lease.tenants?.push(transformFromDbContact(row))
-        })
+          //lease.tenants?.push(transformFromDbContact(row))
+        }),
       )
     })
 
@@ -252,7 +252,7 @@ const getLeases = async (leaseIds?: string[] | undefined): Promise<Lease[]> => {
       leases.push(lease)
     }
     lease?.tenantContactIds?.push(rows[i].ContactId)
-    lease?.tenants?.push(transformFromDbContact(rows[i]))
+    //lease?.tenants?.push(transformFromDbContact(rows[i]))
 
     lastLeaseId = rows[i].LeaseId
   }
@@ -335,28 +335,58 @@ const updateLeases = async (leases: Lease[]) => {
 }
 
 const getContact = async (nationalRegistrationNumber: string) => {
-  //wip: to get a contact address we need to join contracts
-  //todo: find the "main" contract of a contact
-  //if no main contract is found, the contact is not a tenant
-  const rows = await db('hy_contact').select(
-    '*',
-    'hy_contact.contractid as ContactLeaseId',
-    'hy_contract.contractid as LeaseLeaseId',
-    'hy_contact.category as ContactType',
-    'hy_contract.contracttype as LeaseType'
-    )
-    .innerJoin('hy_contract', 'hy_contract.contractid', 'hy_contact.contractid')
+  const rows = await db('cmctc').select(
+    'cmctc.cmctckod as contactId',
+    //leaseId
+    //lease
+    //type
+    'cmctc.fnamn as firstName',
+    'cmctc.enamn as lastName',
+    'cmctc.cmctcben as fullName',
+    'cmctc.persorgnr as nationalRegistrationNumber',
+    'cmctc.birthdate as birthDate',
+    'cmadr.adress1 as street',
+    //address.number
+    'cmadr.adress3 as postalCode',
+    'cmadr.adress4 as city',
+    'cmobj.keycmobj as keycmobj',
+    'cmeml.cmemlben as emailAddress',
+           'cmctc.keycmctc as keycmctc'
+  ).innerJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
+    .innerJoin('cmadr', 'cmadr.keycode ', 'cmobj.keycmobj')
+    .innerJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
     .where({
-    socsecno: nationalRegistrationNumber,
-  })
-
+      persorgnr: nationalRegistrationNumber,
+    })
+    .limit(1)
   if (rows && rows.length > 0) {
-    var contact = transformFromDbContact(rows[0])
-    contact.address = await getAddressOfRentalObject(rows[0].rentalpropertyid, rows[0].LeaseType)
-    return contact
+    console.log(rows[0])
+    var phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
+    var rentalProperties = await getRentalPropertiesForContact(rows[0].keycmctc)
+    var isTenant = rentalProperties.length > 0
+    console.log("rentalProperties", rentalProperties)
+    return transformFromDbContact(rows[0], phoneNumbers, isTenant)
   }
 
   return null
+}
+
+const getPhoneNumbersForContact = async (keycmobj: string) => {
+  var rows = await db('cmtel').select(
+    'cmtelben as phoneNumber',
+    'keycmtet as type',
+    'main as isMainNumber',
+  ).where({ keycmobj: keycmobj })
+  return rows
+}
+
+//todo: rename
+const getRentalPropertiesForContact = async (keycmctc: string) => {
+  var rows = await db('hyavk').select(
+    '*',
+  )//.innerJoin('hyobj', 'hyobj.keyhyobj', 'hyavk.keyhyobj')
+    .where({ keycmctc: keycmctc })
+  return rows
 }
 
 const updateContact = async (contact: Contact) => {
@@ -395,7 +425,7 @@ const updateContact = async (contact: Contact) => {
   }
 
   return {
-    person: transformFromDbContact(dbContact),
+    person: undefined,//transformFromDbContact(dbContact),
     meta: {
       updated,
       inserted,

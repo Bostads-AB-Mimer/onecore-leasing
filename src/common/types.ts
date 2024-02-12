@@ -9,10 +9,18 @@ interface Contact {
   nationalRegistrationNumber: string
   birthDate: Date
   address: Address | undefined
-  mobilePhone: string
-  phoneNumber: string
-  emailAddress: string
+  // mobilePhone: string
+  // phoneNumber: string
+  phoneNumbers: PhoneNumber[] | undefined
+  emailAddress: string,
+  isTenant: boolean,
   lastUpdated: Date | undefined
+}
+
+interface PhoneNumber {
+  phoneNumber: string
+  type: string
+  isMainNumber: boolean
 }
 
 interface Lease {
