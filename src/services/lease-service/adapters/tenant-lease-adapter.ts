@@ -7,15 +7,15 @@ const db = knex({
   connection: Config.database,
 })
 
-const transformFromDbContact = (row: any, phoneNumbers: any, isTenant: boolean): Contact => {
+const transformFromDbContact = (row: any, phoneNumbers: any, leases: any): Contact => {
   const contact = {
     contactId: row.contactId,
     firstName: row.firstName,
     lastName: row.lastName,
     fullName: row.fullName,
     type: row.contractrelation,
-    leaseId: row.contractid,
-    lease: undefined,
+    leaseIds: leases,
+    //lease: leases,
     nationalRegistrationNumber: row.nationalRegistrationNumber,
     birthDate: row.birthDate, //does not exist hy_contact
     address: {
@@ -26,7 +26,7 @@ const transformFromDbContact = (row: any, phoneNumbers: any, isTenant: boolean):
     },
     phoneNumbers: phoneNumbers,
     emailAddress: row.emailAddress,
-    isTenant: isTenant,
+    isTenant: leases.length > 0,
     lastUpdated: row.ContactLastUpdated, //does not exist hy_contact
   }
 
@@ -108,7 +108,7 @@ const transformToDbContact = (contact: Contact) => {
     LastName: contact.lastName,
     FullName: contact.fullName,
     Type: contact.type,
-    LeaseId: contact.leaseId,
+    LeaseId: contact.leaseIds,
     NationalRegistrationNumber: contact.nationalRegistrationNumber,
     BirthDate: contact.birthDate,
     Street: contact.address?.street,
@@ -337,9 +337,7 @@ const updateLeases = async (leases: Lease[]) => {
 const getContact = async (nationalRegistrationNumber: string) => {
   const rows = await db('cmctc').select(
     'cmctc.cmctckod as contactId',
-    //leaseId
-    //lease
-    //type
+    //todo: type, is this needed? joined from hyavk.keyhyakt
     'cmctc.fnamn as firstName',
     'cmctc.enamn as lastName',
     'cmctc.cmctcben as fullName',
@@ -351,7 +349,7 @@ const getContact = async (nationalRegistrationNumber: string) => {
     'cmadr.adress4 as city',
     'cmobj.keycmobj as keycmobj',
     'cmeml.cmemlben as emailAddress',
-           'cmctc.keycmctc as keycmctc'
+    'cmctc.keycmctc as keycmctc',
   ).innerJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
     .innerJoin('cmadr', 'cmadr.keycode ', 'cmobj.keycmobj')
     .innerJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
@@ -362,10 +360,9 @@ const getContact = async (nationalRegistrationNumber: string) => {
   if (rows && rows.length > 0) {
     console.log(rows[0])
     var phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
-    var rentalProperties = await getRentalPropertiesForContact(rows[0].keycmctc)
-    var isTenant = rentalProperties.length > 0
-    console.log("rentalProperties", rentalProperties)
-    return transformFromDbContact(rows[0], phoneNumbers, isTenant)
+    var leases = await getLeaseIds(rows[0].keycmctc)
+    console.log('leases', leases)
+    return transformFromDbContact(rows[0], phoneNumbers, leases)
   }
 
   return null
@@ -380,19 +377,20 @@ const getPhoneNumbersForContact = async (keycmobj: string) => {
   return rows
 }
 
-//todo: rename
-const getRentalPropertiesForContact = async (keycmctc: string) => {
+//todo: extend with type of lease? the type is found in hyhav.hyhavben
+const getLeaseIds = async (keycmctc: string) => {
   var rows = await db('hyavk').select(
-    '*',
-  )//.innerJoin('hyobj', 'hyobj.keyhyobj', 'hyavk.keyhyobj')
+    //'*',
+    'hyobj.hyobjben as leaseId',
+  ).innerJoin('hyobj', 'hyobj.keyhyobj', 'hyavk.keyhyobj')
     .where({ keycmctc: keycmctc })
-  return rows
+  return rows.map(x => x.leaseId)
 }
 
 const updateContact = async (contact: Contact) => {
   const rows = await db('contact').where({
     ContactId: contact.contactId,
-    LeaseId: contact.leaseId,
+    LeaseId: contact.leaseIds,
   })
 
   let inserted = 0

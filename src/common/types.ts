@@ -1,7 +1,7 @@
 interface Contact {
   contactId: string
-  leaseId: string | undefined
-  lease: Lease | undefined
+  leaseIds: string | undefined
+  //lease: Lease | undefined
   firstName: string
   lastName: string
   fullName: string

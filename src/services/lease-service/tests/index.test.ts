@@ -31,7 +31,7 @@ describe('lease-service', () => {
             lastName: 'Testsson',
             fullName: 'Testsson Kalle',
             type: 'Kontraktsinnehavare',
-            leaseId: '406-097-11-0201/06',
+            leaseIds: '406-097-11-0201/06',
             nationalRegistrationNumber: '200009092388',
             birthDate: new Date('2000-09-09T00:00:00.000Z'),
             address: {
@@ -67,7 +67,7 @@ describe('lease-service', () => {
             lastName: 'Lundberg',
             fullName: 'Maj-Britt Lundberg',
             type: 'Kontraktsinnehavare',
-            leaseId: '102-008-03-0202/07',
+            leaseIds: '102-008-03-0202/07',
             nationalRegistrationNumber: '194808075577',
             birthDate: new Date('1948-08-07T00:00:00.000Z'),
             address: {
@@ -103,7 +103,7 @@ describe('lease-service', () => {
             lastName: 'Lundberg',
             fullName: 'Erik Lundberg',
             type: 'Kontraktsinnehavare',
-            leaseId: '102-008-03-0202/07',
+            leaseIds: '102-008-03-0202/07',
             nationalRegistrationNumber: '194512121122',
             birthDate: new Date('1945-12-12T00:00:00.000Z'),
             address: {
