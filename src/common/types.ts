@@ -1,8 +1,9 @@
+//todo: this file is obsolete
+//todo: make changes to onecore-types when the format is defined
 interface Contact {
   contactId: string //cmctc.cmctckod
   contactKey: string //cmtct.keycmctc
   leaseIds: string | undefined
-  //lease: Lease | undefined
   firstName: string
   lastName: string
   fullName: string
@@ -10,8 +11,6 @@ interface Contact {
   nationalRegistrationNumber: string
   birthDate: Date
   address: Address | undefined
-  // mobilePhone: string
-  // phoneNumber: string
   phoneNumbers: PhoneNumber[] | undefined
   emailAddress: string,
   isTenant: boolean,

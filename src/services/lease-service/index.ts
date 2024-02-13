@@ -28,7 +28,6 @@ export const routes = (router: KoaRouter) => {
    * Returns a lease with populated sub objects
    */
   router.get('(.*)/leases/:id', async (ctx) => {
-    console.log("hit leases/:id", ctx.params.id)
     const responseData = await getLease(ctx.params.id)
 
     ctx.body = {

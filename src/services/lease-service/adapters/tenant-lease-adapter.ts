@@ -56,7 +56,6 @@ const transformFromDbLease = (
     lastUpdated: undefined, //todo: does this exist in xpand db?
     rentInfo: undefined,
     address: undefined,
-
     noticeGivenBy: row.noticeGivenBy,
     noticeDate: row.noticeDate,
     noticeTimeTenant: row.noticeTimeTenant,
@@ -70,6 +69,7 @@ const transformFromDbLease = (
   return lease
 }
 
+//todo: include contact/tentant info
 const getLease = async (leaseId: string): Promise<Lease | undefined> => {
   let rows = await getLeaseById(leaseId)
   if(rows.length > 0) {
@@ -207,7 +207,6 @@ const getLeasesByContactKey = async (keycmctc: string) => {
 }
 
 const getLeaseById = async (hyobjben: string) => {
-  console.log("IN QUERY, ", hyobjben)
   var rows = await db('hyavk')
     .select(
       'hyobj.hyobjben as leaseId',
