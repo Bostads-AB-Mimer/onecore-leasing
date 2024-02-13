@@ -78,48 +78,40 @@ const getLease = async (leaseId: string): Promise<Lease | undefined> => {
   return undefined
 }
 
-//todo: map to xpand db
-// const getLeases = async (leaseIds?: string[] | undefined): Promise<Lease[]> => {
-//   const leases: Lease[] = []
-//
-//   const rows = await db('Lease')
-//     .select(
-//       '*',
-//       'Contact.LeaseId as ContactLeaseId',
-//       'Lease.LeaseId as LeaseLeaseId',
-//       'Contact.Type as ContactType',
-//       'Lease.Type as LeaseType',
-//       'Lease.LastUpdated as LeaseLastUpdated',
-//       'Contact.LastUpdated as ContactLastUpdated',
-//     )
-//     .innerJoin('Contact', 'Lease.LeaseId', 'Contact.LeaseId')
-//     .modify((queryBuilder) => {
-//       if (leaseIds) {
-//         queryBuilder.whereIn('Lease.LeaseId', leaseIds)
-//       }
-//     })
-//     .limit(100)
-//
-//   let lastLeaseId: string | null = null
-//   let tenantContactIds: string[] = []
-//   let tenants: Contact[] = []
-//   let lease: Lease | null = null
-//
-//   for (let i = 0; i < rows.length; i++) {
-//     if (!lastLeaseId || lastLeaseId != rows[i].LeaseId) {
-//       tenantContactIds = []
-//       tenants = []
-//       lease = transformFromDbLease(rows[i], tenantContactIds, tenants)
-//       leases.push(lease)
-//     }
-//     lease?.tenantContactIds?.push(rows[i].ContactId)
-//     //lease?.tenants?.push(transformFromDbContact(rows[i]))
-//
-//     lastLeaseId = rows[i].LeaseId
-//   }
-//
-//   return leases
-// }
+const getLeases = async (leaseIds: string[] | undefined): Promise<Lease[]> => {
+  const leases: Lease[] = []
+
+  const rows = await db('Lease')
+    .select(
+      'hyobj.hyobjben as leaseId',
+      'hyhav.hyhavben as leaseType',
+      'hyobj.uppsagtav as noticeGivenBy',
+      'hyobj.avtalsdat as contractDate',
+      'hyobj.sistadeb as lastDebitDate',
+      'hyobj.godkdatum as approvalDate',
+      'hyobj.uppsdatum as noticeDate',
+      'hyobj.fdate as fromDate',
+      'hyobj.tdate as toDate',
+      'hyobj.uppstidg as noticeTimeTenant',
+      'hyobj.onskflytt AS preferredMoveOutDate',
+      'hyobj.makuldatum AS terminationDate',
+    )
+    .innerJoin('hyobj', 'hyobj.keyhyobj', 'hyavk.keyhyobj')
+    .innerJoin('hyhav', 'hyhav.keyhyhav', 'hyobj.keyhyhav')
+    .modify((queryBuilder) => {
+      if (leaseIds) {
+        queryBuilder.whereIn('hyobjben', leaseIds)
+      }
+    })
+    .limit(100)
+
+  for (const row of rows) {
+    const lease = await transformFromDbLease(row, [], [])
+    leases.push(lease)
+  }
+
+  return leases
+}
 
 //todo: include contact/tentant info
 const getLeasesFor = async (nationalRegistrationNumber: string) => {
@@ -239,6 +231,7 @@ const getLeaseById = async (hyobjben: string) => {
 
 export {
   getLease,
+  getLeases,
   getLeasesByContactKey,
   getLeasesFor,
   getContact,

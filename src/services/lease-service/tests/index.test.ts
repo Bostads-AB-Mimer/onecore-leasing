@@ -12,6 +12,7 @@ routes(router)
 app.use(bodyParser())
 app.use(router.routes())
 
+//todo: fix tests to use xpand mock data?
 describe('lease-service', () => {
   let leaseMock: Array<Lease>
 

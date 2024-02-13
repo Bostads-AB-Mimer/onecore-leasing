@@ -36,16 +36,38 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
+  //todo: determine if this endpoint is needed
+  //todo: getting ALL contracts is not feasible in the xpand context
+  //todo: passing a list of ids is not really suitable as query params?
+  //todo: koa-querystring lib could solve the above problem
   /**
    * Returns all leases with populated sub objects
    */
   // router.get('(.*)/leases', async (ctx) => {
-  //   const leases = await getLeasesByContactKey()
+  //   const leases = await getLeases(leaseIds)
   //
   //   ctx.body = {
   //     data: leases,
   //   }
   // })
+
+  router.get('/example', async (ctx) => {
+    // Retrieve the list from the query parameter
+    const list = ctx.query.list;
+
+    // Check if the list is provided
+    if (!list) {
+      ctx.throw(400, 'List parameter is required');
+      return;
+    }
+
+    // Split the comma-separated string into an array
+    const listArray = list.split(',');
+
+    ctx.body = {
+      list: listArray
+    };
+  });
 
   /**
    * Gets a person.
