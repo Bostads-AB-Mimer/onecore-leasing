@@ -1,4 +1,5 @@
 import { Lease, Contact, Address } from '../../../common/types'
+
 import knex from 'knex'
 import Config from '../../../common/config'
 

@@ -4,7 +4,7 @@ import KoaRouter from '@koa/router'
 import bodyParser from 'koa-bodyparser'
 import { routes } from '../index'
 import * as tenantLeaseAdapter from '../adapters/tenant-lease-adapter'
-import { Lease, LeaseStatus } from '../../../common/types'
+import { Lease } from 'onecore-types'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -15,6 +15,11 @@ app.use(router.routes())
 //todo: fix tests to use xpand mock data?
 describe('lease-service', () => {
   let leaseMock: Array<Lease>
+
+  // Mock until this bug is fixed: https://github.com/kulshekhar/ts-jest/issues/3397
+  const LeaseStatus = {
+    Active: 0,
+  }
 
   beforeEach(() => {
     leaseMock = [
