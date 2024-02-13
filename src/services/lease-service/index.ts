@@ -7,16 +7,10 @@
  */
 import KoaRouter from '@koa/router'
 import {
-  getLease,
-  getLeases,
   getLeasesFor,
-  updateLease,
-  updateLeases,
   getContact,
-  updateContact,
-  updateContacts,
+  getLease,
 } from './adapters/tenant-lease-adapter'
-import { Contact, Lease } from '../../common/types'
 
 export const routes = (router: KoaRouter) => {
   /**
@@ -34,6 +28,7 @@ export const routes = (router: KoaRouter) => {
    * Returns a lease with populated sub objects
    */
   router.get('(.*)/leases/:id', async (ctx) => {
+    console.log("hit leases/:id", ctx.params.id)
     const responseData = await getLease(ctx.params.id)
 
     ctx.body = {
@@ -44,13 +39,13 @@ export const routes = (router: KoaRouter) => {
   /**
    * Returns all leases with populated sub objects
    */
-  router.get('(.*)/leases', async (ctx) => {
-    const leases = await getLeases()
-
-    ctx.body = {
-      data: leases,
-    }
-  })
+  // router.get('(.*)/leases', async (ctx) => {
+  //   const leases = await getLeasesByContactKey()
+  //
+  //   ctx.body = {
+  //     data: leases,
+  //   }
+  // })
 
   /**
    * Gets a person.
@@ -61,35 +56,6 @@ export const routes = (router: KoaRouter) => {
 
     ctx.body = {
       data: responseData,
-    }
-  })
-  /**
-   * Creates or updates a person.
-   */
-  router.post('(.*)/contacts', async (ctx) => {
-    if (Array.isArray(ctx.request.body)) {
-      await updateContacts(ctx.request.body as Contact[])
-    } else {
-      await updateContact(ctx.request.body as Contact)
-    }
-
-    ctx.body = {
-      meta: 'tbd',
-    }
-  })
-
-  /**
-   * Creates or updates a lease.
-   */
-  router.post('(.*)/leases', async (ctx) => {
-    if (Array.isArray(ctx.request.body)) {
-      await updateLeases(ctx.request.body as Lease[])
-    } else {
-      await updateLease(ctx.request.body as Lease)
-    }
-
-    ctx.body = {
-      meta: 'tbd',
     }
   })
 }

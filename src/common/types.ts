@@ -1,5 +1,6 @@
 interface Contact {
-  contactId: string
+  contactId: string //cmctc.cmctckod
+  contactKey: string //cmtct.keycmctc
   leaseIds: string | undefined
   //lease: Lease | undefined
   firstName: string
@@ -37,6 +38,16 @@ interface Lease {
   rentInfo: RentInfo | undefined
   lastUpdated: Date | undefined
   address: Address | undefined
+  noticeGivenBy: string | undefined,
+  noticeDate: Date | undefined,
+  noticeTimeTenant: string | undefined,
+  preferredMoveOutDate: Date | undefined,
+  terminationDate: Date | undefined,
+  contractDate: Date | undefined,
+  lastDebitDate: Date | undefined,
+  approvalDate: Date | undefined,
+
+
 }
 
 interface RentalProperty {
