@@ -50,24 +50,6 @@ export const routes = (router: KoaRouter) => {
   //   }
   // })
 
-  router.get('/example', async (ctx) => {
-    // Retrieve the list from the query parameter
-    const list = ctx.query.list;
-
-    // Check if the list is provided
-    if (!list) {
-      ctx.throw(400, 'List parameter is required');
-      return;
-    }
-
-    // Split the comma-separated string into an array
-    const listArray = list.split(',');
-
-    ctx.body = {
-      list: listArray
-    };
-  });
-
   /**
    * Gets a person.
    */
