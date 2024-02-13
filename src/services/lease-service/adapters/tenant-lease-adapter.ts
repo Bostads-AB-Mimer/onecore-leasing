@@ -15,7 +15,6 @@ const transformFromDbContact = (row: any, phoneNumbers: any, leases: any): Conta
     firstName: row.firstName,
     lastName: row.lastName,
     fullName: row.fullName,
-    type: row.type,
     leaseIds: leases,
     nationalRegistrationNumber: row.nationalRegistrationNumber,
     birthDate: row.birthDate,
@@ -143,7 +142,6 @@ const getContact = async (nationalRegistrationNumber: string) => {
     'cmctc.enamn as lastName',
     'cmctc.cmctcben as fullName',
     'cmctc.persorgnr as nationalRegistrationNumber',
-    'hyavk.keyhyakt as type',
     'cmctc.birthdate as birthDate',
     'cmadr.adress1 as street',
     'cmadr.adress3 as postalCode',
@@ -154,7 +152,7 @@ const getContact = async (nationalRegistrationNumber: string) => {
   ).innerJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
     .innerJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
     .innerJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
-    .innerJoin('hyavk', 'hyavk.keycmctc', 'cmctc.keycmctc')
+    //.innerJoin('hyavk', 'hyavk.keycmctc', 'cmctc.keycmctc')
     .where({ persorgnr: nationalRegistrationNumber })
     .limit(1)
   if (rows && rows.length > 0) {

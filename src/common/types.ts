@@ -7,7 +7,6 @@ interface Contact {
   firstName: string
   lastName: string
   fullName: string
-  type: string
   nationalRegistrationNumber: string
   birthDate: Date
   address: Address | undefined
