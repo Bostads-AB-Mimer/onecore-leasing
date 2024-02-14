@@ -6,6 +6,8 @@
  * course, there are always exceptions).
  */
 import KoaRouter from '@koa/router'
+import { Contact } from 'onecore-types'
+
 import {
   getContactByContactCode,
   getContactByNationalRegistrationNumber,
@@ -13,6 +15,14 @@ import {
   getLeasesForContactCode,
   getLeasesForNationRegistrationNumber,
 } from './adapters/tenant-lease-adapter'
+import { createLease } from './adapters/xpand-soap-adapter'
+
+interface CreateLeaseRequest {
+  parkingSpaceId: string
+  contactCode: string
+  fromDate: string
+  companyCode: string
+}
 
 export const routes = (router: KoaRouter) => {
   /**
@@ -82,6 +92,33 @@ export const routes = (router: KoaRouter) => {
 
     ctx.body = {
       data: responseData,
+    }
+  })
+
+  /**
+   * Creates or updates a lease.
+   */
+  router.post('(.*)/leases', async (ctx) => {
+    try {
+      const request = <CreateLeaseRequest>ctx.request.body
+
+      const newLeaseId = await createLease(
+        new Date(request.fromDate),
+        request.parkingSpaceId,
+        request.contactCode,
+        request.companyCode
+      )
+      ctx.body = {
+        LeaseId: newLeaseId,
+      }
+    } catch (error: unknown) {
+      ctx.status = 500
+
+      if (error instanceof Error) {
+        ctx.body = {
+          error: error.message,
+        }
+      }
     }
   })
 }
