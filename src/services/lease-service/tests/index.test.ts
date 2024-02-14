@@ -12,7 +12,6 @@ routes(router)
 app.use(bodyParser())
 app.use(router.routes())
 
-//todo: fix tests to use xpand mock data?
 describe('lease-service', () => {
   let leaseMock: Array<Lease>
 
@@ -25,18 +24,18 @@ describe('lease-service', () => {
     leaseMock = [
       {
         leaseId: '406-097-11-0201/06',
-        leaseNumber: '',
+        leaseNumber: '06',
         leaseStartDate: new Date('2023-09-07T00:00:00.000Z'),
-        leaseEndDate: undefined,
+        leaseEndDate: new Date('2024-09-07T00:00:00.000Z'),
         status: LeaseStatus.Active,
         tenantContactIds: ['P174958'],
         tenants: [
           {
             contactId: 'P174958',
+            contactKey: 'P124854',
             firstName: 'Kalle',
             lastName: 'Testsson',
             fullName: 'Testsson Kalle',
-            type: 'Kontraktsinnehavare',
             leaseIds: '406-097-11-0201/06',
             nationalRegistrationNumber: '200009092388',
             birthDate: new Date('2000-09-09T00:00:00.000Z'),
@@ -46,18 +45,37 @@ describe('lease-service', () => {
               postalCode: '12345',
               city: 'Westeros',
             },
-            mobilePhone: '070-123123123',
-            phoneNumber: '010-120120',
+            phoneNumbers: [
+              {
+                phoneNumber: '+460123456789',
+                type: 'mobtel',
+                isMainNumber: true,
+              },
+            ],
             emailAddress: 'kalle.testsson@test.se',
             lastUpdated: new Date('2023-09-11T07:55:48.750Z'),
-            lease: undefined,
+            isTenant: true,
           },
         ],
+        address: {
+          street: 'Bovägen',
+          number: '12',
+          postalCode: '12345',
+          city: 'Westeros',
+        },
         rentalPropertyId: '406-097-11-0201',
         type: 'Bostadskontrakt',
         lastUpdated: new Date('2023-09-11T07:45:09.833Z'),
         rentalProperty: undefined,
         rentInfo: undefined,
+        noticeGivenBy: '',
+        noticeDate: undefined,
+        noticeTimeTenant: '3',
+        preferredMoveOutDate: undefined,
+        terminationDate: undefined,
+        contractDate: new Date('2023-08-11T07:45:09.833Z'),
+        lastDebitDate: undefined,
+        approvalDate: new Date('2023-08-11T07:45:09.833Z'),
       },
       {
         leaseId: '102-008-03-0202/07',
@@ -69,10 +87,10 @@ describe('lease-service', () => {
         tenants: [
           {
             contactId: 'P965338',
+            contactKey: 'P965432',
             firstName: 'Maj-Britt',
             lastName: 'Lundberg',
             fullName: 'Maj-Britt Lundberg',
-            type: 'Kontraktsinnehavare',
             leaseIds: '102-008-03-0202/07',
             nationalRegistrationNumber: '194808075577',
             birthDate: new Date('1948-08-07T00:00:00.000Z'),
@@ -82,22 +100,41 @@ describe('lease-service', () => {
               postalCode: '72266',
               city: 'Västerås',
             },
-            mobilePhone: '+460759429414',
-            phoneNumber: '+465292643751',
+            phoneNumbers: [
+              {
+                phoneNumber: '+460759429414',
+                type: 'mobtel',
+                isMainNumber: true,
+              },
+            ],
             emailAddress: 'majbritt-123@mimer.nu',
             lastUpdated: undefined,
-            lease: undefined,
+            isTenant: true,
           },
         ],
+        address: {
+          street: 'Bovägen',
+          number: '12',
+          postalCode: '12345',
+          city: 'Westeros',
+        },
         rentalPropertyId: '102-008-03-0202',
         type: 'Bostadskontrakt',
         lastUpdated: undefined,
         rentalProperty: undefined,
         rentInfo: undefined,
+        noticeGivenBy: '',
+        noticeDate: undefined,
+        noticeTimeTenant: '3',
+        preferredMoveOutDate: undefined,
+        terminationDate: undefined,
+        contractDate: new Date('2023-08-11T07:45:09.833Z'),
+        lastDebitDate: undefined,
+        approvalDate: new Date('2023-08-11T07:45:09.833Z'),
       },
       {
         leaseId: '102-008-03-0202/07',
-        leaseNumber: '',
+        leaseNumber: '07',
         leaseStartDate: new Date('2010-12-01T00:00:00.000Z'),
         leaseEndDate: undefined,
         status: LeaseStatus.Active,
@@ -105,12 +142,12 @@ describe('lease-service', () => {
         tenants: [
           {
             contactId: 'P965339',
+            contactKey: 'P624393',
             firstName: 'Erik',
             lastName: 'Lundberg',
             fullName: 'Erik Lundberg',
-            type: 'Kontraktsinnehavare',
             leaseIds: '102-008-03-0202/07',
-            nationalRegistrationNumber: '194512121122',
+            nationalRegistrationNumber: '194808075577',
             birthDate: new Date('1945-12-12T00:00:00.000Z'),
             address: {
               street: 'Gatvägen',
@@ -118,29 +155,48 @@ describe('lease-service', () => {
               postalCode: '72266',
               city: 'Västerås',
             },
-            mobilePhone: '+460759429414',
-            phoneNumber: '+465292643751',
+            phoneNumbers: [
+              {
+                phoneNumber: '+460759429414',
+                type: 'mobtel',
+                isMainNumber: true,
+              },
+            ],
             emailAddress: 'erik.lundberg@mimer.nu',
             lastUpdated: undefined,
-            lease: undefined,
+            isTenant: true,
           },
         ],
+        address: {
+          street: 'Bovägen',
+          number: '12',
+          postalCode: '12345',
+          city: 'Westeros',
+        },
         rentalPropertyId: '102-008-03-0202',
         type: 'Bostadskontrakt',
         lastUpdated: undefined,
         rentalProperty: undefined,
         rentInfo: undefined,
+        noticeGivenBy: '',
+        noticeDate: undefined,
+        noticeTimeTenant: '3',
+        preferredMoveOutDate: undefined,
+        terminationDate: undefined,
+        contractDate: new Date('2023-08-11T07:45:09.833Z'),
+        lastDebitDate: undefined,
+        approvalDate: new Date('2023-08-11T07:45:09.833Z'),
       },
     ]
   })
 
-  describe('GET /leases', () => {
+  describe('GET /getLeasesFor', () => {
     it('responds with an array of leases', async () => {
       const getLeasesSpy = jest
-        .spyOn(tenantLeaseAdapter, 'getLeases')
+        .spyOn(tenantLeaseAdapter, 'getLeasesFor')
         .mockResolvedValue(leaseMock)
 
-      const res = await request(app.callback()).get('/leases')
+      const res = await request(app.callback()).get('/leases/for/194808075577')
       expect(res.status).toBe(200)
       expect(res.body.data).toBeInstanceOf(Array)
       expect(getLeasesSpy).toHaveBeenCalled()
