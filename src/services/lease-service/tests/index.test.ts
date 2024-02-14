@@ -31,7 +31,7 @@ describe('lease-service', () => {
         tenantContactIds: ['P174958'],
         tenants: [
           {
-            contactId: 'P174958',
+            contactCode: 'P174958',
             contactKey: 'P124854',
             firstName: 'Kalle',
             lastName: 'Testsson',
@@ -53,7 +53,6 @@ describe('lease-service', () => {
               },
             ],
             emailAddress: 'kalle.testsson@test.se',
-            lastUpdated: new Date('2023-09-11T07:55:48.750Z'),
             isTenant: true,
           },
         ],
@@ -65,7 +64,6 @@ describe('lease-service', () => {
         },
         rentalPropertyId: '406-097-11-0201',
         type: 'Bostadskontrakt',
-        lastUpdated: new Date('2023-09-11T07:45:09.833Z'),
         rentalProperty: undefined,
         rentInfo: undefined,
         noticeGivenBy: '',
@@ -86,7 +84,7 @@ describe('lease-service', () => {
         tenantContactIds: ['P965338'],
         tenants: [
           {
-            contactId: 'P965338',
+            contactCode: 'P965338',
             contactKey: 'P965432',
             firstName: 'Maj-Britt',
             lastName: 'Lundberg',
@@ -108,7 +106,6 @@ describe('lease-service', () => {
               },
             ],
             emailAddress: 'majbritt-123@mimer.nu',
-            lastUpdated: undefined,
             isTenant: true,
           },
         ],
@@ -120,7 +117,6 @@ describe('lease-service', () => {
         },
         rentalPropertyId: '102-008-03-0202',
         type: 'Bostadskontrakt',
-        lastUpdated: undefined,
         rentalProperty: undefined,
         rentInfo: undefined,
         noticeGivenBy: '',
@@ -141,7 +137,7 @@ describe('lease-service', () => {
         tenantContactIds: ['P965339'],
         tenants: [
           {
-            contactId: 'P965339',
+            contactCode: 'P965339',
             contactKey: 'P624393',
             firstName: 'Erik',
             lastName: 'Lundberg',
@@ -163,7 +159,6 @@ describe('lease-service', () => {
               },
             ],
             emailAddress: 'erik.lundberg@mimer.nu',
-            lastUpdated: undefined,
             isTenant: true,
           },
         ],
@@ -175,7 +170,6 @@ describe('lease-service', () => {
         },
         rentalPropertyId: '102-008-03-0202',
         type: 'Bostadskontrakt',
-        lastUpdated: undefined,
         rentalProperty: undefined,
         rentInfo: undefined,
         noticeGivenBy: '',
@@ -190,13 +184,27 @@ describe('lease-service', () => {
     ]
   })
 
-  describe('GET /getLeasesFor', () => {
+  describe('GET /getLeasesForNationalRegistrationNumber', () => {
     it('responds with an array of leases', async () => {
       const getLeasesSpy = jest
-        .spyOn(tenantLeaseAdapter, 'getLeasesFor')
+        .spyOn(tenantLeaseAdapter, 'getLeasesForNationRegistrationNumber')
         .mockResolvedValue(leaseMock)
 
-      const res = await request(app.callback()).get('/leases/for/194808075577')
+      const res = await request(app.callback()).get('/leases/for/nationalRegistrationNumber/194808075577')
+      expect(res.status).toBe(200)
+      expect(res.body.data).toBeInstanceOf(Array)
+      expect(getLeasesSpy).toHaveBeenCalled()
+      expect(res.body.data.length).toBe(3)
+    })
+  })
+
+  describe('GET /getLeasesForContactCode', () => {
+    it('responds with an array of leases', async () => {
+      const getLeasesSpy = jest
+        .spyOn(tenantLeaseAdapter, 'getLeasesForContactCode')
+        .mockResolvedValue(leaseMock)
+
+      const res = await request(app.callback()).get('/leases/for/contactCode/P965339')
       expect(res.status).toBe(200)
       expect(res.body.data).toBeInstanceOf(Array)
       expect(getLeasesSpy).toHaveBeenCalled()

@@ -7,17 +7,30 @@
  */
 import KoaRouter from '@koa/router'
 import {
-  getLeasesFor,
-  getContact,
+  getContactByContactCode,
+  getContactByNationalRegistrationNumber,
   getLease,
+  getLeasesForContactCode,
+  getLeasesForNationRegistrationNumber,
 } from './adapters/tenant-lease-adapter'
 
 export const routes = (router: KoaRouter) => {
   /**
    * Returns leases for a national registration number with populated sub objects
    */
-  router.get('(.*)/leases/for/:pnr', async (ctx) => {
-    const responseData = await getLeasesFor(ctx.params.pnr)
+  router.get('(.*)/leases/for/nationalRegistrationNumber/:pnr', async (ctx) => {
+    const responseData = await getLeasesForNationRegistrationNumber(ctx.params.pnr)
+
+    ctx.body = {
+      data: responseData,
+    }
+  })
+
+  /**
+   * Returns leases for a contact code with populated sub objects
+   */
+  router.get('(.*)/leases/for/contactCode/:pnr', async (ctx) => {
+    const responseData = await getLeasesForContactCode(ctx.params.pnr)
 
     ctx.body = {
       data: responseData,
@@ -51,11 +64,21 @@ export const routes = (router: KoaRouter) => {
   // })
 
   /**
-   * Gets a person.
+   * Gets a person by national registration number.
    */
+  router.get('(.*)/contact/nationalRegistrationNumber/:pnr', async (ctx: any) => {
+    const responseData = await getContactByNationalRegistrationNumber(ctx.params.pnr)
 
-  router.get('(.*)/contact/:pnr', async (ctx: any) => {
-    const responseData = await getContact(ctx.params.pnr)
+    ctx.body = {
+      data: responseData,
+    }
+  })
+
+  /**
+   * Gets a person by contact code.
+   */
+  router.get('(.*)/contact/contactCode/:contactCode', async (ctx: any) => {
+    const responseData = await getContactByContactCode(ctx.params.contactCode)
 
     ctx.body = {
       data: responseData,

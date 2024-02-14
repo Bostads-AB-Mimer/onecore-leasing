@@ -10,7 +10,7 @@ const db = knex({
 
 const transformFromDbContact = (row: any, phoneNumbers: any, leases: any): Contact => {
   const contact = {
-    contactId: row.contactId,
+    contactCode: row.contactCode,
     contactKey: row.contactKey,
     firstName: row.firstName,
     lastName: row.lastName,
@@ -27,7 +27,6 @@ const transformFromDbContact = (row: any, phoneNumbers: any, leases: any): Conta
     phoneNumbers: phoneNumbers,
     emailAddress: row.emailAddress,
     isTenant: leases.length > 0,
-    lastUpdated: undefined, //todo: does this exist in xpand db?
   }
 
   return contact
@@ -53,7 +52,6 @@ const transformFromDbLease = (
     tenantContactIds,
     tenants,
     rentalProperty: undefined,
-    lastUpdated: undefined, //todo: does this exist in xpand db?
     rentInfo: undefined,
     address: undefined,
     noticeGivenBy: row.noticeGivenBy,
@@ -114,7 +112,7 @@ const getLeases = async (leaseIds: string[] | undefined): Promise<Lease[]> => {
 }
 
 //todo: include contact/tentant info
-const getLeasesFor = async (nationalRegistrationNumber: string) => {
+const getLeasesForNationRegistrationNumber = async (nationalRegistrationNumber: string) => {
   const contact = await db('cmctc').select(
     'cmctc.keycmctc as contactKey',
   ).limit(1)
@@ -122,22 +120,56 @@ const getLeasesFor = async (nationalRegistrationNumber: string) => {
       persorgnr: nationalRegistrationNumber })
     .limit(1)
 
-  var rows: any[] = []
   if (contact != undefined) {
-    rows =  await getLeasesByContactKey(contact[0].contactKey)
-  }
-  var leases: any[] = []
-  for (const row of rows) {
-    const lease = await transformFromDbLease(row, [], [])
-    leases.push(lease)
+    return await getLeasesByContactKey(contact[0].contactKey)
   }
 
-  return leases
+  return undefined
 }
 
-const getContact = async (nationalRegistrationNumber: string) => {
-  const rows = await db('cmctc').select(
-    'cmctc.cmctckod as contactId',
+const getLeasesForContactCode = async (contactCode: string) => {
+  const contact = await db('cmctc').select(
+    'cmctc.keycmctc as contactKey',
+  ).limit(1)
+    .where({
+      cmctckod: contactCode })
+    .limit(1)
+
+  if (contact != undefined) {
+    return await getLeasesByContactKey(contact[0].contactKey)
+  }
+}
+
+const getContactByNationalRegistrationNumber = async (nationalRegistrationNumber: string) => {
+  const rows = await
+    getContactQuery().where({ persorgnr: nationalRegistrationNumber })
+    .limit(1)
+  if (rows && rows.length > 0) {
+    var phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
+    var leases = await getLeaseIds(rows[0].contactKey)
+    return transformFromDbContact(rows[0], phoneNumbers, leases)
+  }
+
+  return null
+}
+
+const getContactByContactCode = async (contactKey: string) => {
+  const rows = await
+    getContactQuery()
+      .where({ cmctckod: contactKey })
+      .limit(1)
+  if (rows && rows.length > 0) {
+    var phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
+    var leases = await getLeaseIds(rows[0].contactKey)
+    return transformFromDbContact(rows[0], phoneNumbers, leases)
+  }
+
+  return null
+}
+
+const getContactQuery = () => {
+  return db('cmctc').select(
+    'cmctc.cmctckod as contactCode',
     'cmctc.fnamn as firstName',
     'cmctc.enamn as lastName',
     'cmctc.cmctcben as fullName',
@@ -152,15 +184,6 @@ const getContact = async (nationalRegistrationNumber: string) => {
   ).innerJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
     .innerJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
     .innerJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
-    .where({ persorgnr: nationalRegistrationNumber })
-    .limit(1)
-  if (rows && rows.length > 0) {
-    var phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
-    var leases = await getLeaseIds(rows[0].contactKey)
-    return transformFromDbContact(rows[0], phoneNumbers, leases)
-  }
-
-  return null
 }
 
 const getPhoneNumbersForContact = async (keycmobj: string) => {
@@ -201,7 +224,14 @@ const getLeasesByContactKey = async (keycmctc: string) => {
     .innerJoin('hyobj', 'hyobj.keyhyobj', 'hyavk.keyhyobj')
     .innerJoin('hyhav', 'hyhav.keyhyhav', 'hyobj.keyhyhav')
     .where({ keycmctc: keycmctc })
-  return rows
+
+  var leases: any[] = []
+  for (const row of rows) {
+    const lease = await transformFromDbLease(row, [], [])
+    leases.push(lease)
+  }
+
+  return leases
 }
 
 const getLeaseById = async (hyobjben: string) => {
@@ -229,8 +259,8 @@ const getLeaseById = async (hyobjben: string) => {
 export {
   getLease,
   getLeases,
-  getLeasesByContactKey,
-  getLeasesFor,
-  getContact,
-  transformFromDbLease,
+  getLeasesForContactCode,
+  getLeasesForNationRegistrationNumber,
+  getContactByNationalRegistrationNumber,
+  getContactByContactCode,
 }
