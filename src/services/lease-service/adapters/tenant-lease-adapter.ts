@@ -1,4 +1,4 @@
-import { Lease, Contact, Address } from '../../../common/types'
+import { Lease, Contact } from 'onecore-types'
 
 import knex from 'knex'
 import Config from '../../../common/config'
@@ -49,7 +49,7 @@ const transformFromDbLease = (
     type: row.leaseType,
     leaseStartDate: row.fromDate,
     leaseEndDate: row.toDate,
-    status: row.Status,
+    status: row.Status, //todo: support status
     tenantContactIds,
     tenants,
     rentalProperty: undefined,
