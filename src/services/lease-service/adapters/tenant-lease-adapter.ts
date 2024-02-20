@@ -1,4 +1,4 @@
-import { Lease, Contact } from 'onecore-types'
+import { Lease, Contact, Invoices, Invoice, UnpaidInvoices, UnpaidInvoice } from 'onecore-types'
 
 import knex from 'knex'
 import Config from '../../../common/config'
@@ -14,6 +14,7 @@ type PartialLease = {
   lastDebitDate: Lease['lastDebitDate']
 }
 
+//todo: move all transformation code to separate file
 const transformFromDbContact = (
   row: any,
   phoneNumbers: any,
@@ -75,6 +76,21 @@ const transformFromDbLease = (
   }
 
   return lease
+}
+
+function transformFromDbInvoice(row: any): Invoice {
+  return {
+    invoiceId: row.invoiceId.trim(),
+    leaseId: row.leaseId.trim(),
+    amount: row.amount,
+    fromDate: row.fromDate,
+    toDate: row.toDate,
+    invoiceDate: row.invoiceDate,
+    expirationDate: row.expirationDate,
+    debitStatus: row.debitStatus,
+    paymentStatus: row.paymentStatus,
+    transactionTypeName: row.transactionTypeName.trim()
+  };
 }
 
 //todo: include contact/tentant info
@@ -227,6 +243,81 @@ const getContactQuery = () => {
     .innerJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
 }
 
+const getInvoiceStatusOfContact = async (
+  contactKey: string,
+): Promise<Invoices | undefined> => {
+  const rows = await db.select(
+    'krfkh.invoice as invoiceId',
+    'krfkh.reference as leaseId',
+    'krfkh.amount as amount',
+    'krfkh.fromdate as fromDate',
+    'krfkh.todate as toDate',
+    'krfkh.invdate as invoiceDate',
+    'krfkh.expdate as expirationDate',
+    'krfkh.debstatus as debitStatus',
+    'krfkh.paystatus as paymentStatus',
+    'revrt.name as transactionTypeName', //not really needed?
+  )
+    .from('krfkh')
+    .innerJoin('cmctc', 'cmctc.keycmctc', 'krfkh.keycmctc')
+    .innerJoin('revrt', 'revrt.keyrevrt', 'krfkh.keyrevrt')
+    .where({ 'cmctc.cmctckod': contactKey })
+
+  if (rows && rows.length > 0) {
+    const invoices: Invoice[] = rows.map(transformFromDbInvoice);
+
+    if(invoices.length === 0) {
+      return undefined;
+    }
+
+    let unpaidInvoices = invoices.filter((invoice: any) => invoice.paymentStatus === 0 || invoice.paymentStatus === 1 )
+    const paidInvoices = invoices.filter((invoice: any) => invoice.paymentStatus > 1 )
+
+    unpaidInvoices = unpaidInvoices.filter(unpaidInvoice => {
+      // If a paid invoice exists with the same invoice id and amount is 0, the invoice is considered paid (probably handled by debt collector)
+      return !paidInvoices.some(paidInvoice => paidInvoice.invoiceId === unpaidInvoice.invoiceId && unpaidInvoice.amount === 0);
+    });
+
+    return {
+      unpaidInvoices: unpaidInvoices,
+      paidInvoices: paidInvoices,
+    }
+  }
+
+  return undefined
+}
+
+const getUnpaidInvoicesOfContact = async (
+  contactKey: string,
+): Promise<UnpaidInvoices | undefined> =>  {
+  var allInvoices = await getInvoiceStatusOfContact(contactKey);
+
+  if(allInvoices?.unpaidInvoices == undefined) {
+    return undefined;
+  }
+
+  let accumulatedLastDebitDaysSinceToday = 0;
+
+  let unpaidInvoices: UnpaidInvoice[] | undefined = allInvoices?.unpaidInvoices.map((invoice: Invoice) => {
+    const today = new Date();
+    const daysSinceLastDebitDate = Math.floor((today.getTime() - invoice.fromDate.getTime()) / (1000 * 60 * 60 * 24));
+    accumulatedLastDebitDaysSinceToday += daysSinceLastDebitDate;
+    return {
+      invoice: invoice.invoiceId,
+      amount: invoice.amount,
+      fromDate: invoice.fromDate,
+      toDate: invoice.toDate,
+      daysSinceLastDebitDate: daysSinceLastDebitDate,
+    }
+  })
+
+  return  {
+    invoices: unpaidInvoices,
+    numberOfUnpaidInvoices: unpaidInvoices.length,
+    accumulatedLastDebitDaysSinceToday: accumulatedLastDebitDaysSinceToday
+  }
+}
+
 const getPhoneNumbersForContact = async (keycmobj: string) => {
   const rows = await db('cmtel')
     .select(
@@ -343,5 +434,7 @@ export {
   getLeasesForNationalRegistrationNumber,
   getContactByNationalRegistrationNumber,
   getContactByContactCode,
+  getInvoiceStatusOfContact,
+  getUnpaidInvoicesOfContact,
   isLeaseActive,
 }
