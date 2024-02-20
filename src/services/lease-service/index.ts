@@ -61,4 +61,22 @@ export const routes = (router: KoaRouter) => {
       data: responseData,
     }
   })
+
+  /***
+   * Returns data to determine if a user is a tenant
+   */
+  router.get('(.*)/leases/tenant-status/:pnr', async (ctx) => {
+    const contactData = await getContact(
+      ctx.params.pnr
+    )
+
+    ctx.body = {
+      data: {
+        isTenant: contactData?.isTenant,
+        leaseIds: contactData ? contactData.leaseIds : [],
+        address: contactData ? contactData.address : null
+      }
+    }
+  })
+
 }
