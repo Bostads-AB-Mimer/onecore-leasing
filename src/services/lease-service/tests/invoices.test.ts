@@ -9,6 +9,7 @@ jest.mock('knex', () => () => ({
   from: jest.fn().mockReturnThis(),
   innerJoin: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
+  orderBy: jest.fn().mockReturnThis(),
   then: jest.fn().mockImplementation((callback: any) => callback([
     {
       invoiceId: "552303315030452",
