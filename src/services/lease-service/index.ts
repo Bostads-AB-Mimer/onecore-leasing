@@ -9,12 +9,13 @@ import KoaRouter from '@koa/router'
 
 import {
   getContactByContactCode,
-  getContactByNationalRegistrationNumber, getInvoiceStatusOfContact,
+  getContactByNationalRegistrationNumber,
   getLease,
   getLeasesForContactCode,
-  getLeasesForNationalRegistrationNumber, getUnpaidInvoicesOfContact,
+  getLeasesForNationalRegistrationNumber
 } from './adapters/tenant-lease-adapter'
 import { createLease } from './adapters/xpand-soap-adapter'
+import { getInvoicesByContactCode, getUnpaidInvoicesByContactCode } from './adapters/invoices-adapter'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -113,7 +114,7 @@ export const routes = (router: KoaRouter) => {
    * Gets all invoices for a contact, filtered on paid and unpaid.
    */
   router.get('(.*)/contact/invoices/contactCode/:contactCode', async (ctx: any) => {
-    const responseData = await getInvoiceStatusOfContact(
+    const responseData = await getInvoicesByContactCode(
       ctx.params.contactCode,
     )
 
@@ -126,7 +127,7 @@ export const routes = (router: KoaRouter) => {
    * Gets the detailed status of a persons unpaid invoices.
    */
   router.get('(.*)/contact/unpaidInvoices/contactCode/:contactCode', async (ctx: any) => {
-    const responseData = await getUnpaidInvoicesOfContact(
+    const responseData = await getUnpaidInvoicesByContactCode(
       ctx.params.contactCode,
     )
 
