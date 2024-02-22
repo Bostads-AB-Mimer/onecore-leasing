@@ -1,9 +1,7 @@
 import { getInvoicesByContactCode, getUnpaidInvoicesByContactCode } from '../adapters/invoices-adapter'
 
-//todo: add a test that has an invoice the is found in both paid and unpaid invoices E.G. handled by debt collector
-// todo: create 2 endpoint tests ?
-
-//todo: can we pass mock data in init in each test? Mock data should differ between tests for better coverage
+//todo: can we pass unique mock data for specific tests? Mock data should differ between tests for better coverage
+//todo: the best approach would be to wrap the knex mock in a function that takes the mock data as an argument
 jest.mock('knex', () => () => ({
   select: jest.fn().mockReturnThis(),
   from: jest.fn().mockReturnThis(),
@@ -39,31 +37,22 @@ jest.mock('knex', () => () => ({
   ])),
 }));
 
-// describe ('GET /invoices ', () => {
-//   it('responds with an array of invoices', async () => {
-//     const getInvoicesSpy = jest
-//       .spyOn(invoicesAdapter, 'getInvoicesByContactCode')
-//       .mockResolvedValue(invoiceMock)
-//
-//     //todo: do we need to the pass the param?
-//     const res = await request(app.callback()).get('/contact/invoices/contactCode/')
-//     expect(res.status).toBe(200)
-//     expect(res.body.data).toBeInstanceOf(Array)
-//     expect(getInvoicesSpy).toHaveBeenCalled()
-//     expect(res.body.data.length).toBe(2)
-//   })
-// }
+//todo: add endpoint tests
 
-
-//todo: flesh out more
 describe('getInvoicesByContactCode', () => {
   it('should return unpaid and paid invoices for a contact', async () => {
-    const contactKey = 'someContactKey';
-    const result = await getInvoicesByContactCode(contactKey);
+    const result = await getInvoicesByContactCode('contactKey');
 
-    console.log('result', result);
-
+    //todo: add more asserts
+    expect(result).toBeDefined();
     expect(result?.paidInvoices).toHaveLength(1); // Passes
     expect(result?.unpaidInvoices).toHaveLength(1); // Passes
   });
+
+  //todo: add a test that has an invoice that is found in both paid and unpaid invoices E.G. handled by debt collector
+  //todo: the invoice handled by debt collector should be found in unpaid invoices in the result
+});
+
+describe('getUnpaidInvoicesByContactCode', () => {
+  //todo: add tests
 });
