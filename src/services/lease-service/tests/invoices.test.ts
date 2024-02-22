@@ -9,6 +9,7 @@ jest.mock('knex', () => () => ({
   where: jest.fn().mockReturnThis(),
   orderBy: jest.fn().mockReturnThis(),
   then: jest.fn().mockImplementation((callback: any) => callback([
+    //unpaid invoice
     {
       invoiceId: "552303315030452",
       leaseId: "705-025-03-0205/01",
