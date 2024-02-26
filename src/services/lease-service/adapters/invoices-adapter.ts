@@ -36,7 +36,7 @@ const getInvoicesByContactCode = async (
       'krfkh.expdate as expirationDate',
       'krfkh.debstatus as debitStatus',
       'krfkh.paystatus as paymentStatus',
-      'revrt.name as transactionTypeName' //not really needed?
+      'revrt.name as transactionTypeName'
     )
     .from('krfkh')
     .innerJoin('cmctc', 'cmctc.keycmctc', 'krfkh.keycmctc')

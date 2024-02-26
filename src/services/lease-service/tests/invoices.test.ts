@@ -157,7 +157,7 @@ describe('invoices-service', () => {
       expect(result).toBeDefined()
       expect(result?.invoices).toHaveLength(2)
       expect(result?.numberOfUnpaidInvoices).toEqual(2)
-      expect(result?.accumulatedLastDebitDaysSinceToday).toBeGreaterThanOrEqual(
+      expect(result?.accumulatedLastDebitDaysSinceToday).toBeGreaterThan(
         0
       )
     })
