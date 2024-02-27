@@ -95,7 +95,7 @@ const getUnpaidInvoicesByContactCode = async (
       )
       accumulatedLastDebitDaysSinceToday += daysSinceLastDebitDate
       return {
-        invoice: invoice.invoiceId,
+        invoiceId: invoice.invoiceId,
         amount: invoice.amount,
         fromDate: invoice.fromDate,
         toDate: invoice.toDate,
@@ -104,7 +104,7 @@ const getUnpaidInvoicesByContactCode = async (
     })
 
   return {
-    invoices: unpaidInvoices,
+    unpaidInvoices: unpaidInvoices,
     numberOfUnpaidInvoices: unpaidInvoices.length,
     accumulatedLastDebitDaysSinceToday: accumulatedLastDebitDaysSinceToday,
   }
