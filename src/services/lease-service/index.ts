@@ -14,7 +14,7 @@ import {
   getLeasesForContactCode,
   getLeasesForNationalRegistrationNumber
 } from './adapters/tenant-lease-adapter'
-import { createLease } from './adapters/xpand-soap-adapter'
+import { createLease, getWaitingList } from './adapters/xpand-soap-adapter'
 import { getInvoicesByContactCode, getUnpaidInvoicesByContactCode } from './adapters/invoices-adapter'
 
 interface CreateLeaseRequest {
@@ -160,6 +160,24 @@ export const routes = (router: KoaRouter) => {
           error: error.message,
         }
       }
+    }
+  })
+
+
+  /**
+   * Gets the waiting lists of a person.
+   */
+  router.get('(.*)/contact/waitingLists/:nationalRegistrationNumber', async (ctx: any) => {
+    // const responseData = await getWaitingList(
+    //   ctx.params.contactCode,
+    // )
+    ///contact/waitingLists/195001182046
+    const responseData = await getWaitingList(
+      ctx.params.nationalRegistrationNumber,
+    )
+
+    ctx.body = {
+      data: responseData,
     }
   })
 }
