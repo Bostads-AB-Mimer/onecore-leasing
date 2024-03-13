@@ -167,11 +167,7 @@ export const routes = (router: KoaRouter) => {
   /**
    * Gets the waiting lists of a person.
    */
-  router.get('(.*)/contact/waitingLists/:nationalRegistrationNumber', async (ctx: any) => {
-    // const responseData = await getWaitingList(
-    //   ctx.params.contactCode,
-    // )
-    ///contact/waitingLists/195001182046
+  router.get('(.*)/contact/waitingList/:nationalRegistrationNumber', async (ctx: any) => {
     const responseData = await getWaitingList(
       ctx.params.nationalRegistrationNumber,
     )
