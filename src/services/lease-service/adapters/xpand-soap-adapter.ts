@@ -3,6 +3,7 @@ import { XMLParser } from 'fast-xml-parser'
 import createHttpError from 'http-errors'
 
 import Config from '../../../common/config'
+import { WaitingList } from 'onecore-types'
 
 const createLease = async (
   fromDate: Date,
@@ -78,17 +79,6 @@ const createLease = async (
   }
 }
 
-//todo: move to onecore trypes
-export interface WaitingListTimeDataContract {
-  ApplicantCaption: string
-  ContactCode: string
-  ContractFromApartment: Date
-  QueuePoints: number
-  QueuePointsSocialConnection: number
-  WaitingListFrom: Date
-  WaitingListTypeCaption: string
-}
-
 const getWaitingList = async (nationalRegistrationNumber: string) => {
   const headers = getHeaders()
 
@@ -129,13 +119,13 @@ const getWaitingList = async (nationalRegistrationNumber: string) => {
       console.log(
         parsedResponse['WaitingListTimes']['WaitingListTimeDataContract']
       )
-      const waitingList: WaitingListTimeDataContract[] = []
+      const waitingList: WaitingList[] = []
 
       for (const item of parsedResponse['WaitingListTimes'][
         'WaitingListTimeDataContract'
       ]) {
-        console.log('iterating')
-        const newItem: WaitingListTimeDataContract = {
+
+        const newItem: WaitingList = {
           ApplicantCaption: item.ApplicantCaption,
           ContactCode: item.ApplicantCode,
           ContractFromApartment: new Date(item.ContractFromApartment),
