@@ -14,7 +14,7 @@ import {
   getLeasesForContactCode,
   getLeasesForNationalRegistrationNumber
 } from './adapters/tenant-lease-adapter'
-import { createLease, getWaitingList } from './adapters/xpand-soap-adapter'
+import { addApplicantToToWaitingList, createLease, getWaitingList } from './adapters/xpand-soap-adapter'
 import { getInvoicesByContactCode, getUnpaidInvoicesByContactCode } from './adapters/invoices-adapter'
 
 interface CreateLeaseRequest {
@@ -174,6 +174,31 @@ export const routes = (router: KoaRouter) => {
 
     ctx.body = {
       data: responseData,
+    }
+  })
+
+  /**
+   * Adds a person to the specified waiting list.
+   */
+  //todo: test response status codes, 201 or 500
+  //todo: define body
+  router.post('(.*)/contact/waitingList/:nationalRegistrationNumber', async (ctx: any) => {
+    const request = <CreateLeaseRequest>ctx.request.body //todo: define body
+    try{
+      await addApplicantToToWaitingList(
+        ctx.params.nationalRegistrationNumber,
+      )
+
+      ctx.status = 201
+    }
+    catch (error: unknown) {
+      ctx.status = 500
+
+      if (error instanceof Error) {
+        ctx.body = {
+          error: error.message,
+        }
+      }
     }
   })
 }

@@ -116,15 +116,11 @@ const getWaitingList = async (nationalRegistrationNumber: string) => {
     throw createHttpError(404, 'Waiting lists not found')
   } else {
     try {
-      console.log(
-        parsedResponse['WaitingListTimes']['WaitingListTimeDataContract']
-      )
       const waitingList: WaitingList[] = []
 
       for (const item of parsedResponse['WaitingListTimes'][
         'WaitingListTimeDataContract'
       ]) {
-
         const newItem: WaitingList = {
           ApplicantCaption: item.ApplicantCaption,
           ContactCode: item.ApplicantCode,
@@ -144,6 +140,63 @@ const getWaitingList = async (nationalRegistrationNumber: string) => {
   }
 }
 
+//todo: define body param
+const addApplicantToToWaitingList = async (nationalRegistrationNumber: string) => {
+  const headers = getHeaders()
+
+  //todo: support params for WaitingListTypeCaption
+  //todo: add params for contactCode
+  var xml = `
+   <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ser="http://incit.xpand.eu/service/" xmlns:inc="http://incit.xpand.eu/">
+   <soap:Header xmlns:wsa='http://www.w3.org/2005/08/addressing'><wsa:Action>http://incit.xpand.eu/service/AddApplicantWaitingListTime/AddApplicantWaitingListTime</wsa:Action><wsa:To>https://pdatest.mimer.nu:9055/Incit/Service/External/ServiceCatalogue/</wsa:To></soap:Header>
+     <soap:Body>
+        <ser:AddApplicantWaitingListTimeRequest>
+        <!--Optional:-->
+        <inc:CivicNumber>${nationalRegistrationNumber}</inc:CivicNumber>
+          <!--Optional:-->
+        <inc:Code>P174965</inc:Code>
+        <!--Optional:-->
+        <inc:CompanyCode>001</inc:CompanyCode>
+        <!--Optional:-->
+        <inc:MessageCulture>${Config.xpandSoap.messageCulture}</inc:MessageCulture>
+        <!--Optional:-->
+        <inc:WaitingListTypeCaption>Bilplats (intern)</inc:WaitingListTypeCaption>
+        <!--Optional:-->
+        </ser:AddApplicantWaitingListTimeRequest>
+    </soap:Body>
+</soap:Envelope>`
+
+  const { response } = await soapRequest({
+    url: Config.xpandSoap.url,
+    headers: headers,
+    xml: xml,
+  })
+  const { body } = response
+
+  const options = {
+    ignoreAttributes: false,
+    ignoreNameSpace: false,
+    removeNSPrefix: true,
+  }
+
+  const parser = new XMLParser(options)
+  const parsedResponse =
+    parser.parse(body)['Envelope']['Body']['ResultBase']
+  console.log(parsedResponse)
+  try{
+    if (parsedResponse.Success) {
+      return
+    } else if(parsedResponse['Message'] == 'Kötyp finns redan'){
+      throw createHttpError(409, 'Applicant already in waiting list')
+    }else{
+      throw createHttpError(500, 'unknown error when adding applicant to waiting list')
+    }
+  }catch (error){
+    console.error(error)
+    throw error
+  }
+}
+
 function getHeaders() {
   const base64credentials = Buffer.from(
     Config.xpandSoap.username + ':' + Config.xpandSoap.password,
@@ -156,4 +209,4 @@ function getHeaders() {
   }
 }
 
-export { createLease, getWaitingList }
+export { createLease, getWaitingList, addApplicantToToWaitingList }
