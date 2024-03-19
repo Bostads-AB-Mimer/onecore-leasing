@@ -24,6 +24,12 @@ interface CreateLeaseRequest {
   companyCode: string
 }
 
+interface CreateWaitingListRequest {
+  contactCode: string,
+  waitingListTypeCaption: string,
+
+}
+
 export const routes = (router: KoaRouter) => {
   /**
    * Returns leases for a national registration number with populated sub objects
@@ -183,10 +189,12 @@ export const routes = (router: KoaRouter) => {
   //todo: test response status codes, 201 or 500
   //todo: define body
   router.post('(.*)/contact/waitingList/:nationalRegistrationNumber', async (ctx: any) => {
-    const request = <CreateLeaseRequest>ctx.request.body //todo: define body
+    const request = <CreateWaitingListRequest>ctx.request.body
     try{
       await addApplicantToToWaitingList(
         ctx.params.nationalRegistrationNumber,
+        request.contactCode,
+        request.waitingListTypeCaption
       )
 
       ctx.status = 201
