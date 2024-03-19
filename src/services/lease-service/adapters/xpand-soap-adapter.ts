@@ -140,7 +140,11 @@ const getWaitingList = async (nationalRegistrationNumber: string) => {
   }
 }
 
-const addApplicantToToWaitingList = async (nationalRegistrationNumber: string, contactCode: string, waitingListTypeCaption: string) => {
+const addApplicantToToWaitingList = async (
+  nationalRegistrationNumber: string,
+  contactCode: string,
+  waitingListTypeCaption: string
+) => {
   const headers = getHeaders()
 
   var xml = `
@@ -171,18 +175,20 @@ const addApplicantToToWaitingList = async (nationalRegistrationNumber: string, c
   }
 
   const parser = new XMLParser(options)
-  const parsedResponse =
-    parser.parse(body)['Envelope']['Body']['ResultBase']
-  console.log(parsedResponse)
-  try{
+  const parsedResponse = parser.parse(body)['Envelope']['Body']['ResultBase']
+
+  try {
     if (parsedResponse.Success) {
       return
-    } else if(parsedResponse['Message'] == 'Kötyp finns redan'){
+    } else if (parsedResponse['Message'] == 'Kötyp finns redan') {
       throw createHttpError(409, 'Applicant already in waiting list')
-    }else{
-      throw createHttpError(500, `unknown error when adding applicant to waiting list: ${parsedResponse['Message'] }`)
+    } else {
+      throw createHttpError(
+        500,
+        `unknown error when adding applicant to waiting list: ${parsedResponse['Message']}`
+      )
     }
-  }catch (error){
+  } catch (error) {
     console.error(error)
     throw error
   }
@@ -190,10 +196,10 @@ const addApplicantToToWaitingList = async (nationalRegistrationNumber: string, c
 
 function getHeaders() {
   const base64credentials = Buffer.from(
-    Config.xpandSoap.username + ':' + Config.xpandSoap.password,
+    Config.xpandSoap.username + ':' + Config.xpandSoap.password
   ).toString('base64')
 
-  return  {
+  return {
     'Content-Type': 'application/soap+xml;charset=UTF-8;',
     'user-agent': 'onecore-xpand-soap-adapter',
     Authorization: `Basic ${base64credentials}`,

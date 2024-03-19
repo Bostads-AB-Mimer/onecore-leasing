@@ -12,10 +12,17 @@ import {
   getContactByNationalRegistrationNumber,
   getLease,
   getLeasesForContactCode,
-  getLeasesForNationalRegistrationNumber
+  getLeasesForNationalRegistrationNumber,
 } from './adapters/tenant-lease-adapter'
-import { addApplicantToToWaitingList, createLease, getWaitingList } from './adapters/xpand-soap-adapter'
-import { getInvoicesByContactCode, getUnpaidInvoicesByContactCode } from './adapters/invoices-adapter'
+import {
+  addApplicantToToWaitingList,
+  createLease,
+  getWaitingList,
+} from './adapters/xpand-soap-adapter'
+import {
+  getInvoicesByContactCode,
+  getUnpaidInvoicesByContactCode,
+} from './adapters/invoices-adapter'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -25,9 +32,8 @@ interface CreateLeaseRequest {
 }
 
 interface CreateWaitingListRequest {
-  contactCode: string,
-  waitingListTypeCaption: string,
-
+  contactCode: string
+  waitingListTypeCaption: string
 }
 
 export const routes = (router: KoaRouter) => {
@@ -119,28 +125,34 @@ export const routes = (router: KoaRouter) => {
   /**
    * Gets all invoices for a contact, filtered on paid and unpaid.
    */
-  router.get('(.*)/contact/invoices/contactCode/:contactCode', async (ctx: any) => {
-    const responseData = await getInvoicesByContactCode(
-      ctx.params.contactCode,
-    )
+  router.get(
+    '(.*)/contact/invoices/contactCode/:contactCode',
+    async (ctx: any) => {
+      const responseData = await getInvoicesByContactCode(
+        ctx.params.contactCode
+      )
 
-    ctx.body = {
-      data: responseData,
+      ctx.body = {
+        data: responseData,
+      }
     }
-  })
+  )
 
   /**
    * Gets the detailed status of a persons unpaid invoices.
    */
-  router.get('(.*)/contact/unpaidInvoices/contactCode/:contactCode', async (ctx: any) => {
-    const responseData = await getUnpaidInvoicesByContactCode(
-      ctx.params.contactCode,
-    )
+  router.get(
+    '(.*)/contact/unpaidInvoices/contactCode/:contactCode',
+    async (ctx: any) => {
+      const responseData = await getUnpaidInvoicesByContactCode(
+        ctx.params.contactCode
+      )
 
-    ctx.body = {
-      data: responseData,
+      ctx.body = {
+        data: responseData,
+      }
     }
-  })
+  )
 
   /**
    * Creates or updates a lease.
@@ -169,44 +181,48 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
-
   /**
    * Gets the waiting lists of a person.
    */
-  router.get('(.*)/contact/waitingList/:nationalRegistrationNumber', async (ctx: any) => {
-    const responseData = await getWaitingList(
-      ctx.params.nationalRegistrationNumber,
-    )
+  router.get(
+    '(.*)/contact/waitingList/:nationalRegistrationNumber',
+    async (ctx: any) => {
+      const responseData = await getWaitingList(
+        ctx.params.nationalRegistrationNumber
+      )
 
-    ctx.body = {
-      data: responseData,
+      ctx.body = {
+        data: responseData,
+      }
     }
-  })
+  )
 
   /**
    * Adds a person to the specified waiting list.
    */
   //todo: test response status codes, 201 or 500
   //todo: define body
-  router.post('(.*)/contact/waitingList/:nationalRegistrationNumber', async (ctx: any) => {
-    const request = <CreateWaitingListRequest>ctx.request.body
-    try{
-      await addApplicantToToWaitingList(
-        ctx.params.nationalRegistrationNumber,
-        request.contactCode,
-        request.waitingListTypeCaption
-      )
+  router.post(
+    '(.*)/contact/waitingList/:nationalRegistrationNumber',
+    async (ctx: any) => {
+      const request = <CreateWaitingListRequest>ctx.request.body
+      try {
+        await addApplicantToToWaitingList(
+          ctx.params.nationalRegistrationNumber,
+          request.contactCode,
+          request.waitingListTypeCaption
+        )
 
-      ctx.status = 201
-    }
-    catch (error: unknown) {
-      ctx.status = 500
+        ctx.status = 201
+      } catch (error: unknown) {
+        ctx.status = 500
 
-      if (error instanceof Error) {
-        ctx.body = {
-          error: error.message,
+        if (error instanceof Error) {
+          ctx.body = {
+            error: error.message,
+          }
         }
       }
     }
-  })
+  )
 }

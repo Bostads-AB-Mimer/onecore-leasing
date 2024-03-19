@@ -17,10 +17,6 @@ routes(router)
 app.use(bodyParser())
 app.use(router.routes())
 
-
-
-
-
 const mockedWaitingList: WaitingList[] = [
   {
     ApplicantCaption: 'Foo Bar',
