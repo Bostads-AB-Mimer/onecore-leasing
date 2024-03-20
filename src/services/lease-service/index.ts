@@ -187,21 +187,29 @@ export const routes = (router: KoaRouter) => {
   router.get(
     '(.*)/contact/waitingList/:nationalRegistrationNumber',
     async (ctx: any) => {
-      const responseData = await getWaitingList(
-        ctx.params.nationalRegistrationNumber
-      )
+      try{
+        const responseData = await getWaitingList(
+          ctx.params.nationalRegistrationNumber
+        )
 
-      ctx.body = {
-        data: responseData,
-      }
+        ctx.body = {
+          data: responseData,
+        }
+      } catch (error: unknown) {
+          ctx.status = 500
+
+          if (error instanceof Error) {
+            ctx.body = {
+              error: error.message,
+            }
+          }
+        }
     }
   )
 
   /**
    * Adds a person to the specified waiting list.
    */
-  //todo: test response status codes, 201 or 500
-  //todo: define body
   router.post(
     '(.*)/contact/waitingList/:nationalRegistrationNumber',
     async (ctx: any) => {

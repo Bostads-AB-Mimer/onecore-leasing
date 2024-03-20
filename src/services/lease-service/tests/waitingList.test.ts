@@ -10,6 +10,8 @@ import {
   getWaitingList,
 } from '../adapters/xpand-soap-adapter'
 import { WaitingList } from '../../../../../onecore-types'
+import * as http from 'http'
+import { HttpStatusCode } from 'axios'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -48,6 +50,20 @@ describe('GET contact/waitingList', () => {
     expect(xpandAdapterSpy).toHaveBeenCalled()
     expect(result.status).toEqual(200)
   })
+
+  it('handles errors', async () => {
+    const xpandAdapterSpy = jest
+      .spyOn(xpandSoapAdapter, 'getWaitingList')
+      .mockImplementation(() => {
+        throw new Error('Oh no')
+      })
+
+    const result = await request(app.callback()).get('/contact/waitingList/123')
+
+    expect(xpandAdapterSpy).toHaveBeenCalled
+    expect(result.status).toEqual(HttpStatusCode.InternalServerError)
+    expect(result.body).toEqual({ error: 'Oh no' })
+  })
 })
 
 describe('POST contact/waitingList', () => {
@@ -62,5 +78,19 @@ describe('POST contact/waitingList', () => {
 
     expect(xpandAdapterSpy).toHaveBeenCalled()
     expect(result.status).toEqual(201)
+  })
+
+  it('handles errors', async () => {
+    const xpandAdapterSpy = jest
+      .spyOn(xpandSoapAdapter, 'addApplicantToToWaitingList')
+      .mockImplementation(() => {
+        throw new Error('Oh no')
+      })
+
+    const result = await request(app.callback()).post('/contact/waitingList/123')
+
+    expect(xpandAdapterSpy).toHaveBeenCalled
+    expect(result.status).toEqual(HttpStatusCode.InternalServerError)
+    expect(result.body).toEqual({ error: 'Oh no' })
   })
 })
