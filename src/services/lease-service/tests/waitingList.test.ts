@@ -21,22 +21,22 @@ app.use(router.routes())
 
 const mockedWaitingList: WaitingList[] = [
   {
-    ApplicantCaption: 'Foo Bar',
-    ContactCode: 'P12345',
-    ContractFromApartment: new Date('2024-02-29T23:00:00.000Z'),
-    QueuePoints: 45,
-    QueuePointsSocialConnection: 0,
-    WaitingListFrom: new Date('2024-01-31T23:00:00.000Z'),
-    WaitingListTypeCaption: 'Bostad',
+    applicantCaption: 'Foo Bar',
+    contactCode: 'P12345',
+    contractFromApartment: new Date('2024-02-29T23:00:00.000Z'),
+    queuePoints: 45,
+    queuePointsSocialConnection: 0,
+    waitingListFrom: new Date('2024-01-31T23:00:00.000Z'),
+    waitingListTypeCaption: 'Bostad',
   },
   {
-    ApplicantCaption: 'Foo Bar',
-    ContactCode: 'P12345',
-    ContractFromApartment: new Date('2024-02-29T23:00:00.000Z'),
-    QueuePoints: 45,
-    QueuePointsSocialConnection: 0,
-    WaitingListFrom: new Date('2024-01-31T23:00:00.000Z'),
-    WaitingListTypeCaption: 'Bilplats (intern)',
+    applicantCaption: 'Foo Bar',
+    contactCode: 'P12345',
+    contractFromApartment: new Date('2024-02-29T23:00:00.000Z'),
+    queuePoints: 45,
+    queuePointsSocialConnection: 0,
+    waitingListFrom: new Date('2024-01-31T23:00:00.000Z'),
+    waitingListTypeCaption: 'Bilplats (intern)',
   },
 ]
 describe('GET contact/waitingList', () => {

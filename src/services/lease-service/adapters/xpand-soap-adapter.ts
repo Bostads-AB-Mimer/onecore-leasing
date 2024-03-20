@@ -122,13 +122,13 @@ const getWaitingList = async (nationalRegistrationNumber: string) => {
         'WaitingListTimeDataContract'
       ]) {
         const newItem: WaitingList = {
-          ApplicantCaption: item.ApplicantCaption,
-          ContactCode: item.ApplicantCode,
-          ContractFromApartment: new Date(item.ContractFromApartment),
-          QueuePoints: item.QueuePoints,
-          QueuePointsSocialConnection: item.QueuePointsSocialConnection,
-          WaitingListFrom: new Date(item.WaitingListFrom),
-          WaitingListTypeCaption: item.WaitingListTypeCaption,
+          applicantCaption: item.ApplicantCaption,
+          contactCode: item.ApplicantCode,
+          contractFromApartment: new Date(item.ContractFromApartment),
+          queuePoints: item.QueuePoints,
+          queuePointsSocialConnection: item.QueuePointsSocialConnection,
+          waitingListFrom: new Date(item.WaitingListFrom),
+          waitingListTypeCaption: item.WaitingListTypeCaption,
         }
 
         waitingList.push(newItem)
