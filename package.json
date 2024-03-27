@@ -60,7 +60,7 @@
     "personnummer": "^3.2.1",
     "prettier": "^3.2.5",
     "randexp": "^0.5.3",
-    "strong-soap": "^4.0.0",
+    "strong-soap": "^4.0.4",
     "tedious": "^16.6.1"
   }
 }
