@@ -415,6 +415,17 @@ const getApplicantsByContactCodeAndRentalObjectCode = async (contactCode: string
     .first();
 }
 
+const applicationExists = async (contactCode: string, listingId: number) => {
+  const result = await db('applicant')
+    .where({
+      ContactCode: contactCode,
+      ListingId: listingId
+    })
+    .first();
+  return !!result; // Convert result to boolean: true if exists, false if not
+};
+
+
 
 export {
   getLease,
@@ -429,5 +440,6 @@ export {
   getListingByRentalObjectCode,
   getAllListingsWithApplicants,
   getApplicantsByContactCode,
-  getApplicantsByContactCodeAndRentalObjectCode
+  getApplicantsByContactCodeAndRentalObjectCode,
+  applicationExists,
 }

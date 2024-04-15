@@ -19,6 +19,7 @@ import {
   getApplicantsByContactCode,
   getApplicantsByContactCodeAndRentalObjectCode as getApplicantByContactCodeAndRentalObjectCode,
   getListingByRentalObjectCode,
+  applicationExists
 } from './adapters/tenant-lease-adapter'
 import {
   addApplicantToToWaitingList,
@@ -215,8 +216,16 @@ export const routes = (router: KoaRouter) => {
   router.post('(.*)/listings/apply', async (ctx) => {
     try {
       const applicantData = <Applicant>ctx.request.body;
-      const applicationId = await createApplication(applicantData);
 
+      // Check if the applicant has already applied for the same listing
+      const exists = await applicationExists(applicantData.contactCode, applicantData.listingId);
+      if (exists) {
+        ctx.status = 409; // Conflict
+        ctx.body = { error: 'Applicant has already applied for this listing.' };
+        return;
+      }
+
+      const applicationId = await createApplication(applicantData);
       ctx.status = 201; // HTTP status code for Created
       ctx.body = { applicationId };
     } catch (error) {
