@@ -326,7 +326,6 @@ export const routes = (router: KoaRouter) => {
 
   router.get('/applicants/:contactCode/', async (ctx) => {
     const { contactCode } = ctx.params // Extracting from URL parameters
-
     try {
       const applicants = await getApplicantsByContactCode(contactCode)
       ctx.body = applicants

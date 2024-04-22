@@ -129,19 +129,21 @@ const getAllListingsWithApplicants = async () => {
 };
 
 const getApplicantsByContactCode = async (contactCode: string) => {
-  //todo: map to type
-  return db('Applicant')
+  const result =  await db('Applicant')
     .where({ ContactCode: contactCode }).first();
+
+  return transformDbApplicant(result)
 }
 
 const getApplicantsByContactCodeAndRentalObjectCode = async (contactCode: string, rentalObjectCode: string) => {
-  //todo: map to type
-  return db('Applicant')
+  const result = await db('Applicant')
     .where({
       ContactCode: contactCode,
       RentalObjectCode: rentalObjectCode
     })
     .first();
+
+  return transformDbApplicant(result)
 }
 
 const applicationExists = async (contactCode: string, listingId: number) => {
