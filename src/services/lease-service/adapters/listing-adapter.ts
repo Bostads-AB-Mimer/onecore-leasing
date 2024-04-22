@@ -1,14 +1,53 @@
-import { Applicant, Listing, ListingStatus } from 'onecore-types'
+import {
+  Applicant,
+  Invoice,
+  Listing,
+  ListingStatus,
+  ParkingSpaceApplicationCategory,
+  parkingSpaceApplicationCategoryTranslation,
+} from 'onecore-types'
 
 import knex from 'knex'
 import Config from '../../../common/config'
-
-//todo: handle case conversion, db schema is pascalcase but onecore-types is camelcase
 
 const db = knex({
   client: 'mssql',
   connection: Config.leasingDatabase,
 })
+
+function transformFromDbListing(row: any): Listing {
+  return {
+    id: row.Id,
+    rentalObjectCode: row.RentalObjectCode,
+    address: row.Address,
+    monthlyRent: row.MonthlyRent,
+    districtCaption: row.DistrictCaption,
+    districtCode: row.DistrictCode,
+    blockCaption: row.BlockCaption,
+    blockCode: row.BlockCode,
+    objectTypeCaption: row.ObjectTypeCaption,
+    objectTypeCode: row.ObjectTypeCode,
+    rentalObjectTypeCaption: row.RentalObjectTypeCaption,
+    rentalObjectTypeCode: row.RentalObjectTypeCode,
+    publishedFrom: row.PublishedFrom,
+    publishedTo: row.PublishedTo,
+    vacantFrom: row.VacantFrom,
+    status: row.Status,
+    waitingListType: row.WaitingListType,
+    applicationCategory:  parkingSpaceApplicationCategoryTranslation[row.WaitingListType],
+  }
+}
+
+function transformDbApplicant(row: any): Applicant {
+  return {
+    id: row.Id,
+    name: row.Name,
+    contactCode: row.ContactCode,
+    applicationDate: row.ApplicationDate,
+    status: row.Status,
+    listingId: row.ListingId,
+  }
+}
 
 const createListing = async (listingData: Listing) => {
   const insertedRow = await db('Listing')
@@ -32,25 +71,7 @@ const createListing = async (listingData: Listing) => {
     })
     .returning('*');
 
-  return {
-    id: insertedRow[0].Id,
-    rentalObjectCode: insertedRow[0].RentalObjectCode,
-    address:  insertedRow[0].Address,
-    monthlyRent:  insertedRow[0].MonthlyRent,
-    districtCaption:  insertedRow[0].DistrictCaption,
-    districtCode:  insertedRow[0].DistrictCode,
-    blockCaption:  insertedRow[0].BlockCaption,
-    blockCode:  insertedRow[0].BlockCode,
-    objectTypeCaption:  insertedRow[0].ObjectTypeCaption,
-    objectTypeCode:  insertedRow[0].ObjectTypeCode,
-    rentalObjectTypeCaption:  insertedRow[0].RentalObjectTypeCaption,
-    rentalObjectTypeCode:  insertedRow[0].RentalObjectCode,
-    publishedFrom:  insertedRow[0].PublishedFrom,
-    publishedTo:  insertedRow[0].PublishedTo,
-    vacantFrom:  insertedRow[0].VacantFrom,
-    status:  insertedRow[0].Status,
-    waitingListType:  insertedRow[0].WaitingListType
-  }
+  return transformFromDbListing(insertedRow[0])
 }
 
 /**
@@ -69,26 +90,7 @@ const getListingByRentalObjectCode = async (rentalObjectCode: string): Promise<L
   if(listing == undefined){
     return undefined
   }
-
-  return  {
-    id: listing.Id,
-    rentalObjectCode: listing.RentalObjectCode,
-    address: listing.Address,
-    monthlyRent: listing.MonthlyRent,
-    districtCaption: listing.DistrictCaption,
-    districtCode: listing.DistrictCode,
-    blockCaption: listing.BlockCaption,
-    blockCode: listing.BlockCode,
-    objectTypeCaption: listing.ObjectTypeCaption,
-    objectTypeCode: listing.ObjectTypeCode,
-    rentalObjectTypeCaption: listing.RentalObjectTypeCaption,
-    rentalObjectTypeCode: listing.RentalObjectTypeCode,
-    publishedFrom: listing.PublishedFrom,
-    publishedTo: listing.PublishedTo,
-    vacantFrom: listing.VacantFrom,
-    status: listing.Status,
-    waitingListType: listing.WaitingListType
-  };
+  return transformFromDbListing(listing)
 };
 
 const createApplication = async (applicationData: Applicant) => {
@@ -102,28 +104,38 @@ const createApplication = async (applicationData: Applicant) => {
   });
 }
 
-
-//todo: use type and do type conversion to camelCase
 const getAllListingsWithApplicants = async () => {
-  const listings = await db('Listing').select('*');
+  const dbListings: Listing[] = await db('Listing').select('*');
+  let transformedListings: Listing[]  = []
 
-  for (let listing of listings) {
-    const applicants = await db('Applicant')
-      .where('listingId', listing.Id)
-      .select('*');
-
-    listing.applicants = applicants;
+  for (let listing of dbListings) {
+    let transformedListing = transformFromDbListing(listing)
+    transformedListings.push(transformedListing)
   }
 
-  return listings;
+  for (let listing of transformedListings) {
+    const dbApplicants = await db('Applicant')
+      .where('ListingId', listing.id)
+      .select('*');
+
+    let transformedApplicants: Applicant[] = []
+    for(let applicant of dbApplicants){
+      transformedApplicants.push(transformDbApplicant(applicant))
+    }
+    listing.applicants = transformedApplicants
+  }
+
+  return transformedListings;
 };
 
 const getApplicantsByContactCode = async (contactCode: string) => {
+  //todo: map to type
   return db('Applicant')
     .where({ ContactCode: contactCode }).first();
 }
 
 const getApplicantsByContactCodeAndRentalObjectCode = async (contactCode: string, rentalObjectCode: string) => {
+  //todo: map to type
   return db('Applicant')
     .where({
       ContactCode: contactCode,
