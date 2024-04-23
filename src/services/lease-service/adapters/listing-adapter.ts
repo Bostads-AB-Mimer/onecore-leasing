@@ -34,7 +34,6 @@ function transformFromDbListing(row: any): Listing {
     vacantFrom: row.VacantFrom,
     status: row.Status,
     waitingListType: row.WaitingListType,
-    applicationCategory:  parkingSpaceApplicationCategoryTranslation[row.WaitingListType],
   }
 }
 
