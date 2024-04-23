@@ -107,12 +107,12 @@ const getAllListingsWithApplicants = async () => {
   const dbListings: Listing[] = await db('Listing').select('*');
   let transformedListings: Listing[]  = []
 
-  for (let listing of dbListings) {
+  for (const listing of dbListings) {
     let transformedListing = transformFromDbListing(listing)
     transformedListings.push(transformedListing)
   }
 
-  for (let listing of transformedListings) {
+  for (const listing of transformedListings) {
     const dbApplicants = await db('Applicant')
       .where('ListingId', listing.id)
       .select('*');
@@ -131,6 +131,9 @@ const getApplicantsByContactCode = async (contactCode: string) => {
   const result =  await db('Applicant')
     .where({ ContactCode: contactCode }).first();
 
+  if(result == undefined)
+    return undefined
+
   return transformDbApplicant(result)
 }
 
@@ -141,6 +144,9 @@ const getApplicantsByContactCodeAndRentalObjectCode = async (contactCode: string
       RentalObjectCode: rentalObjectCode
     })
     .first();
+
+  if(result == undefined)
+    return undefined
 
   return transformDbApplicant(result)
 }
