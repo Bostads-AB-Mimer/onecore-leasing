@@ -118,7 +118,7 @@ const getAllListingsWithApplicants = async () => {
       .select('*');
 
     let transformedApplicants: Applicant[] = []
-    for(let applicant of dbApplicants){
+    for(const applicant of dbApplicants){
       transformedApplicants.push(transformDbApplicant(applicant))
     }
     listing.applicants = transformedApplicants
