@@ -303,21 +303,17 @@ export const routes = (router: KoaRouter) => {
 
   router.get('/listings/by-id/:listingId', async (ctx) => {
     try {
-      const listingId = ctx.params.listingId;
-      const listing = await getListingById(listingId);
-      if(listing == undefined){
-        ctx.status = 404;
+      const listingId = ctx.params.listingId
+      const listing = await getListingById(listingId)
+      if (listing == undefined) {
+        ctx.status = 404
         return
       }
 
-      ctx.body = listing;
-      ctx.status = 200;
+      ctx.body = listing
+      ctx.status = 200
     } catch (error) {
-      console.error(
-        'Error fetching listing:',
-        ctx.params.listingId,
-        error
-      )
+      console.error('Error fetching listing:', ctx.params.listingId, error)
       ctx.status = 500 // Internal Server Error
       ctx.body = {
         error:
@@ -329,15 +325,15 @@ export const routes = (router: KoaRouter) => {
 
   router.get('/listings/by-code/:rentalObjectCode', async (ctx) => {
     try {
-      const rentaLObjectCode = ctx.params.rentalObjectCode;
-      const listing = await getListingByRentalObjectCode(rentaLObjectCode);
-      if(listing == undefined){
-        ctx.status = 404;
+      const rentaLObjectCode = ctx.params.rentalObjectCode
+      const listing = await getListingByRentalObjectCode(rentaLObjectCode)
+      if (listing == undefined) {
+        ctx.status = 404
         return
       }
 
-      ctx.body = listing;
-      ctx.status = 200;
+      ctx.body = listing
+      ctx.status = 200
     } catch (error) {
       console.error(
         'Error fetching listing:',
@@ -423,25 +419,29 @@ export const routes = (router: KoaRouter) => {
   })
 
   router.patch('/applicants/:id/status', async (ctx) => {
-    const { id } = ctx.params;
-    const status = ctx.request.body as any;
+    const { id } = ctx.params
+    const status = ctx.request.body as any
 
     try {
-      const applicantUpdated = await updateApplicantStatus(Number(id), status.status);
+      const applicantUpdated = await updateApplicantStatus(
+        Number(id),
+        status.status
+      )
       if (applicantUpdated) {
-        ctx.status = 200;
-        ctx.body = { message: 'Applicant status updated successfully' };
+        ctx.status = 200
+        ctx.body = { message: 'Applicant status updated successfully' }
       } else {
-        ctx.status = 404;
-        ctx.body = { error: 'Applicant not found' };
+        ctx.status = 404
+        ctx.body = { error: 'Applicant not found' }
       }
     } catch (error) {
-      console.error('Error updating applicant status:', error);
-      ctx.status = 500; // Internal Server Error
-      ctx.body = { error: 'An error occurred while updating the applicant status.' };
+      console.error('Error updating applicant status:', error)
+      ctx.status = 500 // Internal Server Error
+      ctx.body = {
+        error: 'An error occurred while updating the applicant status.',
+      }
     }
-});
-
+  })
 
   /**
    * Gets the waiting lists of a person.
@@ -450,7 +450,9 @@ export const routes = (router: KoaRouter) => {
     '(.*)/contact/waitingList/:nationalRegistrationNumber',
     async (ctx: any) => {
       try {
-        const responseData = await getWaitingList(ctx.params.nationalRegistrationNumber)
+        const responseData = await getWaitingList(
+          ctx.params.nationalRegistrationNumber
+        )
 
         ctx.body = {
           data: responseData,
@@ -496,40 +498,44 @@ export const routes = (router: KoaRouter) => {
 
   /**
    * Gets detailed information on a listings applicants
+   * Uses ListingId instead of rentalObjectCode since multiple listings can share the same rentalObjectCode for historical reasons
    */
-  router.get(
-          //todo: define good slug
-          //todo: we need to use id instead of rentObjCode
-    '(.*)/listing/:rentalObjectCode/applicants/details',
-    async (ctx: any) => {
-      try {
-        //todo: use getListing instead of getAll (merge main)
-        const listing = await getAllListingsWithApplicants(
-          //ctx.params.rentalObjectCode
-        )
-        console.log(listing)
-        let result: any = []
+  //todo: define good slug
+  //todo: we need to use id instead of rentObjCode
+  //todo: test cases to write:
+  //todo: assert 404 if no listing
+  //todo: assert response is a list of correct type
+  //todo: assert that response matches expected values
+  router.get('(.*)/listing/:listingId/applicants/details', async (ctx: any) => {
+    try {
+      const listingId = ctx.params.listingId
+      console.log('listingId: ', listingId)
+      const listing = await getListingById(listingId)
 
-        if(listing[0]?.applicants){
-          for(const applicant of listing[0]?.applicants){
-            console.log("applicant: ", applicant)
-              const detailedApplicant = await getDetailedApplicantInformation(applicant)
-            result.push(detailedApplicant)
-          }
+      if (!listing) {
+        ctx.status = 404
+        return
+      }
+
+      let result: any = []
+
+      if (listing.applicants) {
+        for (const applicant of listing.applicants) {
+          const detailedApplicant =
+            await getDetailedApplicantInformation(applicant)
+          result.push(detailedApplicant)
         }
+      }
 
-        ctx.body = result
-      } catch (error: unknown) {
-        ctx.status = 500
+      ctx.body = result
+    } catch (error: unknown) {
+      ctx.status = 500
 
-        if (error instanceof Error) {
-          ctx.body = {
-            error: error.message,
-          }
+      if (error instanceof Error) {
+        ctx.body = {
+          error: error.message,
         }
       }
     }
-  )
+  })
 }
-
-

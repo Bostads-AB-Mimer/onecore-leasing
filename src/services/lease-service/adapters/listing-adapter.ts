@@ -1,10 +1,7 @@
 import {
   Applicant,
-  Invoice,
   Listing,
-  ListingStatus, ApplicantStatus,
-  ParkingSpaceApplicationCategory,
-  parkingSpaceApplicationCategoryTranslation,
+  ApplicantStatus,
 } from 'onecore-types'
 
 import knex from 'knex'
@@ -16,6 +13,7 @@ const db = knex({
 })
 
 function transformFromDbListing(row: any): Listing {
+  //todo: should handle applicant list if join is performed
   return {
     id: row.Id,
     rentalObjectCode: row.RentalObjectCode,
@@ -34,6 +32,7 @@ function transformFromDbListing(row: any): Listing {
     vacantFrom: row.VacantFrom,
     status: row.Status,
     waitingListType: row.WaitingListType,
+    applicants: undefined, //todo: handle
   }
 }
 
@@ -80,6 +79,7 @@ const createListing = async (listingData: Listing) => {
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
 const getListingByRentalObjectCode = async (rentalObjectCode: string): Promise<Listing | undefined> => {
+  //todo: join in applicants?
   const listing = await db('Listing')
     .where({
       RentalObjectCode: rentalObjectCode
@@ -108,7 +108,11 @@ const getListingById = async (listingId: string): Promise<Listing | undefined> =
   if(listing == undefined){
     return undefined
   }
-  return transformFromDbListing(listing)
+
+  //todo: write join instead?
+  let transformedListing = transformFromDbListing(listing)
+  transformedListing.applicants =  await getApplicantByListingId(transformedListing.id)
+  return transformedListing
 };
 
 const createApplication = async (applicationData: Applicant) => {
@@ -145,8 +149,9 @@ const updateApplicantStatus = async (applicantId: number, status: ApplicantStatu
   }
 }
 
-//todo: use type and do type conversion to camelCase
+//todo: write doc
 const getAllListingsWithApplicants = async () => {
+  //todo: add join to applicant instead of separate query?
   const dbListings: Listing[] = await db('Listing').select('*');
   let transformedListings: Listing[]  = []
 
@@ -155,16 +160,9 @@ const getAllListingsWithApplicants = async () => {
     transformedListings.push(transformedListing)
   }
 
+  //todo: possibly remove this
   for (const listing of transformedListings) {
-    const dbApplicants = await db('Applicant')
-      .where('ListingId', listing.id)
-      .select('*');
-
-    let transformedApplicants: Applicant[] = []
-    for(const applicant of dbApplicants){
-      transformedApplicants.push(transformDbApplicant(applicant))
-    }
-    listing.applicants = transformedApplicants
+    listing.applicants =  await getApplicantByListingId(listing.id)
   }
 
   return transformedListings;
@@ -183,6 +181,7 @@ const getApplicantsByContactCode = async (contactCode: string) => {
     return result.map(transformDbApplicant);
 }
 
+//todo: write doc
 const getApplicantsByContactCodeAndRentalObjectCode = async (contactCode: string, rentalObjectCode: string) => {
   const result = await db('Applicant')
     .where({
@@ -197,6 +196,21 @@ const getApplicantsByContactCodeAndRentalObjectCode = async (contactCode: string
   return transformDbApplicant(result)
 }
 
+//todo: write doc
+const getApplicantByListingId = async(listingId: number) => {
+  const dbApplicants = await db('Applicant')
+    .where('ListingId', listingId )
+    .select('*');
+  console.log(dbApplicants)
+  let transformedApplicants: Applicant[] = []
+  for(const applicant of dbApplicants){
+    transformedApplicants.push(transformDbApplicant(applicant))
+  }
+
+  return transformedApplicants
+}
+
+//todo: write doc
 const applicationExists = async (contactCode: string, listingId: number) => {
   const result = await db('applicant')
     .where({
