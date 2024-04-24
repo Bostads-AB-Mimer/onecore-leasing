@@ -1,8 +1,4 @@
-import {
-  Applicant,
-  Listing,
-  ApplicantStatus,
-} from 'onecore-types'
+import { Applicant, Listing, ApplicantStatus } from 'onecore-types'
 
 import knex from 'knex'
 import Config from '../../../common/config'
@@ -67,7 +63,7 @@ const createListing = async (listingData: Listing) => {
       Status: listingData.status,
       WaitingListType: listingData.waitingListType,
     })
-    .returning('*');
+    .returning('*')
 
   return transformFromDbListing(insertedRow[0])
 }
@@ -78,19 +74,21 @@ const createListing = async (listingData: Listing) => {
  * @param {string} rentalObjectCode - The rental object code of the listing (originally from xpand)
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
-const getListingByRentalObjectCode = async (rentalObjectCode: string): Promise<Listing | undefined> => {
+const getListingByRentalObjectCode = async (
+  rentalObjectCode: string
+): Promise<Listing | undefined> => {
   //todo: join in applicants?
   const listing = await db('Listing')
     .where({
-      RentalObjectCode: rentalObjectCode
+      RentalObjectCode: rentalObjectCode,
     })
-    .first();
+    .first()
 
-  if(listing == undefined){
+  if (listing == undefined) {
     return undefined
   }
   return transformFromDbListing(listing)
-};
+}
 
 /**
  * Checks if a listing already exists based on unique criteria.
@@ -98,23 +96,28 @@ const getListingByRentalObjectCode = async (rentalObjectCode: string): Promise<L
  * @param {number} listingId - The rental object code of the listing (originally from xpand)
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
-const getListingById = async (listingId: string): Promise<Listing | undefined> => {
+const getListingById = async (
+  listingId: string
+): Promise<Listing | undefined> => {
   const listing = await db('Listing')
     .where({
-      Id: listingId
+      Id: listingId,
     })
-    .first();
+    .first()
 
-  if(listing == undefined){
+  if (listing == undefined) {
     return undefined
   }
 
   //todo: write join instead?
   let transformedListing = transformFromDbListing(listing)
-  transformedListing.applicants =  await getApplicantByListingId(transformedListing.id)
+  transformedListing.applicants = await getApplicantByListingId(
+    transformedListing.id
+  )
   return transformedListing
-};
+}
 
+//todo: write doc
 const createApplication = async (applicationData: Applicant) => {
   await db('applicant').insert({
     Name: applicationData.name,
@@ -123,37 +126,37 @@ const createApplication = async (applicationData: Applicant) => {
     ApplicationType: applicationData.applicationType,
     Status: applicationData.status,
     ListingId: applicationData.listingId,
-  });
+  })
 }
 
 /**
  * Updates the status of an existing applicant using the ApplicantStatus enum.
- * 
+ *
  * @param {number} applicantId - The ID of the applicant to update.
  * @param {ApplicantStatus} newStatus - The new status to set for the applicant.
  * @returns {Promise<boolean>} - Returns true if the update was successful, false otherwise.
  */
-const updateApplicantStatus = async (applicantId: number, status: ApplicantStatus) => {
+const updateApplicantStatus = async (
+  applicantId: number,
+  status: ApplicantStatus
+) => {
   try {
+    const updateCount = await db('applicant').where('Id', applicantId).update({
+      Status: status,
+    })
 
-    const updateCount = await db('applicant')
-      .where('Id', applicantId)
-      .update({
-        Status: status
-      });
-
-    return updateCount > 0;
+    return updateCount > 0
   } catch (error) {
-    console.error('Error updating applicant status:', error);
-    throw error;
+    console.error('Error updating applicant status:', error)
+    throw error
   }
 }
 
 //todo: write doc
 const getAllListingsWithApplicants = async () => {
   //todo: add join to applicant instead of separate query?
-  const dbListings: Listing[] = await db('Listing').select('*');
-  let transformedListings: Listing[]  = []
+  const dbListings: Listing[] = await db('Listing').select('*')
+  let transformedListings: Listing[] = []
 
   for (const listing of dbListings) {
     let transformedListing = transformFromDbListing(listing)
@@ -162,48 +165,50 @@ const getAllListingsWithApplicants = async () => {
 
   //todo: possibly remove this
   for (const listing of transformedListings) {
-    listing.applicants =  await getApplicantByListingId(listing.id)
+    listing.applicants = await getApplicantByListingId(listing.id)
   }
 
-  return transformedListings;
-};
+  return transformedListings
+}
 
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant')
     .where({ ContactCode: contactCode })
-    .select('*');
+    .select('*')
 
-    if (result == undefined){
-      return undefined
-    }
-    
-    // Map result array to Applicant objects
-    return result.map(transformDbApplicant);
+  if (result == undefined) {
+    return undefined
+  }
+
+  // Map result array to Applicant objects
+  return result.map(transformDbApplicant)
 }
 
 //todo: write doc
-const getApplicantsByContactCodeAndRentalObjectCode = async (contactCode: string, rentalObjectCode: string) => {
+const getApplicantsByContactCodeAndRentalObjectCode = async (
+  contactCode: string,
+  rentalObjectCode: string
+) => {
   const result = await db('Applicant')
     .where({
       ContactCode: contactCode,
-      RentalObjectCode: rentalObjectCode
+      RentalObjectCode: rentalObjectCode,
     })
-    .first();
+    .first()
 
-  if(result == undefined)
-    return undefined
+  if (result == undefined) return undefined
 
   return transformDbApplicant(result)
 }
 
 //todo: write doc
-const getApplicantByListingId = async(listingId: number) => {
+const getApplicantByListingId = async (listingId: number) => {
   const dbApplicants = await db('Applicant')
-    .where('ListingId', listingId )
-    .select('*');
+    .where('ListingId', listingId)
+    .select('*')
   console.log(dbApplicants)
   let transformedApplicants: Applicant[] = []
-  for(const applicant of dbApplicants){
+  for (const applicant of dbApplicants) {
     transformedApplicants.push(transformDbApplicant(applicant))
   }
 
@@ -215,11 +220,11 @@ const applicationExists = async (contactCode: string, listingId: number) => {
   const result = await db('applicant')
     .where({
       ContactCode: contactCode,
-      ListingId: listingId
+      ListingId: listingId,
     })
-    .first();
-  return !!result; // Convert result to boolean: true if exists, false if not
-};
+    .first()
+  return !!result // Convert result to boolean: true if exists, false if not
+}
 
 export {
   createListing,
@@ -230,5 +235,5 @@ export {
   getApplicantsByContactCode,
   getApplicantsByContactCodeAndRentalObjectCode,
   applicationExists,
-  updateApplicantStatus
+  updateApplicantStatus,
 }

@@ -144,6 +144,10 @@ describe('getDetailedApplicantInformation', () => {
     expect(getLeasesForContactCodeSpy).toHaveBeenCalled()
   })
 
+  //todo: is this test necessary?
+  it('should throw error if no Bostadskontrakt found for applicant', async () => {
+  })
+
   it('should return applicant with necessary data on success', async () => {
     //todo: fully defined result object needs to be defined for this test
   })

@@ -47,23 +47,20 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
       'false'
     )
 
-    console.log('leases', leases)
-
     if (!leases) {
       throw new Error(`Leases not found for applicant ${applicant.contactCode}`)
     }
 
     //todo: validate and extract main contract
     //todo: extract all parking spaces
-
-    // Consolidate data into a minimal viable object
+    //todo: cherry-pick and consolidate data from applicantFromXpand, waitingListForInternalParkingSpace, leases
+    //todo: define the proper interface type to return
     return {
       ...applicantFromXpand,
-      // ...waitingListForInternalParkingSpace,
-      // ...leases,
+      ...waitingListForInternalParkingSpace,
+      ...leases,
     }
   } catch (error) {
-    // Log the error for debugging purposes
     console.error('Error in getDetailedApplicantInformation:', error)
     throw error // Re-throw the error to propagate it upwards
   }
