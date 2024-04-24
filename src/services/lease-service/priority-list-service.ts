@@ -24,7 +24,7 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
     }
 
     const applicantWaitingList = await getWaitingList(applicantFromXpand.nationalRegistrationNumber)
-    const waitingListForInternalParkingSpace  = parseWaitingListType(applicantWaitingList)
+    const waitingListForInternalParkingSpace  = parseWaitingListForInternalParkingSpace(applicantWaitingList)
     console.log(waitingListForInternalParkingSpace)
 
     const leases = await getLeasesForContactCode(applicant.contactCode, "false", "false")
@@ -38,7 +38,7 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
 
 }
 
-const parseWaitingListType = (waitingList: WaitingList[]) : WaitingList | undefined => {
+const parseWaitingListForInternalParkingSpace = (waitingList: WaitingList[]) : WaitingList | undefined => {
   for(const item of waitingList){
     if(parkingSpaceApplicationCategoryTranslation[item.waitingListTypeCaption]== ParkingSpaceApplicationCategory.internal){
       return item
@@ -48,5 +48,6 @@ const parseWaitingListType = (waitingList: WaitingList[]) : WaitingList | undefi
 }
 
 export {
-  getDetailedApplicantInformation
+  getDetailedApplicantInformation,
+  parseWaitingListForInternalParkingSpace
 }
