@@ -36,6 +36,7 @@ import {
   getUnpaidInvoicesByContactCode,
 } from './adapters/xpand/invoices-adapter'
 import { Applicant, Listing } from 'onecore-types'
+import { getDetailedApplicantInformation } from './priority-list-service'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -399,9 +400,7 @@ export const routes = (router: KoaRouter) => {
     '(.*)/contact/waitingList/:nationalRegistrationNumber',
     async (ctx: any) => {
       try {
-        const responseData = await getWaitingList(
-          ctx.params.nationalRegistrationNumber
-        )
+        const responseData = await getWaitingList(ctx.params.nationalRegistrationNumber)
 
         ctx.body = {
           data: responseData,
@@ -444,4 +443,43 @@ export const routes = (router: KoaRouter) => {
       }
     }
   )
+
+  /**
+   * Gets detailed information on a listings applicants
+   */
+  router.get(
+          //todo: define good slug
+          //todo: we need to use id instead of rentObjCode
+    '(.*)/listing/:rentalObjectCode/applicants/details',
+    async (ctx: any) => {
+      try {
+        //todo: use getListing instead of getAll (merge main)
+        const listing = await getAllListingsWithApplicants(
+          //ctx.params.rentalObjectCode
+        )
+        console.log(listing)
+        let result: any = []
+
+        if(listing[0]?.applicants){
+          for(const applicant of listing[0]?.applicants){
+            console.log("applicant: ", applicant)
+              const detailedApplicant = await getDetailedApplicantInformation(applicant)
+            result.push(detailedApplicant)
+          }
+        }
+
+        ctx.body = result
+      } catch (error: unknown) {
+        ctx.status = 500
+
+        if (error instanceof Error) {
+          ctx.body = {
+            error: error.message,
+          }
+        }
+      }
+    }
+  )
 }
+
+
