@@ -302,21 +302,18 @@ export const routes = (router: KoaRouter) => {
 
   router.get('/listings/by-id/:listingId', async (ctx) => {
     try {
-      const listingId = ctx.params.listingId;
-      const listing = await getListingById(listingId);
-      if(listing == undefined){
-        ctx.status = 404;
+      const listingId = ctx.params.listingId
+      const listing = await getListingById(listingId)
+
+      if (listing == undefined) {
+        ctx.status = 404
         return
       }
 
-      ctx.body = listing;
-      ctx.status = 200;
+      ctx.body = listing
+      ctx.status = 200
     } catch (error) {
-      console.error(
-        'Error fetching listing:',
-        ctx.params.listingId,
-        error
-      )
+      console.error('Error fetching listing:', ctx.params.listingId, error)
       ctx.status = 500 // Internal Server Error
       ctx.body = {
         error:
@@ -328,15 +325,15 @@ export const routes = (router: KoaRouter) => {
 
   router.get('/listings/by-code/:rentalObjectCode', async (ctx) => {
     try {
-      const rentaLObjectCode = ctx.params.rentalObjectCode;
-      const listing = await getListingByRentalObjectCode(rentaLObjectCode);
-      if(listing == undefined){
-        ctx.status = 404;
+      const rentaLObjectCode = ctx.params.rentalObjectCode
+      const listing = await getListingByRentalObjectCode(rentaLObjectCode)
+      if (listing == undefined) {
+        ctx.status = 404
         return
       }
 
-      ctx.body = listing;
-      ctx.status = 200;
+      ctx.body = listing
+      ctx.status = 200
     } catch (error) {
       console.error(
         'Error fetching listing:',
@@ -422,25 +419,29 @@ export const routes = (router: KoaRouter) => {
   })
 
   router.patch('/applicants/:id/status', async (ctx) => {
-    const { id } = ctx.params;
-    const status = ctx.request.body as any;
+    const { id } = ctx.params
+    const status = ctx.request.body as any
 
     try {
-      const applicantUpdated = await updateApplicantStatus(Number(id), status.status);
+      const applicantUpdated = await updateApplicantStatus(
+        Number(id),
+        status.status
+      )
       if (applicantUpdated) {
-        ctx.status = 200;
-        ctx.body = { message: 'Applicant status updated successfully' };
+        ctx.status = 200
+        ctx.body = { message: 'Applicant status updated successfully' }
       } else {
-        ctx.status = 404;
-        ctx.body = { error: 'Applicant not found' };
+        ctx.status = 404
+        ctx.body = { error: 'Applicant not found' }
       }
     } catch (error) {
-      console.error('Error updating applicant status:', error);
-      ctx.status = 500; // Internal Server Error
-      ctx.body = { error: 'An error occurred while updating the applicant status.' };
+      console.error('Error updating applicant status:', error)
+      ctx.status = 500 // Internal Server Error
+      ctx.body = {
+        error: 'An error occurred while updating the applicant status.',
+      }
     }
-});
-
+  })
 
   /**
    * Gets the waiting lists of a person.
