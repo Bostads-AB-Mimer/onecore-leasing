@@ -224,4 +224,3 @@ export {
   applicationExists,
   updateApplicantStatus,
 }
-
