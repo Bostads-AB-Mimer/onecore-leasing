@@ -498,10 +498,9 @@ export const routes = (router: KoaRouter) => {
 
   /**
    * Gets detailed information on a listings applicants
+   * Returns a list of all applicants on a listing by listing id
    * Uses ListingId instead of rentalObjectCode since multiple listings can share the same rentalObjectCode for historical reasons
    */
-  //todo: define good slug
-  //todo: we need to use id instead of rentObjCode
   //todo: test cases to write:
   //todo: assert 404 if no listing
   //todo: assert response is a list of correct type

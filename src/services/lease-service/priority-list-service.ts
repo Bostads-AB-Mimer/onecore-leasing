@@ -5,6 +5,7 @@
 
 import {
   Applicant,
+  Lease,
   ParkingSpaceApplicationCategory,
   parkingSpaceApplicationCategoryTranslation,
   WaitingList,
@@ -53,12 +54,18 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
 
     //todo: validate and extract main contract
     //todo: extract all parking spaces
+    const housingContract = parseLeasesForHousingContract(leases)
+    console.log('maincontract: ', housingContract)
+    const parkingSpaces = parseLeasesForParkingSpaces(leases)
+
     //todo: cherry-pick and consolidate data from applicantFromXpand, waitingListForInternalParkingSpace, leases
     //todo: define the proper interface type to return
     return {
-      ...applicantFromXpand,
-      ...waitingListForInternalParkingSpace,
-      ...leases,
+      ...applicant,
+      queuePoints: waitingListForInternalParkingSpace.queuePoints,
+      address: applicantFromXpand.address,
+      housingContract: housingContract,
+      parkingSpaceContracts: parkingSpaces,
     }
   } catch (error) {
     console.error('Error in getDetailedApplicantInformation:', error)
@@ -67,20 +74,44 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
 }
 
 const parseWaitingListForInternalParkingSpace = (
-  waitingList: WaitingList[]
+  waitingLists: WaitingList[]
 ): WaitingList | undefined => {
-  for (const item of waitingList) {
+  for (const waitingList of waitingLists) {
     if (
-      parkingSpaceApplicationCategoryTranslation[item.waitingListTypeCaption] ==
-      ParkingSpaceApplicationCategory.internal
+      parkingSpaceApplicationCategoryTranslation[
+        waitingList.waitingListTypeCaption
+      ] == ParkingSpaceApplicationCategory.internal
     ) {
-      return item
+      return waitingList
     }
   }
   return undefined
 }
 
+const parseLeasesForHousingContract = (leases: Lease[]): Lease | undefined => {
+  for (const lease of leases) {
+    //use startsWith to handle whitespace issues from xpand
+    if (lease.type.startsWith('Bostadskontrakt')) {
+      return lease
+    }
+  }
+  return undefined
+}
+
+const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] | undefined => {
+  let parkingSpaces: Lease[] = []
+  for (const lease of leases) {
+    //use startsWith to handle whitespace issues from xpand
+    if (lease.type.startsWith('P-Platskontrakt')) {
+      parkingSpaces.push(lease)
+    }
+  }
+  return parkingSpaces
+}
+
 export {
   getDetailedApplicantInformation,
   parseWaitingListForInternalParkingSpace,
+  parseLeasesForHousingContract,
+  parseLeasesForParkingSpaces,
 }
