@@ -119,14 +119,14 @@ const getListingById = async (
     applicants: row.applicants ? JSON.parse(row.applicants) : [],
   })
 
-  const formatListing = (row: { applicants: Array<unknown> }): Listing => ({
+  const transformListing = (row: { applicants: Array<unknown> }): Listing => ({
     ...transformFromDbListing(row),
     applicants: row.applicants.map(transformDbApplicant),
   })
 
   if (!result) return undefined
 
-  return formatListing(parseApplicantsJson(result))
+  return transformListing(parseApplicantsJson(result))
 }
 
 const createApplication = async (applicationData: Applicant) => {
@@ -181,14 +181,14 @@ const getAllListingsWithApplicants = async () => {
     applicants: row.applicants ? JSON.parse(row.applicants) : [],
   })
 
-  const formatListing = (row: { applicants: Array<unknown> }) => ({
+  const transformListing = (row: { applicants: Array<unknown> }) => ({
     ...transformFromDbListing(row),
     applicants: row.applicants.map(transformDbApplicant),
   })
 
   const result: Array<Listing> = await db
     .raw(query)
-    .then((rows) => rows.map(parseApplicantsJson).map(formatListing))
+    .then((rows) => rows.map(parseApplicantsJson).map(transformListing))
 
   return result
 }
