@@ -39,6 +39,7 @@ function transformDbApplicant(row: any): Applicant {
     name: row.Name,
     contactCode: row.ContactCode,
     applicationDate: row.ApplicationDate,
+    applicationType: row.ApplicationType,
     status: row.Status,
     listingId: row.ListingId,
   }
@@ -131,6 +132,21 @@ const getListingById = async (
 }
 
 //todo: write doc
+const getApplicantById = async (
+  applicantId: number
+): Promise<Applicant | undefined> => {
+  const applicant = await db('Applicant')
+    .where({
+      Id: applicantId,
+    })
+    .first()
+
+  if (applicant == undefined) {
+    return undefined
+  }
+  return transformDbApplicant(applicant)
+}
+
 const createApplication = async (applicationData: Applicant) => {
   await db('applicant').insert({
     Name: applicationData.name,
@@ -258,6 +274,7 @@ export {
   getListingById,
   getListingByRentalObjectCode,
   getAllListingsWithApplicants,
+  getApplicantById,
   getApplicantsByContactCode,
   getApplicantsByContactCodeAndRentalObjectCode,
   applicationExists,

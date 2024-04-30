@@ -21,6 +21,7 @@ import {
   createListing,
   createApplication,
   getAllListingsWithApplicants,
+  getApplicantById,
   getApplicantsByContactCode,
   getApplicantsByContactCodeAndRentalObjectCode as getApplicantByContactCodeAndRentalObjectCode,
   getListingByRentalObjectCode,
@@ -37,8 +38,8 @@ import {
   getInvoicesByContactCode,
   getUnpaidInvoicesByContactCode,
 } from './adapters/xpand/invoices-adapter'
-import { Applicant, Listing } from 'onecore-types'
 import { getDetailedApplicantInformation } from './priority-list-service'
+import { Applicant, ApplicantStatus, Listing } from 'onecore-types'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -351,7 +352,6 @@ export const routes = (router: KoaRouter) => {
 
   router.get('/listings-with-applicants', async (ctx) => {
     try {
-      console.log('Fetching listings with applicants...')
       const listingsWithApplicants = await getAllListingsWithApplicants()
       ctx.body = listingsWithApplicants
       ctx.status = 200
@@ -420,13 +420,20 @@ export const routes = (router: KoaRouter) => {
 
   router.patch('/applicants/:id/status', async (ctx) => {
     const { id } = ctx.params
-    const status = ctx.request.body as any
+    const { status, contactCode } = ctx.request.body as any
 
     try {
-      const applicantUpdated = await updateApplicantStatus(
-        Number(id),
-        status.status
-      )
+      //if the applicant is withdrawn by the user, make sure the application belongs to that particular user
+      if (status == ApplicantStatus.WithdrawnByUser) {
+        const applicant = await getApplicantById(Number(id))
+        if (applicant?.contactCode != contactCode) {
+          ctx.status = 404
+          ctx.body = { error: 'Applicant not found for this contactCode' }
+          return
+        }
+      }
+
+      const applicantUpdated = await updateApplicantStatus(Number(id), status)
       if (applicantUpdated) {
         ctx.status = 200
         ctx.body = { message: 'Applicant status updated successfully' }
