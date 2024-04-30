@@ -15,7 +15,6 @@ type PartialLease = {
   terminationDate: Lease['terminationDate']
 }
 
-//todo: move all transformation code to separate file
 const transformFromDbContact = (
   row: any,
   phoneNumbers: any,

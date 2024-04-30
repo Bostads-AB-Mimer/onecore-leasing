@@ -46,39 +46,69 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
 
     const leases = await getLeasesForContactCode(
       applicant.contactCode,
-      'false',
-      undefined
+      'true', //this filter does not consider upcoming leases
+      undefined //do not include contacts
     )
 
     if (!leases) {
       throw new Error(`Leases not found for applicant ${applicant.contactCode}`)
     }
 
-    for (const lease of leases) {
+    //todo: implement this, should apply for all contracts regardless of type
+    let activeAndUpcomingLeases: Lease[] = leases.filter(
+      isLeaseActiveOrUpcoming
+    )
+
+    for (const lease of activeAndUpcomingLeases) {
       lease.residentalArea = await getResidentialAreaByRentalPropertyId(
         lease.rentalPropertyId
       )
     }
 
-    //todo: validate and extract main contract
-    const housingContract = parseLeasesForHousingContract(leases)
-    console.log('housingContract: ', housingContract)
+    //todo: write tests
+    let housingContracts = parseLeasesForHousingContracts(
+      activeAndUpcomingLeases
+    )
+    if (!housingContracts) {
+      throw new Error(
+        `Housing contracts not found for applicant ${applicant.contactCode}`
+      )
+    }
 
     //todo: make sure that these parkingSpaces are active and not terminated
-    const parkingSpaces = parseLeasesForParkingSpaces(leases)
+    const parkingSpaces = parseLeasesForParkingSpaces(activeAndUpcomingLeases)
 
     //todo: define the proper interface type to return
     return {
       ...applicant,
       queuePoints: waitingListForInternalParkingSpace.queuePoints,
       address: applicantFromXpand.address,
-      housingContract: housingContract,
+      currentHousingContract: housingContracts[0],
+      upcomingHousingContract: housingContracts[1],
       parkingSpaceContracts: parkingSpaces,
     }
   } catch (error) {
     console.error('Error in getDetailedApplicantInformation:', error)
     throw error // Re-throw the error to propagate it upwards
   }
+}
+
+//helper function to filter all non-terminated and all still active contracts with a last debit date
+const isLeaseActiveOrUpcoming = (lease: Lease): boolean => {
+  const currentDate = new Date()
+  const leaseStartDate = new Date(lease.leaseStartDate)
+  const terminationDate = lease.terminationDate
+    ? new Date(lease.terminationDate)
+    : null
+
+  const lastDebitDate = lease.lastDebitDate
+    ? new Date(lease.lastDebitDate)
+    : null
+
+  return (
+    (!lastDebitDate || currentDate < lastDebitDate) &&
+    (!terminationDate || currentDate < terminationDate)
+  )
 }
 
 const parseWaitingListForInternalParkingSpace = (
@@ -96,13 +126,39 @@ const parseWaitingListForInternalParkingSpace = (
   return undefined
 }
 
-const parseLeasesForHousingContract = (leases: Lease[]): Lease | undefined => {
+//this functions assumes based on xpand rules that there can be max 1 current active contract and 1 upcoming contract
+const parseLeasesForHousingContracts = (
+  leases: Lease[]
+):
+  | [currentHousingContract: Lease, upcomingHousingContract: Lease | undefined]
+  | undefined => {
+  let housingContracts: Lease[] = []
   for (const lease of leases) {
     //use startsWith to handle whitespace issues from xpand
     if (lease.type.startsWith('Bostadskontrakt')) {
-      return lease
+      housingContracts.push(lease)
     }
   }
+
+  //only 1 active housing contract found
+  if (housingContracts.length == 1) {
+    return [housingContracts[0], null]
+  }
+
+  //applicant have 1 active and 1 pending contract
+  if (housingContracts.length == 2) {
+    const currentDate = new Date()
+    const curentActiveLease = leases.find(
+      (lease) =>
+        lease.lastDebitDate !== null && lease.leaseStartDate < currentDate
+    )
+    const pendingLease = leases.find(
+      (lease) =>
+        lease.lastDebitDate === null && lease.leaseStartDate > currentDate
+    )
+    return [curentActiveLease, pendingLease]
+  }
+
   return undefined
 }
 
@@ -120,6 +176,6 @@ const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] | undefined => {
 export {
   getDetailedApplicantInformation,
   parseWaitingListForInternalParkingSpace,
-  parseLeasesForHousingContract,
+  parseLeasesForHousingContracts,
   parseLeasesForParkingSpaces,
 }
