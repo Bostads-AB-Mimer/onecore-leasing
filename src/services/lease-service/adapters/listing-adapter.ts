@@ -9,7 +9,8 @@ const db = knex({
 })
 
 function transformFromDbListing(row: any): Listing {
-  //todo: should handle applicant list if join is performed
+  // TODO: Listing has some properties T | undefined.
+  // However, this function is returning null when the db returns null
   return {
     id: row.Id,
     rentalObjectCode: row.RentalObjectCode,
@@ -28,7 +29,7 @@ function transformFromDbListing(row: any): Listing {
     vacantFrom: row.VacantFrom,
     status: row.Status,
     waitingListType: row.WaitingListType,
-    applicants: undefined, //todo: handle
+    applicants: undefined,
   }
 }
 
@@ -77,7 +78,6 @@ const createListing = async (listingData: Listing) => {
 const getListingByRentalObjectCode = async (
   rentalObjectCode: string
 ): Promise<Listing | undefined> => {
-  //todo: join in applicants?
   const listing = await db('Listing')
     .where({
       RentalObjectCode: rentalObjectCode,
@@ -93,28 +93,41 @@ const getListingByRentalObjectCode = async (
 /**
  * Checks if a listing already exists based on unique criteria.
  *
- * @param {number} listingId - The rental object code of the listing (originally from xpand)
+ * @param {string} listingId - The rental object code of the listing (originally from xpand)
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
 const getListingById = async (
   listingId: string
 ): Promise<Listing | undefined> => {
-  const listing = await db('Listing')
-    .where({
-      Id: listingId,
-    })
+  const result = await db
+    .from('listing AS l')
+    .select(
+      'l.*',
+      db.raw(`
+      (
+        SELECT a.*
+        FROM applicant a
+        WHERE a.ListingId = l.Id
+        FOR JSON PATH
+      ) as applicants
+    `)
+    )
+    .where('l.Id', listingId)
     .first()
 
-  if (listing == undefined) {
-    return undefined
-  }
+  const parseApplicantsJson = (row: { applicants?: string }) => ({
+    ...row,
+    applicants: row.applicants ? JSON.parse(row.applicants) : [],
+  })
 
-  //todo: write join instead?
-  let transformedListing = transformFromDbListing(listing)
-  transformedListing.applicants = await getApplicantByListingId(
-    transformedListing.id
-  )
-  return transformedListing
+  const transformListing = (row: { applicants: Array<unknown> }): Listing => ({
+    ...transformFromDbListing(row),
+    applicants: row.applicants.map(transformDbApplicant),
+  })
+
+  if (!result) return undefined
+
+  return transformListing(parseApplicantsJson(result))
 }
 
 //todo: write doc
@@ -154,23 +167,36 @@ const updateApplicantStatus = async (
 
 //todo: write doc
 const getAllListingsWithApplicants = async () => {
-  //todo: add join to applicant instead of separate query?
-  const dbListings: Listing[] = await db('Listing').select('*')
-  let transformedListings: Listing[] = []
+  const query = `
+    SELECT
+      l.*,
+      (
+        SELECT a.*
+        FROM applicant a
+        WHERE a.ListingId = l.Id
+        FOR JSON PATH
+      ) as applicants
+    FROM listing l
+  `
 
-  for (const listing of dbListings) {
-    let transformedListing = transformFromDbListing(listing)
-    transformedListings.push(transformedListing)
-  }
+  const parseApplicantsJson = (row: { applicants?: string }) => ({
+    ...row,
+    applicants: row.applicants ? JSON.parse(row.applicants) : [],
+  })
 
-  //todo: possibly remove this
-  for (const listing of transformedListings) {
-    listing.applicants = await getApplicantByListingId(listing.id)
-  }
+  const transformListing = (row: { applicants: Array<unknown> }) => ({
+    ...transformFromDbListing(row),
+    applicants: row.applicants.map(transformDbApplicant),
+  })
 
-  return transformedListings
+  const result: Array<Listing> = await db
+    .raw(query)
+    .then((rows) => rows.map(parseApplicantsJson).map(transformListing))
+
+  return result
 }
 
+//todo: write doc
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant')
     .where({ ContactCode: contactCode })
