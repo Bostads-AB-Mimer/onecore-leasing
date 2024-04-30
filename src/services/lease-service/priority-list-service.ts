@@ -54,7 +54,8 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
       throw new Error(`Leases not found for applicant ${applicant.contactCode}`)
     }
 
-    //todo: implement this, should apply for all contracts regardless of type
+    //todo: write tests
+    //todo: test mocks should contain both parking spaces and housing contracts
     let activeAndUpcomingLeases: Lease[] = leases.filter(
       isLeaseActiveOrUpcoming
     )
@@ -75,7 +76,6 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
       )
     }
 
-    //todo: make sure that these parkingSpaces are active and not terminated
     const parkingSpaces = parseLeasesForParkingSpaces(activeAndUpcomingLeases)
 
     //todo: define the proper interface type to return
@@ -126,7 +126,7 @@ const parseWaitingListForInternalParkingSpace = (
   return undefined
 }
 
-//this functions assumes based on xpand rules that there can be max 1 current active contract and 1 upcoming contract
+//this function is based on xpand rules that there can be max 1 current active contract and 1 upcoming contract
 const parseLeasesForHousingContracts = (
   leases: Lease[]
 ):
