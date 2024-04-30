@@ -12,6 +12,7 @@ type PartialLease = {
   leaseId: Lease['leaseId']
   leaseStartDate: Lease['leaseStartDate']
   lastDebitDate: Lease['lastDebitDate']
+  terminationDate: Lease['terminationDate']
 }
 
 //todo: move all transformation code to separate file
@@ -95,41 +96,6 @@ const getLease = async (
   return undefined
 }
 
-const getLeases = async (leaseIds: string[] | undefined): Promise<Lease[]> => {
-  const leases: Lease[] = []
-
-  const rows = await db('Lease')
-    .select(
-      'hyobj.hyobjben as leaseId',
-      'hyhav.hyhavben as leaseType',
-      'hyobj.uppsagtav as noticeGivenBy',
-      'hyobj.avtalsdat as contractDate',
-      'hyobj.sistadeb as lastDebitDate',
-      'hyobj.godkdatum as approvalDate',
-      'hyobj.uppsdatum as noticeDate',
-      'hyobj.fdate as fromDate',
-      'hyobj.tdate as toDate',
-      'hyobj.uppstidg as noticeTimeTenant',
-      'hyobj.onskflytt AS preferredMoveOutDate',
-      'hyobj.makuldatum AS terminationDate'
-    )
-    .innerJoin('hyobj', 'hyobj.keyhyobj', 'hyavk.keyhyobj')
-    .innerJoin('hyhav', 'hyhav.keyhyhav', 'hyobj.keyhyhav')
-    .modify((queryBuilder) => {
-      if (leaseIds) {
-        queryBuilder.whereIn('hyobjben', leaseIds)
-      }
-    })
-    .limit(100)
-
-  for (const row of rows) {
-    const lease = await transformFromDbLease(row, [], [])
-    leases.push(lease)
-  }
-
-  return leases
-}
-
 const getLeasesForNationalRegistrationNumber = async (
   nationalRegistrationNumber: string,
   includeTerminatedLeases: string | string[] | undefined,
@@ -176,9 +142,9 @@ const getLeasesForContactCode = async (
     })
     .limit(1)
 
+  //todo: assert actual string value, now undefined equals false and every other value true
   if (contact != undefined) {
     const leases = await getLeasesByContactKey(contact[0].contactKey)
-
     if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
       return leases
     }
@@ -232,6 +198,27 @@ const getLeasesForPropertyId = async (
   }
 
   return leases.filter(isLeaseActive)
+}
+
+const getResidentialAreaByRentalPropertyId = async (
+  rentalPropertyId: string
+) => {
+  const rows = await db('babya')
+    .select('babya.code', 'babya.caption')
+    .innerJoin('bafst', 'bafst.keybabya', 'babya.keybabya')
+    .innerJoin('babuf', 'bafst.keycmobj', 'babuf.keyobjfst')
+    .where('babuf.hyresid', rentalPropertyId)
+    .limit(1)
+
+  if (rows && rows.length > 0) {
+    //remove whitespaces from xpand and return
+    return {
+      code: rows[0].code.replace(/\s/g, ''),
+      caption: rows[0].caption.replace(/\s/g, ''),
+    }
+  }
+
+  return undefined
 }
 
 const getContactByNationalRegistrationNumber = async (
@@ -442,15 +429,20 @@ const isLeaseActive = (lease: Lease | PartialLease): boolean => {
     ? new Date(lease.lastDebitDate)
     : null
 
+  //todo: wip
+  // const terminationDate = lease.terminationDate
+  //   ? new Date(lease.terminationDate)
+  //   : null
+
   return (
     leaseStartDate < currentDate &&
-    (!lastDebitDate || currentDate < lastDebitDate)
+    (!lastDebitDate || currentDate < lastDebitDate) //&&
+    //(!terminationDate || currentDate < terminationDate)
   )
 }
 
 export {
   getLease,
-  getLeases,
   getLeasesForContactCode,
   getLeasesForNationalRegistrationNumber,
   getLeasesForPropertyId,
@@ -458,4 +450,5 @@ export {
   getContactByContactCode,
   getContactForPhoneNumber,
   isLeaseActive,
+  getResidentialAreaByRentalPropertyId,
 }

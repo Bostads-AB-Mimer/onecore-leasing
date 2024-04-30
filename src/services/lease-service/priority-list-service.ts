@@ -1,7 +1,8 @@
-//todo: where does this belong?
-//todo: this is a helper service for:
-//todo: 1. fetching detailed information on applicants
-//todo: 2. calculating the list of applicants based on the rental rules
+/*
+ * Service for:
+ * Fetching and consolidating detailed information on applicants from internal database and xpand
+ * Sorting applicants based on rental rules
+ */
 
 import {
   Applicant,
@@ -13,6 +14,7 @@ import {
 import { getWaitingList } from './adapters/xpand/xpand-soap-adapter'
 import {
   getContactByContactCode,
+  getResidentialAreaByRentalPropertyId,
   getLeasesForContactCode,
 } from './adapters/xpand/tenant-lease-adapter'
 import app from '../../app'
@@ -45,20 +47,26 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
     const leases = await getLeasesForContactCode(
       applicant.contactCode,
       'false',
-      'false'
+      undefined
     )
 
     if (!leases) {
       throw new Error(`Leases not found for applicant ${applicant.contactCode}`)
     }
 
+    for (const lease of leases) {
+      lease.residentalArea = await getResidentialAreaByRentalPropertyId(
+        lease.rentalPropertyId
+      )
+    }
+
     //todo: validate and extract main contract
-    //todo: extract all parking spaces
     const housingContract = parseLeasesForHousingContract(leases)
-    console.log('maincontract: ', housingContract)
+    console.log('housingContract: ', housingContract)
+
+    //todo: make sure that these parkingSpaces are active and not terminated
     const parkingSpaces = parseLeasesForParkingSpaces(leases)
 
-    //todo: cherry-pick and consolidate data from applicantFromXpand, waitingListForInternalParkingSpace, leases
     //todo: define the proper interface type to return
     return {
       ...applicant,
