@@ -92,22 +92,41 @@ const getListingByRentalObjectCode = async (
 /**
  * Checks if a listing already exists based on unique criteria.
  *
- * @param {number} listingId - The rental object code of the listing (originally from xpand)
+ * @param {string} listingId - The rental object code of the listing (originally from xpand)
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
 const getListingById = async (
   listingId: string
 ): Promise<Listing | undefined> => {
-  const listing = await db('Listing')
-    .where({
-      Id: listingId,
-    })
+  const result = await db
+    .from('listing AS l')
+    .select(
+      'l.*',
+      db.raw(`
+      (
+        SELECT a.*
+        FROM applicant a
+        WHERE a.ListingId = l.Id
+        FOR JSON PATH
+      ) as applicants
+    `)
+    )
+    .where('l.Id', listingId)
     .first()
 
-  if (listing == undefined) {
-    return undefined
-  }
-  return transformFromDbListing(listing)
+  const parseApplicantsJson = (row: { applicants?: string }) => ({
+    ...row,
+    applicants: row.applicants ? JSON.parse(row.applicants) : [],
+  })
+
+  const formatListing = (row: { applicants: Array<unknown> }): Listing => ({
+    ...transformFromDbListing(row),
+    applicants: row.applicants.map(transformDbApplicant),
+  })
+
+  if (!result) return undefined
+
+  return formatListing(parseApplicantsJson(result))
 }
 
 const createApplication = async (applicationData: Applicant) => {
