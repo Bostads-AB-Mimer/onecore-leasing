@@ -54,8 +54,6 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
       throw new Error(`Leases not found for applicant ${applicant.contactCode}`)
     }
 
-    //todo: write tests
-    //todo: test mocks should contain both parking spaces and housing contracts
     let activeAndUpcomingLeases: Lease[] = leases.filter(
       isLeaseActiveOrUpcoming
     )
@@ -66,7 +64,6 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
       )
     }
 
-    //todo: write tests
     let housingContracts = parseLeasesForHousingContracts(
       activeAndUpcomingLeases
     )
@@ -178,4 +175,5 @@ export {
   parseWaitingListForInternalParkingSpace,
   parseLeasesForHousingContracts,
   parseLeasesForParkingSpaces,
+  isLeaseActiveOrUpcoming,
 }

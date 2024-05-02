@@ -7,6 +7,7 @@ import {
 } from 'onecore-types'
 import {
   getDetailedApplicantInformation,
+  isLeaseActiveOrUpcoming,
   parseLeasesForHousingContracts,
   parseLeasesForParkingSpaces,
   parseWaitingListForInternalParkingSpace,
@@ -67,33 +68,7 @@ const mockedLeasesWithHousingAndParkingSpaceContracts: Lease[] = [
     leaseStartDate: new Date('2024-03-01T00:00:00.000Z'),
     leaseEndDate: undefined,
     tenantContactIds: [],
-    tenants: [
-      {
-        contactCode: 'P174965',
-        contactKey: '_6TK0TGIEWV5PGS',
-        firstName: 'Stina',
-        lastName: 'Testsson',
-        fullName: 'Testsson Stina',
-        leaseIds: [],
-        nationalRegistrationNumber: '195001182046',
-        birthDate: new Date('1950-01-18T00:00:00.000Z'),
-        address: {
-          street: 'Testvägen 25',
-          number: '',
-          postalCode: '12139',
-          city: 'JOHANNESHOV',
-        },
-        phoneNumbers: [
-          {
-            phoneNumber: '0701231231',
-            type: 'mobil',
-            isMainNumber: true,
-          },
-        ],
-        emailAddress: 'redacted',
-        isTenant: false,
-      },
-    ],
+    tenants: [],
     noticeGivenBy: undefined,
     noticeDate: undefined,
     noticeTimeTenant: '3',
@@ -112,33 +87,7 @@ const mockedLeasesWithHousingAndParkingSpaceContracts: Lease[] = [
     leaseStartDate: '2024-03-01T00:00:00.000Z',
     leaseEndDate: null,
     tenantContactIds: [],
-    tenants: [
-      {
-        contactCode: 'P174965',
-        contactKey: '_6TK0TGIEWV5PGS',
-        firstName: 'Stina',
-        lastName: 'Testsson',
-        fullName: 'Testsson Stina',
-        leaseIds: [],
-        nationalRegistrationNumber: '195001182046',
-        birthDate: '1950-01-18T00:00:00.000Z',
-        address: {
-          street: 'Testvägen 25',
-          number: '',
-          postalCode: '12139',
-          city: 'JOHANNESHOV',
-        },
-        phoneNumbers: [
-          {
-            phoneNumber: '0701231231',
-            type: 'mobil',
-            isMainNumber: 1,
-          },
-        ],
-        emailAddress: 'redacted',
-        isTenant: false,
-      },
-    ],
+    tenants: [],
     noticeGivenBy: null,
     noticeDate: null,
     noticeTimeTenant: 3,
@@ -157,33 +106,7 @@ const mockedLeasesWithHousingAndParkingSpaceContracts: Lease[] = [
     leaseStartDate: new Date('2024-04-02T00:00:00.000Z'),
     leaseEndDate: undefined,
     tenantContactIds: [],
-    tenants: [
-      {
-        contactCode: 'P174965',
-        contactKey: '_6TK0TGIEWV5PGS',
-        firstName: 'Stina',
-        lastName: 'Testsson',
-        fullName: 'Testsson Stina',
-        leaseIds: [],
-        nationalRegistrationNumber: '195001182046',
-        birthDate: new Date('1950-01-18T00:00:00.000Z'),
-        address: {
-          street: 'Testvägen 25',
-          number: '',
-          postalCode: '12139',
-          city: 'JOHANNESHOV',
-        },
-        phoneNumbers: [
-          {
-            phoneNumber: '0701231231',
-            type: 'mobil',
-            isMainNumber: true,
-          },
-        ],
-        emailAddress: 'redacted',
-        isTenant: false,
-      },
-    ],
+    tenants: [],
     noticeGivenBy: '',
     noticeDate: new Date(),
     noticeTimeTenant: '3',
@@ -195,7 +118,131 @@ const mockedLeasesWithHousingAndParkingSpaceContracts: Lease[] = [
   },
 ]
 
-//todo: fake sensitive data
+//todo: add dynamic dates
+//todo: current contract = active from today
+//todo: upcoming contract = active from today + 30 days
+const mockedLeasesWithUpcomingHousingContract: Lease[] = [
+  //still active but soon to be terminated housing contract
+  {
+    leaseId: '605-004-01-0103/01T',
+    leaseNumber: '01T',
+    rentalPropertyId: '605-004-01-0103',
+    type: 'Bostadskontrakt               ',
+    leaseStartDate: new Date('2022-02-01T00:00:00.000Z'),
+    leaseEndDate: null,
+    tenantContactIds: [],
+    tenants: [],
+    noticeGivenBy: 'G',
+    noticeDate: new Date('2024-03-11T00:00:00.000Z'),
+    noticeTimeTenant: 3,
+    preferredMoveOutDate: new Date('2024-04-30T00:00:00.000Z'),
+    terminationDate: null,
+    contractDate: new Date('2021-09-08T00:00:00.000Z'),
+    lastDebitDate: new Date('2024-06-30T00:00:00.000Z'),
+    approvalDate: new Date('2021-09-08T00:00:00.000Z'),
+  },
+  //upcoming housing contract to replace current active contract
+  {
+    leaseId: '605-004-01-0103/01',
+    leaseNumber: '01',
+    rentalPropertyId: '605-004-01-0103',
+    type: 'Bostadskontrakt               ',
+    leaseStartDate: new Date('2024-07-01T00:00:00.000Z'),
+    leaseEndDate: null,
+    tenantContactIds: [],
+    tenants: [],
+    noticeGivenBy: null,
+    noticeDate: null,
+    noticeTimeTenant: 3,
+    preferredMoveOutDate: null,
+    terminationDate: null,
+    contractDate: new Date('2024-03-11T00:00:00.000Z'),
+    lastDebitDate: null,
+    approvalDate: new Date('2024-03-11T00:00:00.000Z'),
+  },
+  //parking space contract
+  {
+    leaseId: '605-703-00-0014/01',
+    leaseNumber: '01',
+    rentalPropertyId: '605-703-00-0014',
+    type: 'P-Platskontrakt               ',
+    leaseStartDate: new Date('2022-02-01T00:00:00.000Z'),
+    leaseEndDate: null,
+    tenantContactIds: [],
+    tenants: [],
+    noticeGivenBy: null,
+    noticeDate: null,
+    noticeTimeTenant: 3,
+    preferredMoveOutDate: null,
+    terminationDate: null,
+    contractDate: new Date('2021-12-02T00:00:00.000Z'),
+    lastDebitDate: null,
+    approvalDate: new Date('2021-12-02T00:00:00.000Z'),
+  },
+]
+
+// 1 active housing contract, 1 upcoming housing contract, 1 active parkingspace
+const mockedLeasesWithOneActiveHousingContractAndOneTerminatedHousingContract =
+  [
+    //old and terminated housing contract
+    {
+      leaseId: '704-003-02-0302/02',
+      leaseNumber: '02',
+      rentalPropertyId: '704-003-02-0302',
+      type: 'Bostadskontrakt               ',
+      leaseStartDate: new Date('2011-01-01T00:00:00.000Z'),
+      leaseEndDate: null,
+      tenantContactIds: [],
+      tenants: [],
+      noticeGivenBy: 'G',
+      noticeDate: new Date('2019-09-04T00:00:00.000Z'),
+      noticeTimeTenant: 3,
+      preferredMoveOutDate: new Date('2019-09-30T00:00:00.000Z'),
+      terminationDate: null,
+      contractDate: new Date('2010-12-28T00:00:00.000Z'),
+      lastDebitDate: new Date('2019-09-30T00:00:00.000Z'),
+      approvalDate: new Date('2010-12-28T00:00:00.000Z'),
+    },
+    //active housing contract
+    {
+      leaseId: '104-061-02-0202/11',
+      leaseNumber: '11',
+      rentalPropertyId: '104-061-02-0202',
+      type: 'Bostadskontrakt               ',
+      leaseStartDate: new Date('2019-10-01T00:00:00.000Z'),
+      leaseEndDate: null,
+      tenantContactIds: [],
+      tenants: [],
+      noticeGivenBy: null,
+      noticeDate: null,
+      noticeTimeTenant: 3,
+      preferredMoveOutDate: null,
+      terminationDate: null,
+      contractDate: new Date('2019-09-04T00:00:00.000Z'),
+      lastDebitDate: null,
+      approvalDate: new Date('2019-09-04T00:00:00.000Z'),
+    },
+    //active parking space contract
+    {
+      leaseId: '104-071-99-0049/19',
+      leaseNumber: '19',
+      rentalPropertyId: '104-071-99-0049',
+      type: 'Garagekontrakt                ',
+      leaseStartDate: new Date('2022-06-29T00:00:00.000Z'),
+      leaseEndDate: null,
+      tenantContactIds: [],
+      tenants: [],
+      noticeGivenBy: null,
+      noticeDate: null,
+      noticeTimeTenant: 3,
+      preferredMoveOutDate: null,
+      terminationDate: null,
+      contractDate: new Date('2022-06-29T00:00:00.000Z'),
+      lastDebitDate: null,
+      approvalDate: new Date('2022-06-29T00:00:00.000Z'),
+    },
+  ]
+
 const mockedApplicantFromXpand: Contact = {
   contactCode: 'P145241',
   contactKey: '_5YI0VPRJ5GARYV',
@@ -318,15 +365,33 @@ describe('parseWaitingList', () => {
 })
 
 describe('parseLeasesForHousingContract', () => {
-  it('should return housing contract from leases', async () => {
-    const result = parseLeasesForHousingContracts(
-      mockedLeasesWithHousingAndParkingSpaceContracts
-    )
+  it('should return 1 housing contract if only 1 active housing contract', async () => {
+    let filteredLeases: Lease[] =
+      mockedLeasesWithOneActiveHousingContractAndOneTerminatedHousingContract.filter(
+        isLeaseActiveOrUpcoming
+      )
+    const result = parseLeasesForHousingContracts(filteredLeases)
 
-    //todo: make assertions when decision on result format decided
+    expect(result).toBeDefined()
+    if (result) {
+      const housingContract = result[0]
+      expect(result[0]).toBeDefined()
+      expect(result[1]).toBeNull() //todo: check function signature, should be undefined?
+    }
   })
 
-  //todo: write test for upcoming housing contract?
+  it('should return 1 active housing contract and 1 upcoming housing contract', async () => {
+    let filteredLeases: Lease[] =
+      mockedLeasesWithUpcomingHousingContract.filter(isLeaseActiveOrUpcoming)
+    const result = parseLeasesForHousingContracts(filteredLeases)
+
+    expect(result).toBeDefined()
+    if (result) {
+      const housingContract = result[0]
+      expect(result[0]).toBeDefined()
+      expect(result[1]).toBeDefined() //todo: check function signature, should be undefined?
+    }
+  })
 
   it('should return undefined for leases without housing contract', async () => {
     const result = parseLeasesForHousingContracts([])

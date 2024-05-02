@@ -78,7 +78,7 @@ export const routes = (router: KoaRouter) => {
       ctx.query.includeTerminatedLeases,
       ctx.query.includeContacts
     )
-
+    console.log(ctx.query.includeTerminatedLeases)
     ctx.body = {
       data: responseData,
     }
