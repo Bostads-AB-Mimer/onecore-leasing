@@ -94,7 +94,7 @@ const getListingByRentalObjectCode = async (
 /**
  * Checks if a listing already exists based on unique criteria.
  *
- * @param {string} listingId - The rental object code of the listing (originally from xpand)
+ * @param {string} listingId - The rental object code of the listing (originally from xpand).
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
 const getListingById = async (
@@ -134,8 +134,8 @@ const getListingById = async (
 /**
  * Gets an applicant by id
  *
- * @param {number} applicantId - The ID of the applicant
- * @returns {Promise<boolean>} - Returns the applicant or undefined if not found.
+ * @param {number} applicantId - The ID of the applicant.
+ * @returns {Promise<Applicant>} - Returns the applicant.
  */
 const getApplicantById = async (
   applicantId: number
@@ -167,7 +167,7 @@ const createApplication = async (applicationData: Applicant) => {
  * Updates the status of an existing applicant using the ApplicantStatus enum.
  *
  * @param {number} applicantId - The ID of the applicant to update.
- * @param {ApplicantStatus} newStatus - The new status to set for the applicant.
+ * @param {ApplicantStatus} status - The new status to set for the applicant.
  * @returns {Promise<boolean>} - Returns true if the update was successful, false otherwise.
  */
 const updateApplicantStatus = async (
@@ -189,7 +189,7 @@ const updateApplicantStatus = async (
 /**
  * Gets all listings with applicants
  *
- * @returns {Promise<boolean>} - Returns a list of listings or empty list if no listings exists.
+ * @returns {Promise<Listing[] | []>} - Returns a list of listings or empty list if no listings exists.
  */
 const getAllListingsWithApplicants = async () => {
   const query = `
@@ -225,7 +225,7 @@ const getAllListingsWithApplicants = async () => {
  * Gets an applicant by contact code
  *
  * @param {string} contactCode - The applicants contact code
- * @returns {Promise<boolean>} - Returns the applicant or undefined if not found.
+ * @returns {Promise<Applicant>} - Returns the applicant.
  */
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant')
@@ -243,9 +243,9 @@ const getApplicantsByContactCode = async (contactCode: string) => {
 /**
  * Gets an applicant by contact code and rental object code
  *
- * @param {string} contactCode - The applicants contact code
- * @param {string} rentalObjectCode - The rental object code of the listing that the applicant belongs to
- * @returns {Promise<boolean>} - Returns the applicant or undefined if not found.
+ * @param {string} contactCode - The applicants contact code.
+ * @param {string} rentalObjectCode - The rental object code of the listing that the applicant belongs to.
+ * @returns {Promise<Applicant>} - Returns the applicant.
  */
 const getApplicantsByContactCodeAndRentalObjectCode = async (
   contactCode: string,
@@ -267,7 +267,7 @@ const getApplicantsByContactCodeAndRentalObjectCode = async (
  * Gets an applicant by listing id
  *
  * @param {number} listingId - The ID of the listing the applicant belongs to.
- * @returns {Promise<boolean>} - Returns the applicant or undefined if not found.
+ * @returns {Promise<Applicant> } - Returns the applicant or undefined if not found.
  */
 const getApplicantByListingId = async (listingId: number) => {
   const dbApplicants = await db('Applicant')
@@ -284,9 +284,9 @@ const getApplicantByListingId = async (listingId: number) => {
 /**
  * Checks if an applicant has a applied for a listing
  *
- * @param {string} contactCode - The applicants contact code
+ * @param {string} contactCode - The applicants contact code.
  * @param {number} listingId - The ID of the listing the applicant belongs to.
- * @returns {Promise<boolean>} - Returns true if applicant belongs to listing, false if not
+ * @returns {Promise<boolean>} - Returns true if applicant belongs to listing, false if not.
  */
 const applicationExists = async (contactCode: string, listingId: number) => {
   const result = await db('applicant')
