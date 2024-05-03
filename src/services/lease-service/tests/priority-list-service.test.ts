@@ -118,9 +118,13 @@ const mockedLeasesWithHousingAndParkingSpaceContracts: Lease[] = [
   },
 ]
 
-//todo: add dynamic dates
-//todo: current contract = active from today
-//todo: upcoming contract = active from today + 30 days
+//dynamic dates for active and upcoming contracts
+const currentDate = new Date()
+const thirtyDaysInThePastDate = new Date()
+const thirtyDaysInTheFutureDate = new Date()
+thirtyDaysInThePastDate.setDate(currentDate.getDate() + 30)
+thirtyDaysInTheFutureDate.setDate(currentDate.getDate() + 30)
+
 const mockedLeasesWithUpcomingHousingContract: Lease[] = [
   //still active but soon to be terminated housing contract
   {
@@ -133,12 +137,12 @@ const mockedLeasesWithUpcomingHousingContract: Lease[] = [
     tenantContactIds: [],
     tenants: [],
     noticeGivenBy: 'G',
-    noticeDate: new Date('2024-03-11T00:00:00.000Z'),
+    noticeDate: thirtyDaysInThePastDate, //new Date('2024-03-11T00:00:00.000Z'),
     noticeTimeTenant: 3,
-    preferredMoveOutDate: new Date('2024-04-30T00:00:00.000Z'),
+    preferredMoveOutDate: thirtyDaysInTheFutureDate, //new Date('2024-04-30T00:00:00.000Z'),
     terminationDate: null,
     contractDate: new Date('2021-09-08T00:00:00.000Z'),
-    lastDebitDate: new Date('2024-06-30T00:00:00.000Z'),
+    lastDebitDate: thirtyDaysInTheFutureDate, //new Date('2024-06-30T00:00:00.000Z'),
     approvalDate: new Date('2021-09-08T00:00:00.000Z'),
   },
   //upcoming housing contract to replace current active contract
@@ -147,7 +151,7 @@ const mockedLeasesWithUpcomingHousingContract: Lease[] = [
     leaseNumber: '01',
     rentalPropertyId: '605-004-01-0103',
     type: 'Bostadskontrakt               ',
-    leaseStartDate: new Date('2024-07-01T00:00:00.000Z'),
+    leaseStartDate: thirtyDaysInTheFutureDate, //new Date('2024-07-01T00:00:00.000Z'),
     leaseEndDate: null,
     tenantContactIds: [],
     tenants: [],
@@ -338,11 +342,8 @@ describe('getDetailedApplicantInformation', () => {
     expect(getLeasesForContactCodeSpy).toHaveBeenCalled()
   })
 
-  //todo: is this test necessary?
-  it('should throw error if no housing contract found for applicant', async () => {})
-
-  it('should return applicant with necessary data on success', async () => {
-    //todo: fully defined result object needs to be defined for this test
+  it('should return applicant with expected data on success', async () => {
+    //todo: write test when return type interface is defined
   })
 })
 
@@ -376,7 +377,7 @@ describe('parseLeasesForHousingContract', () => {
     if (result) {
       const housingContract = result[0]
       expect(result[0]).toBeDefined()
-      expect(result[1]).toBeNull() //todo: check function signature, should be undefined?
+      expect(result[1]).toBeNull()
     }
   })
 
@@ -389,7 +390,7 @@ describe('parseLeasesForHousingContract', () => {
     if (result) {
       const housingContract = result[0]
       expect(result[0]).toBeDefined()
-      expect(result[1]).toBeDefined() //todo: check function signature, should be undefined?
+      expect(result[1]).toBeDefined()
     }
   })
 

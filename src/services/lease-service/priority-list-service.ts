@@ -93,7 +93,6 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
 //helper function to filter all non-terminated and all still active contracts with a last debit date
 const isLeaseActiveOrUpcoming = (lease: Lease): boolean => {
   const currentDate = new Date()
-  const leaseStartDate = new Date(lease.leaseStartDate)
   const terminationDate = lease.terminationDate
     ? new Date(lease.terminationDate)
     : null

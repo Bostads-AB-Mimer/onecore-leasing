@@ -131,7 +131,12 @@ const getListingById = async (
   return transformListing(parseApplicantsJson(result))
 }
 
-//todo: write doc
+/**
+ * Gets an applicant by id
+ *
+ * @param {number} applicantId - The ID of the applicant
+ * @returns {Promise<boolean>} - Returns the applicant or undefined if not found.
+ */
 const getApplicantById = async (
   applicantId: number
 ): Promise<Applicant | undefined> => {
@@ -181,7 +186,11 @@ const updateApplicantStatus = async (
   }
 }
 
-//todo: write doc
+/**
+ * Gets all listings with applicants
+ *
+ * @returns {Promise<boolean>} - Returns a list of listings or empty list if no listings exists.
+ */
 const getAllListingsWithApplicants = async () => {
   const query = `
     SELECT
@@ -212,7 +221,12 @@ const getAllListingsWithApplicants = async () => {
   return result
 }
 
-//todo: write doc
+/**
+ * Gets an applicant by contact code
+ *
+ * @param {string} contactCode - The applicants contact code
+ * @returns {Promise<boolean>} - Returns the applicant or undefined if not found.
+ */
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant')
     .where({ ContactCode: contactCode })
@@ -226,7 +240,13 @@ const getApplicantsByContactCode = async (contactCode: string) => {
   return result.map(transformDbApplicant)
 }
 
-//todo: write doc
+/**
+ * Gets an applicant by contact code and rental object code
+ *
+ * @param {string} contactCode - The applicants contact code
+ * @param {string} rentalObjectCode - The rental object code of the listing that the applicant belongs to
+ * @returns {Promise<boolean>} - Returns the applicant or undefined if not found.
+ */
 const getApplicantsByContactCodeAndRentalObjectCode = async (
   contactCode: string,
   rentalObjectCode: string
@@ -243,12 +263,16 @@ const getApplicantsByContactCodeAndRentalObjectCode = async (
   return transformDbApplicant(result)
 }
 
-//todo: write doc
+/**
+ * Gets an applicant by listing id
+ *
+ * @param {number} listingId - The ID of the listing the applicant belongs to.
+ * @returns {Promise<boolean>} - Returns the applicant or undefined if not found.
+ */
 const getApplicantByListingId = async (listingId: number) => {
   const dbApplicants = await db('Applicant')
     .where('ListingId', listingId)
     .select('*')
-  console.log(dbApplicants)
   let transformedApplicants: Applicant[] = []
   for (const applicant of dbApplicants) {
     transformedApplicants.push(transformDbApplicant(applicant))
@@ -257,7 +281,13 @@ const getApplicantByListingId = async (listingId: number) => {
   return transformedApplicants
 }
 
-//todo: write doc
+/**
+ * Checks if an applicant has a applied for a listing
+ *
+ * @param {string} contactCode - The applicants contact code
+ * @param {number} listingId - The ID of the listing the applicant belongs to.
+ * @returns {Promise<boolean>} - Returns true if applicant belongs to listing, false if not
+ */
 const applicationExists = async (contactCode: string, listingId: number) => {
   const result = await db('applicant')
     .where({
