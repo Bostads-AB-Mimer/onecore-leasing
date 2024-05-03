@@ -510,7 +510,6 @@ export const routes = (router: KoaRouter) => {
   router.get('(.*)/listing/:listingId/applicants/details', async (ctx: any) => {
     try {
       const listingId = ctx.params.listingId
-      console.log('listingId: ', listingId)
       const listing = await getListingById(listingId)
 
       if (!listing) {
