@@ -135,7 +135,7 @@ const getListingById = async (
  * Gets an applicant by id
  *
  * @param {number} applicantId - The ID of the applicant.
- * @returns {Promise<Applicant>} - Returns the applicant.
+ * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
 const getApplicantById = async (
   applicantId: number
@@ -189,7 +189,7 @@ const updateApplicantStatus = async (
 /**
  * Gets all listings with applicants
  *
- * @returns {Promise<Listing[] | []>} - Returns a list of listings or empty list if no listings exists.
+ * @returns {Promise<Listing[]>} - Returns a list of listings.
  */
 const getAllListingsWithApplicants = async () => {
   const query = `
@@ -225,7 +225,7 @@ const getAllListingsWithApplicants = async () => {
  * Gets an applicant by contact code
  *
  * @param {string} contactCode - The applicants contact code
- * @returns {Promise<Applicant>} - Returns the applicant.
+ * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant')
@@ -245,7 +245,7 @@ const getApplicantsByContactCode = async (contactCode: string) => {
  *
  * @param {string} contactCode - The applicants contact code.
  * @param {string} rentalObjectCode - The rental object code of the listing that the applicant belongs to.
- * @returns {Promise<Applicant>} - Returns the applicant.
+ * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
 const getApplicantsByContactCodeAndRentalObjectCode = async (
   contactCode: string,

@@ -64,7 +64,7 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
       )
     }
 
-    let housingContracts = parseLeasesForHousingContracts(
+    const housingContracts = parseLeasesForHousingContracts(
       activeAndUpcomingLeases
     )
     if (!housingContracts) {
