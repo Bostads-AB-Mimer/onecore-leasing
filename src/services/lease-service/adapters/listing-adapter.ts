@@ -267,7 +267,7 @@ const getApplicantsByContactCodeAndRentalObjectCode = async (
  * Gets an applicant by listing id
  *
  * @param {number} listingId - The ID of the listing the applicant belongs to.
- * @returns {Promise<Applicant> } - Returns the applicant or undefined if not found.
+ * @returns {Promise<Applicant[] | []> } - Returns a list of applicants or empty list if not found.
  */
 const getApplicantByListingId = async (listingId: number) => {
   const dbApplicants = await db('Applicant')

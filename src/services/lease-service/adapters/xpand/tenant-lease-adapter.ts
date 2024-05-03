@@ -209,15 +209,14 @@ const getResidentialAreaByRentalPropertyId = async (
     .where('babuf.hyresid', rentalPropertyId)
     .limit(1)
 
-  if (rows && rows.length > 0) {
-    //remove whitespaces from xpand and return
-    return {
-      code: rows[0].code.replace(/\s/g, ''),
-      caption: rows[0].caption.replace(/\s/g, ''),
-    }
+  if (!rows?.length) {
+    return undefined
   }
-
-  return undefined
+  //remove whitespaces from xpand and return
+  return {
+    code: rows[0].code.replace(/\s/g, ''),
+    caption: rows[0].caption.replace(/\s/g, ''),
+  }
 }
 
 const getContactByNationalRegistrationNumber = async (

@@ -517,7 +517,7 @@ export const routes = (router: KoaRouter) => {
         return
       }
 
-      let result: any = []
+      const result: any = []
 
       if (listing.applicants) {
         for (const applicant of listing.applicants) {

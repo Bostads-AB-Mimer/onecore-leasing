@@ -206,6 +206,26 @@ describe('lease-service', () => {
       vacantFrom: new Date(),
       status: 1,
       waitingListType: 'Bilplats (intern)',
+      applicants: [
+        {
+          id: 3005,
+          name: 'Sökande Fiktiv',
+          contactCode: 'P145241',
+          applicationDate: new Date(),
+          applicationType: 'Additional',
+          status: 1,
+          listingId: 3030,
+        },
+        {
+          id: 3006,
+          name: 'Testsson Stina',
+          contactCode: 'P174965',
+          applicationDate: new Date(),
+          applicationType: 'Additional',
+          status: 1,
+          listingId: 3030,
+        },
+      ],
     }
     detailedApplicantMock = {
       id: 3005,
@@ -315,11 +335,12 @@ describe('lease-service', () => {
     it('responds with 404 if no listing found', async () => {
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
-        .mockResolvedValue(undefined)
+        .mockResolvedValueOnce(undefined)
 
       const res = await request(app.callback()).get(
         '/listing/1337/applicants/details'
       )
+      expect(getListingSpy).toHaveBeenCalled()
       expect(res.status).toBe(404)
     })
     it('responds with 200 on success', async () => {
@@ -334,6 +355,8 @@ describe('lease-service', () => {
       const res = await request(app.callback()).get(
         '/listing/1337/applicants/details'
       )
+      expect(getListingSpy).toHaveBeenCalled()
+      expect(priorityListServiceSpy).toHaveBeenCalled()
       expect(res.status).toBe(200)
       expect(res.body).toBeDefined()
     })

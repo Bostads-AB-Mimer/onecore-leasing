@@ -17,7 +17,6 @@ import {
   getResidentialAreaByRentalPropertyId,
   getLeasesForContactCode,
 } from './adapters/xpand/tenant-lease-adapter'
-import app from '../../app'
 
 const getDetailedApplicantInformation = async (applicant: Applicant) => {
   try {
@@ -54,7 +53,7 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
       throw new Error(`Leases not found for applicant ${applicant.contactCode}`)
     }
 
-    let activeAndUpcomingLeases: Lease[] = leases.filter(
+    const activeAndUpcomingLeases: Lease[] = leases.filter(
       isLeaseActiveOrUpcoming
     )
 
@@ -101,9 +100,15 @@ const isLeaseActiveOrUpcoming = (lease: Lease): boolean => {
     ? new Date(lease.lastDebitDate)
     : null
 
+  //determine if lastDebitDate and terminationDate is set
+  //if so, the date(s) needs to be in the future for the lease to be active
+  const isCurrentDateEarlierThanLastDebitDate =
+    !lastDebitDate || currentDate < lastDebitDate
+  const isCurrentDateBeforeTerminationDate =
+    !terminationDate || currentDate < terminationDate
+
   return (
-    (!lastDebitDate || currentDate < lastDebitDate) &&
-    (!terminationDate || currentDate < terminationDate)
+    isCurrentDateEarlierThanLastDebitDate && isCurrentDateBeforeTerminationDate
   )
 }
 
@@ -128,7 +133,7 @@ const parseLeasesForHousingContracts = (
 ):
   | [currentHousingContract: Lease, upcomingHousingContract: Lease | undefined]
   | undefined => {
-  let housingContracts: Lease[] = []
+  const housingContracts: Lease[] = []
   for (const lease of leases) {
     //use startsWith to handle whitespace issues from xpand
     if (lease.type.startsWith('Bostadskontrakt')) {
@@ -144,22 +149,32 @@ const parseLeasesForHousingContracts = (
   //applicant have 1 active and 1 pending contract
   if (housingContracts.length == 2) {
     const currentDate = new Date()
-    const curentActiveLease = leases.find(
+    const currentActiveLease = leases.find(
       (lease) =>
         lease.lastDebitDate !== null && lease.leaseStartDate < currentDate
     )
+
+    if (currentActiveLease == undefined) {
+      throw new Error('could not find any active lease')
+    }
+
     const pendingLease = leases.find(
       (lease) =>
         lease.lastDebitDate === null && lease.leaseStartDate > currentDate
     )
-    return [curentActiveLease, pendingLease]
+
+    if (pendingLease == undefined) {
+      throw new Error('could not find any pending lease')
+    }
+
+    return [currentActiveLease, pendingLease]
   }
 
   return undefined
 }
 
 const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] | undefined => {
-  let parkingSpaces: Lease[] = []
+  const parkingSpaces: Lease[] = []
   for (const lease of leases) {
     //use startsWith to handle whitespace issues from xpand
     if (lease.type.startsWith('P-Platskontrakt')) {

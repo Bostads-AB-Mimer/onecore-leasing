@@ -367,7 +367,7 @@ describe('parseWaitingList', () => {
 
 describe('parseLeasesForHousingContract', () => {
   it('should return 1 housing contract if only 1 active housing contract', async () => {
-    let filteredLeases: Lease[] =
+    const filteredLeases: Lease[] =
       mockedLeasesWithOneActiveHousingContractAndOneTerminatedHousingContract.filter(
         isLeaseActiveOrUpcoming
       )
@@ -375,20 +375,18 @@ describe('parseLeasesForHousingContract', () => {
 
     expect(result).toBeDefined()
     if (result) {
-      const housingContract = result[0]
       expect(result[0]).toBeDefined()
       expect(result[1]).toBeNull()
     }
   })
 
   it('should return 1 active housing contract and 1 upcoming housing contract', async () => {
-    let filteredLeases: Lease[] =
+    const filteredLeases: Lease[] =
       mockedLeasesWithUpcomingHousingContract.filter(isLeaseActiveOrUpcoming)
     const result = parseLeasesForHousingContracts(filteredLeases)
 
     expect(result).toBeDefined()
     if (result) {
-      const housingContract = result[0]
       expect(result[0]).toBeDefined()
       expect(result[1]).toBeDefined()
     }
@@ -409,7 +407,7 @@ describe('parseLeasesForParkingSpaces', () => {
     expect(result).toBeDefined()
     expect(Array.isArray(result)).toBe(true)
     expect(result).toHaveLength(2)
-    result!.forEach((lease, index) => {
+    result?.forEach((lease) => {
       expect(lease.type).toEqual('P-Platskontrakt')
     })
   })
