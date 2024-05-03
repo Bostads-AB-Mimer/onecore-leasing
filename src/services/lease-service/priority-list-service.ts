@@ -151,7 +151,8 @@ const parseLeasesForHousingContracts = (
     const currentDate = new Date()
     const currentActiveLease = leases.find(
       (lease) =>
-        lease.lastDebitDate !== null && lease.leaseStartDate <= currentDate
+        (lease.lastDebitDate === null || lease.lastDebitDate === undefined) &&
+        lease.leaseStartDate <= currentDate
     )
 
     if (currentActiveLease == undefined) {
@@ -160,7 +161,8 @@ const parseLeasesForHousingContracts = (
 
     const pendingLease = leases.find(
       (lease) =>
-        lease.lastDebitDate === undefined && lease.leaseStartDate > currentDate
+        (lease.lastDebitDate === null || lease.lastDebitDate === undefined) &&
+        lease.leaseStartDate > currentDate
     )
 
     if (pendingLease == undefined) {
