@@ -38,7 +38,10 @@ import {
   getInvoicesByContactCode,
   getUnpaidInvoicesByContactCode,
 } from './adapters/xpand/invoices-adapter'
-import { getDetailedApplicantInformation } from './priority-list-service'
+import {
+  getDetailedApplicantInformation,
+  sortApplicantsBasedOnRentalRules,
+} from './priority-list-service'
 import { Applicant, ApplicantStatus, Listing } from 'onecore-types'
 
 interface CreateLeaseRequest {
@@ -517,17 +520,26 @@ export const routes = (router: KoaRouter) => {
         return
       }
 
-      const result: any = []
+      const applicants: any = [] //todo: rename
 
       if (listing.applicants) {
         for (const applicant of listing.applicants) {
           const detailedApplicant =
             await getDetailedApplicantInformation(applicant)
-          result.push(detailedApplicant)
+          applicants.push(detailedApplicant)
         }
       }
 
-      ctx.body = result
+      const applicantsSortedByRentalRules = sortApplicantsBasedOnRentalRules(
+        listing,
+        applicants
+      )
+
+      console.log('*******')
+      console.log(applicantsSortedByRentalRules)
+      console.log('*******')
+
+      ctx.body = applicantsSortedByRentalRules
     } catch (error: unknown) {
       ctx.status = 500
 

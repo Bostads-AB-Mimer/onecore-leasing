@@ -7,6 +7,7 @@
 import {
   Applicant,
   Lease,
+  Listing,
   ParkingSpaceApplicationCategory,
   parkingSpaceApplicationCategoryTranslation,
   WaitingList,
@@ -87,6 +88,56 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
     console.error('Error in getDetailedApplicantInformation:', error)
     throw error // Re-throw the error to propagate it upwards
   }
+}
+
+//todo: should use and return defined interface type
+const sortApplicantsBasedOnRentalRules = (
+  listing: Listing,
+  applicants: any[]
+): any[] => {
+  for (const applicant of applicants) {
+    assignPriorityToApplicantBasedOnRentalRules(listing, applicant)
+  }
+
+  return applicants
+}
+
+//todo: should use and return defined interface type
+const assignPriorityToApplicantBasedOnRentalRules = (
+  listing: Listing,
+  applicant: any
+): any => {
+  //priority  1
+  //Hyresgäst utan bilplats, gällande/kommande kontrakt i området
+  if (!applicant.parkingSpaceContracts.length) {
+    if (
+      applicant.currentHousingContract.residentialArea.code ==
+      listing.districtCode
+    ) {
+      applicant.priority = 1
+      return applicant
+    }
+
+    if (
+      applicant.upcomingHousingContract.residentialArea.code ==
+      listing.districtCode
+    ) {
+      applicant.priority = 1
+      return applicant
+    }
+  }
+
+  //Hyresgäst med bilplats, önskar byta
+
+  //priority 2
+  //Hyresgäst har en bilplats, söker en till.
+  //Hyresgäst med två/flera bilplatser, önskar byta mot annan
+
+  //priority 3
+  //Hyresgäst med fler än två bilplatser söker en till
+
+  applicant.priority = 0
+  return applicant
 }
 
 //helper function to filter all non-terminated and all still active contracts with a last debit date
@@ -188,6 +239,8 @@ const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] | undefined => {
 
 export {
   getDetailedApplicantInformation,
+  sortApplicantsBasedOnRentalRules,
+  assignPriorityToApplicantBasedOnRentalRules,
   parseWaitingListForInternalParkingSpace,
   parseLeasesForHousingContracts,
   parseLeasesForParkingSpaces,

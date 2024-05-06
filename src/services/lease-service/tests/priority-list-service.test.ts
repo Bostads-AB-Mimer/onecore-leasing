@@ -6,6 +6,7 @@ import {
   WaitingList,
 } from 'onecore-types'
 import {
+  assignPriorityToApplicantBasedOnRentalRules,
   getDetailedApplicantInformation,
   isLeaseActiveOrUpcoming,
   parseLeasesForHousingContracts,
@@ -14,6 +15,7 @@ import {
 } from '../priority-list-service'
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
+import { ApplicantFactory, LeaseFactory, ListingFactory } from './factory'
 
 const mockedApplicant: Applicant = {
   id: 2004,
@@ -455,5 +457,73 @@ describe('parseLeasesForParkingSpaces', () => {
   it('should return empty list for leases without parking spaces', async () => {
     const result = parseLeasesForParkingSpaces([])
     expect(result).toEqual([])
+  })
+})
+
+describe('assignPriorityToApplicantBasedOnRentalRules', () => {
+  it('applicant should get priority 1 if no parking space contract and valid housing contract in same residential area as listing', async () => {
+    const currentHousingContract = LeaseFactory.params({
+      residentialArea: {
+        code: 'MAL',
+      },
+    }).build()
+    const applicant = ApplicantFactory.params({
+      currentHousingContract: currentHousingContract,
+    }).build()
+
+    const listing = ListingFactory.params({
+      districtCode: 'MAL',
+    }).build()
+
+    const result = assignPriorityToApplicantBasedOnRentalRules(
+      listing,
+      applicant
+    )
+
+    expect(result.priority).toBe(1)
+  })
+
+  it('applicant should get priority 1 if no parking space contract and upcoming housing contract in same residential area as listing', async () => {
+    const currentHousingContract = LeaseFactory.params({
+      residentialArea: {
+        code: 'some other area',
+      },
+    }).build()
+    const upcomingHousingContract = LeaseFactory.params({
+      residentialArea: {
+        code: 'MAL',
+      },
+    }).build()
+    const applicant = ApplicantFactory.params({
+      currentHousingContract: currentHousingContract,
+      upcomingHousingContract: upcomingHousingContract,
+    }).build()
+
+    const listing = ListingFactory.params({
+      districtCode: 'MAL',
+    }).build()
+
+    const result = assignPriorityToApplicantBasedOnRentalRules(
+      listing,
+      applicant
+    )
+
+    expect(result.priority).toBe(1)
+  })
+
+  it('applicant should get priority 1 if has valid parking space contract and applicationType equals Replace', async () => {
+    console.log('implement')
+  })
+
+  it('applicant should get priority 2 if has valid parking space contract and applicationType equals Additional', async () => {
+    console.log('implement')
+  })
+
+  it('applicant should get priority 2 if has 2 valid parking space contracts and applicationType equals Replace', async () => {
+    console.log('implement')
+  })
+
+  it('applicant should get priority 3 if has more than 2 valid parking space contracts', async () => {
+    console.log('implement')
   })
 })
