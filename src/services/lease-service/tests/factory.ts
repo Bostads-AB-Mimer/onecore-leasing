@@ -43,8 +43,8 @@ const ApplicantFactory = Factory.define<any, { currentHousingContract: Lease }>(
     applicationDate: new Date().toISOString(),
     applicationType: 'Additional',
     status: 1,
-    listingId: 3030,
-    queuePoints: 6,
+    listingId: 3030, //todo: sequence?
+    queuePoints: 6, //todo: rand
     address: {
       street: 'Aromas väg 8B',
       number: '',

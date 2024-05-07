@@ -107,36 +107,64 @@ const assignPriorityToApplicantBasedOnRentalRules = (
   listing: Listing,
   applicant: any
 ): any => {
+  //todo: add base validation that applicant belongs to same listing?
+
   //priority  1
   //Hyresgäst utan bilplats, gällande/kommande kontrakt i området
+  //Applicant has no active contract for parking space and is current or future tenant in same area as listing
   if (!applicant.parkingSpaceContracts.length) {
     if (
-      applicant.currentHousingContract.residentialArea.code ==
-      listing.districtCode
+      applicant.currentHousingContract.residentialArea.code ===
+        listing.districtCode ||
+      applicant.upcomingHousingContract.residentialArea.code ===
+        listing.districtCode
     ) {
       applicant.priority = 1
       return applicant
     }
 
-    if (
-      applicant.upcomingHousingContract.residentialArea.code ==
-      listing.districtCode
-    ) {
-      applicant.priority = 1
-      return applicant
-    }
+    // if (
+    //   applicant.upcomingHousingContract.residentialArea.code ===
+    //   listing.districtCode
+    // ) {
+    //   applicant.priority = 1
+    //   return applicant
+    // }
   }
 
   //Hyresgäst med bilplats, önskar byta
+  //Applicant has 1 active contract for parking space but wishes to replace current parking space
+  //todo: write test tomorrow
+  if (
+    applicant.parkingSpaceContracts.length === 1 &&
+    applicant.applicationType === 'Replace'
+  ) {
+    applicant.priority = 1
+    return applicant
+  }
 
   //priority 2
   //Hyresgäst har en bilplats, söker en till.
+  if (
+    applicant.parkingSpaceContracts.length === 1 &&
+    applicant.applicationType === 'Additional'
+  ) {
+    applicant.priority = 2
+    return applicant
+  }
   //Hyresgäst med två/flera bilplatser, önskar byta mot annan
+  if (
+    applicant.parkingSpaceContracts.length > 1 &&
+    applicant.applicationType === 'Replace'
+  ) {
+    applicant.priority = 2
+    return applicant
+  }
 
   //priority 3
   //Hyresgäst med fler än två bilplatser söker en till
 
-  applicant.priority = 0
+  applicant.priority = 3
   return applicant
 }
 
