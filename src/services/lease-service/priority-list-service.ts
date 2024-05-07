@@ -18,6 +18,7 @@ import {
   getLeasesForContactCode,
   getResidentialAreaByRentalPropertyId,
 } from './adapters/xpand/tenant-lease-adapter'
+import { leaseTypes } from '../../constants/leaseTypes'
 
 const getDetailedApplicantInformation = async (applicant: Applicant) => {
   try {
@@ -248,7 +249,7 @@ const parseLeasesForHousingContracts = (
   const housingContracts: Lease[] = []
   for (const lease of leases) {
     //use startsWith to handle whitespace issues from xpand
-    if (lease.type.startsWith('Bostadskontrakt')) {
+    if (lease.type.startsWith(leaseTypes.housingContract)) {
       housingContracts.push(lease)
     }
   }
@@ -291,7 +292,7 @@ const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] | undefined => {
   const parkingSpaces: Lease[] = []
   for (const lease of leases) {
     //use startsWith to handle whitespace issues from xpand
-    if (lease.type.startsWith('P-Platskontrakt')) {
+    if (lease.type.startsWith(leaseTypes.parkingspaceContract)) {
       parkingSpaces.push(lease)
     }
   }

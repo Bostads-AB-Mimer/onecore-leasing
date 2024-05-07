@@ -3,8 +3,6 @@ import {
   Contact,
   Lease,
   LeaseStatus,
-  ParkingSpaceType,
-  parkingSpaceTypeTranslation,
   WaitingList,
 } from 'onecore-types'
 import {
@@ -20,6 +18,7 @@ import {
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
 import { ApplicantFactory, LeaseFactory, ListingFactory } from './factory'
+import { leaseTypes } from '../../../constants/leaseTypes'
 
 const mockedApplicant: Applicant = {
   id: 2004,
@@ -93,7 +92,7 @@ const mockedLeasesWithHousingAndParkingSpaceContracts: Lease[] = [
     leaseNumber: '19',
     rentalPropertyId: '508-713-00-0009',
     rentalProperty: undefined,
-    type: 'P-Platskontrakt',
+    type: leaseTypes.parkingspaceContract,
     leaseStartDate: new Date('2024-03-01T00:00:00.000Z'),
     leaseEndDate: undefined,
     tenantContactIds: [],
@@ -116,7 +115,7 @@ const mockedLeasesWithHousingAndParkingSpaceContracts: Lease[] = [
     leaseNumber: '02',
     rentalPropertyId: '216-704-00-0017',
     rentalProperty: undefined,
-    type: 'P-Platskontrakt',
+    type: leaseTypes.parkingspaceContract,
     leaseStartDate: new Date('2024-04-02T00:00:00.000Z'),
     leaseEndDate: undefined,
     tenantContactIds: [],
@@ -195,7 +194,7 @@ const mockedLeasesWithUpcomingHousingContract: Lease[] = [
     leaseNumber: '01',
     rentalPropertyId: '605-703-00-0014',
     rentalProperty: undefined,
-    type: 'P-Platskontrakt               ',
+    type: leaseTypes.parkingspaceContract,
     leaseStartDate: new Date('2022-02-01T00:00:00.000Z'),
     leaseEndDate: undefined,
     tenantContactIds: [],
@@ -454,7 +453,7 @@ describe('parseLeasesForParkingSpaces', () => {
     expect(Array.isArray(result)).toBe(true)
     expect(result).toHaveLength(2)
     result?.forEach((lease) => {
-      expect(lease.type).toEqual('P-Platskontrakt')
+      expect(lease.type).toEqual(leaseTypes.parkingspaceContract)
     })
   })
 
@@ -533,9 +532,7 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
   it('applicant should get priority 1 if has active parking space contract and applicationType equals Replace', () => {
     const listing = ListingFactory.build()
 
-    const parkingSpaceContract = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const parkingSpaceContract = LeaseFactory.build()
 
     const applicant = ApplicantFactory.params({
       applicationType: 'Replace', //todo: add as enum
@@ -597,17 +594,11 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
   it('applicant should get priority 3 if has more than 2 active parking space contracts applicationType equals Additional', () => {
     const listing = ListingFactory.build()
 
-    const parkingSpaceContract1 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const parkingSpaceContract1 = LeaseFactory.build()
 
-    const parkingSpaceContract2 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const parkingSpaceContract2 = LeaseFactory.build()
 
-    const parkingSpaceContract3 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const parkingSpaceContract3 = LeaseFactory.build()
 
     const applicant = ApplicantFactory.params({
       applicationType: 'Additional', //todo: add as enum

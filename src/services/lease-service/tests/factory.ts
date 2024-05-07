@@ -1,5 +1,6 @@
 import { Factory } from 'fishery'
 import { Lease, LeaseStatus, Listing, ListingStatus } from 'onecore-types'
+import { leaseTypes } from '../../../constants/leaseTypes'
 
 const LeaseFactory = Factory.define<Lease>(({ sequence }) => ({
   leaseId: `${sequence}`,
@@ -11,7 +12,7 @@ const LeaseFactory = Factory.define<Lease>(({ sequence }) => ({
   tenants: undefined,
   rentalPropertyId: '605-703-00-0014',
   rentalProperty: undefined,
-  type: 'P-plats (intern)', //todo use correct type
+  type: leaseTypes.parkingspaceContract,
   rentInfo: undefined,
   address: {
     street: 'Testgatan',
