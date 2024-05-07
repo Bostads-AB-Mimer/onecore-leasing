@@ -464,10 +464,10 @@ describe('parseLeasesForParkingSpaces', () => {
 })
 
 describe('assignPriorityToApplicantBasedOnRentalRules', () => {
-  it('should throw error if applicant does not belong to the same listing', async () => {
-    const listing = ListingFactory.params({}).build()
+  it('should throw error if applicant does not belong to the same listing', () => {
+    const listing = ListingFactory.build()
 
-    const applicant = ApplicantFactory.params({}).build()
+    const applicant = ApplicantFactory.build()
 
     expect(() =>
       assignPriorityToApplicantBasedOnRentalRules(listing, applicant)
@@ -498,7 +498,7 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
     expect(result.priority).toBe(1)
   })
 
-  it('applicant should get priority 1 if no parking space contract and upcoming housing contract in same residential area as listing', async () => {
+  it('applicant should get priority 1 if no parking space contract and upcoming housing contract in same residential area as listing', () => {
     const listing = ListingFactory.params({
       districtCode: 'XYZ',
     }).build()
@@ -529,8 +529,8 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
     expect(result.priority).toBe(1)
   })
 
-  it('applicant should get priority 1 if has active parking space contract and applicationType equals Replace', async () => {
-    const listing = ListingFactory.params({}).build()
+  it('applicant should get priority 1 if has active parking space contract and applicationType equals Replace', () => {
+    const listing = ListingFactory.build()
 
     const parkingSpaceContract = LeaseFactory.params({
       type: 'P-plats (intern)', //todo: use onecore-type translation
@@ -551,8 +551,8 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
     expect(result.priority).toBe(1)
   })
 
-  it('applicant should get priority 2 if has active parking space contract and applicationType equals Additional', async () => {
-    const listing = ListingFactory.params({}).build()
+  it('applicant should get priority 2 if has active parking space contract and applicationType equals Additional', () => {
+    const listing = ListingFactory.build()
 
     const parkingSpaceContract = LeaseFactory.params({
       type: 'P-plats (intern)', //todo: use onecore-type translation
@@ -573,8 +573,8 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
     expect(result.priority).toBe(2)
   })
 
-  it('applicant should get priority 2 if has more than 1 active parking space contracts and applicationType equals Replace', async () => {
-    const listing = ListingFactory.params({}).build()
+  it('applicant should get priority 2 if has more than 1 active parking space contracts and applicationType equals Replace', () => {
+    const listing = ListingFactory.build()
 
     const parkingSpaceContract1 = LeaseFactory.params({
       type: 'P-plats (intern)', //todo: use onecore-type translation
@@ -599,8 +599,8 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
     expect(result.priority).toBe(2)
   })
 
-  it('applicant should get priority 3 if has more than 2 active parking space contracts applicationType equals Additional', async () => {
-    const listing = ListingFactory.params({}).build()
+  it('applicant should get priority 3 if has more than 2 active parking space contracts applicationType equals Additional', () => {
+    const listing = ListingFactory.build()
 
     const parkingSpaceContract1 = LeaseFactory.params({
       type: 'P-plats (intern)', //todo: use onecore-type translation
@@ -635,7 +635,7 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
 })
 
 describe('sortApplicantsBasedOnRentalRules', () => {
-  it('', async () => {
+  it('should short applicants in expected order based on rental rules', () => {
     const listing = ListingFactory.params({
       districtCode: 'XYZ',
     }).build()
@@ -760,9 +760,8 @@ describe('sortApplicantsBasedOnRentalRules', () => {
     ]
 
     const result = sortApplicantsBasedOnRentalRules(listing, applicants)
-    console.log(result)
-    expect(result).toBeDefined()
-    expect(result).toHaveLength(6)
+
+    expect(result).toHaveLength(applicants.length)
     expect(
       applicants.filter((applicant) => applicant.priority === 1)
     ).toHaveLength(3)
