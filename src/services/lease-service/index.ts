@@ -10,24 +10,24 @@ import KoaRouter from '@koa/router'
 import {
   getContactByContactCode,
   getContactByNationalRegistrationNumber,
-  getLeasesForPropertyId,
   getContactForPhoneNumber,
   getLease,
   getLeasesForContactCode,
   getLeasesForNationalRegistrationNumber,
+  getLeasesForPropertyId,
 } from './adapters/xpand/tenant-lease-adapter'
 
 import {
-  createListing,
+  applicationExists,
   createApplication,
+  createListing,
   getAllListingsWithApplicants,
   getApplicantById,
   getApplicantsByContactCode,
   getApplicantsByContactCodeAndRentalObjectCode as getApplicantByContactCodeAndRentalObjectCode,
-  getListingByRentalObjectCode,
-  applicationExists,
-  updateApplicantStatus,
   getListingById,
+  getListingByRentalObjectCode,
+  updateApplicantStatus,
 } from './adapters/listing-adapter'
 import {
   addApplicantToToWaitingList,
@@ -507,7 +507,7 @@ export const routes = (router: KoaRouter) => {
 
   /**
    * Gets detailed information on a listings applicants
-   * Returns a list of all applicants on a listing by listing id
+   * Returns a sorted list by rental rules for internal parking spaces of all applicants on a listing by listing id
    * Uses ListingId instead of rentalObjectCode since multiple listings can share the same rentalObjectCode for historical reasons
    */
   router.get('(.*)/listing/:listingId/applicants/details', async (ctx) => {
@@ -520,7 +520,7 @@ export const routes = (router: KoaRouter) => {
         return
       }
 
-      const applicants: any = [] //todo: rename
+      const applicants: any = []
 
       if (listing.applicants) {
         for (const applicant of listing.applicants) {
@@ -530,18 +530,7 @@ export const routes = (router: KoaRouter) => {
         }
       }
 
-      console.log(applicants)
-
-      const applicantsSortedByRentalRules = sortApplicantsBasedOnRentalRules(
-        listing,
-        applicants
-      )
-
-      console.log('*******')
-      console.log(applicantsSortedByRentalRules)
-      console.log('*******')
-
-      ctx.body = applicantsSortedByRentalRules
+      ctx.body = sortApplicantsBasedOnRentalRules(listing, applicants)
     } catch (error: unknown) {
       ctx.status = 500
 

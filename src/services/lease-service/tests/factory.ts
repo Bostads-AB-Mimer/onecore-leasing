@@ -2,7 +2,7 @@ import { Factory } from 'fishery'
 import { Lease, LeaseStatus, Listing, ListingStatus } from 'onecore-types'
 
 //todo: remove params?
-const LeaseFactory = Factory.define<Lease>(({ sequence, params }) => ({
+const LeaseFactory = Factory.define<Lease>(({ sequence }) => ({
   leaseId: `${sequence}`,
   leaseNumber: `0${sequence}`,
   leaseStartDate: new Date(2022, 1),
@@ -12,7 +12,7 @@ const LeaseFactory = Factory.define<Lease>(({ sequence, params }) => ({
   tenants: undefined,
   rentalPropertyId: '605-703-00-0014',
   rentalProperty: undefined,
-  type: 'P-plats (intern)',
+  type: 'P-plats (intern)', //todo use correct type
   rentInfo: undefined,
   address: {
     street: 'Testgatan',
@@ -43,8 +43,8 @@ const ApplicantFactory = Factory.define<any, { currentHousingContract: Lease }>(
     applicationDate: new Date().toISOString(),
     applicationType: 'Additional',
     status: 1,
-    listingId: 3030, //todo: sequence?
-    queuePoints: 6, //todo: rand
+    listingId: `${sequence}`,
+    queuePoints: 10,
     address: {
       street: 'Aromas väg 8B',
       number: '',
@@ -59,7 +59,7 @@ const ApplicantFactory = Factory.define<any, { currentHousingContract: Lease }>(
 )
 
 //todo: remove params?
-const ListingFactory = Factory.define<Listing>(({ sequence, params }) => ({
+const ListingFactory = Factory.define<Listing>(({ sequence }) => ({
   id: sequence + 1,
   rentalObjectCode: `R${sequence + 1000}`,
   address: 'Sample Address',
@@ -77,7 +77,7 @@ const ListingFactory = Factory.define<Listing>(({ sequence, params }) => ({
   vacantFrom: new Date(),
   status: ListingStatus.Active,
   waitingListType: 'Bilplats (intern)',
-  applicants: [], //todo: should we supply applicants here? Do we need to validate that applicant relationship actually exists or just trust the database?
+  applicants: [],
 }))
 
 export { LeaseFactory, ApplicantFactory, ListingFactory }
