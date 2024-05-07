@@ -249,7 +249,7 @@ const parseLeasesForHousingContracts = (
   const housingContracts: Lease[] = []
   for (const lease of leases) {
     //use startsWith to handle whitespace issues from xpand
-    if (lease.type.startsWith(leaseTypes.housingContract)) {
+    if (lease.type.includes(leaseTypes.housingContract)) {
       housingContracts.push(lease)
     }
   }
@@ -292,7 +292,7 @@ const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] | undefined => {
   const parkingSpaces: Lease[] = []
   for (const lease of leases) {
     //use startsWith to handle whitespace issues from xpand
-    if (lease.type.startsWith(leaseTypes.parkingspaceContract)) {
+    if (lease.type.includes(leaseTypes.parkingspaceContract)) {
       parkingSpaces.push(lease)
     }
   }
