@@ -1,7 +1,6 @@
 import { Factory } from 'fishery'
 import { Lease, LeaseStatus, Listing, ListingStatus } from 'onecore-types'
 
-//todo: remove params?
 const LeaseFactory = Factory.define<Lease>(({ sequence }) => ({
   leaseId: `${sequence}`,
   leaseNumber: `0${sequence}`,
@@ -58,7 +57,6 @@ const ApplicantFactory = Factory.define<any, { currentHousingContract: Lease }>(
   })
 )
 
-//todo: remove params?
 const ListingFactory = Factory.define<Listing>(({ sequence }) => ({
   id: sequence + 1,
   rentalObjectCode: `R${sequence + 1000}`,
