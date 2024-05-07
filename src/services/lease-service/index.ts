@@ -39,6 +39,7 @@ import {
   getUnpaidInvoicesByContactCode,
 } from './adapters/xpand/invoices-adapter'
 import {
+  addPriorityToApplicantsBasedOnRentalRules,
   getDetailedApplicantInformation,
   sortApplicantsBasedOnRentalRules,
 } from './priority-list-service'
@@ -530,7 +531,12 @@ export const routes = (router: KoaRouter) => {
         }
       }
 
-      ctx.body = sortApplicantsBasedOnRentalRules(listing, applicants)
+      const applicantsWithPriority = addPriorityToApplicantsBasedOnRentalRules(
+        listing,
+        applicants
+      )
+
+      ctx.body = sortApplicantsBasedOnRentalRules(applicantsWithPriority)
     } catch (error: unknown) {
       ctx.status = 500
 

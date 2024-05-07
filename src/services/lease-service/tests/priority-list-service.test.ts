@@ -8,6 +8,7 @@ import {
   WaitingList,
 } from 'onecore-types'
 import {
+  addPriorityToApplicantsBasedOnRentalRules,
   assignPriorityToApplicantBasedOnRentalRules,
   getDetailedApplicantInformation,
   isLeaseActiveOrUpcoming,
@@ -759,23 +760,31 @@ describe('sortApplicantsBasedOnRentalRules', () => {
       applicant6,
     ]
 
-    const result = sortApplicantsBasedOnRentalRules(listing, applicants)
-
-    expect(result).toHaveLength(applicants.length)
+    const applicantsWithPriority = addPriorityToApplicantsBasedOnRentalRules(
+      listing,
+      applicants
+    )
     expect(
-      applicants.filter((applicant) => applicant.priority === 1)
+      applicantsWithPriority.filter((applicant) => applicant.priority === 1)
     ).toHaveLength(3)
     expect(
-      applicants.filter((applicant) => applicant.priority === 2)
+      applicantsWithPriority.filter((applicant) => applicant.priority === 2)
     ).toHaveLength(2)
     expect(
-      applicants.filter((applicant) => applicant.priority === 3)
+      applicantsWithPriority.filter((applicant) => applicant.priority === 3)
     ).toHaveLength(1)
-    expect(result[0]).toEqual(applicant3) //priority 1 and highest queuePoints
-    expect(result[1]).toEqual(applicant2) //priority 1 and second highest queuePoints
-    expect(result[2]).toEqual(applicant1) //priority 1 and third highest queuePoints
-    expect(result[3]).toEqual(applicant5) //priority 2 and fourth highest queuePoints
-    expect(result[4]).toEqual(applicant4) //priority 2 and fifth highest queuePoints
-    expect(result[5]).toEqual(applicant6) //priority 3 and lowest queuePoints
+
+    const sortedApplicantsBasedOnRentalRules = sortApplicantsBasedOnRentalRules(
+      applicantsWithPriority
+    )
+
+    expect(sortedApplicantsBasedOnRentalRules).toHaveLength(applicants.length)
+
+    expect(sortedApplicantsBasedOnRentalRules[0]).toEqual(applicant3) //priority 1 and highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[1]).toEqual(applicant2) //priority 1 and second highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[2]).toEqual(applicant1) //priority 1 and third highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[3]).toEqual(applicant5) //priority 2 and fourth highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[4]).toEqual(applicant4) //priority 2 and fifth highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[5]).toEqual(applicant6) //priority 3 and lowest queuePoints
   })
 })

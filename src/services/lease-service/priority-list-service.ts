@@ -15,8 +15,8 @@ import {
 import { getWaitingList } from './adapters/xpand/xpand-soap-adapter'
 import {
   getContactByContactCode,
-  getResidentialAreaByRentalPropertyId,
   getLeasesForContactCode,
+  getResidentialAreaByRentalPropertyId,
 } from './adapters/xpand/tenant-lease-adapter'
 
 const getDetailedApplicantInformation = async (applicant: Applicant) => {
@@ -91,15 +91,22 @@ const getDetailedApplicantInformation = async (applicant: Applicant) => {
 }
 
 //todo: should use and return defined interface type
-const sortApplicantsBasedOnRentalRules = (
+const addPriorityToApplicantsBasedOnRentalRules = (
   listing: Listing,
   applicants: any[]
-): any[] => {
+) => {
+  const applicantsWithAssignedPriority: any[] = [] //todo: use defined interface
   for (const applicant of applicants) {
-    assignPriorityToApplicantBasedOnRentalRules(listing, applicant)
+    applicantsWithAssignedPriority.push(
+      assignPriorityToApplicantBasedOnRentalRules(listing, applicant)
+    )
   }
 
-  applicants.sort((a, b) => {
+  return applicantsWithAssignedPriority
+}
+
+const sortApplicantsBasedOnRentalRules = (applicants: any[]): any[] => {
+  return Array.from(applicants).sort((a, b) => {
     //sort by priority (ascending)
     if (a.priority !== b.priority) {
       return a.priority - b.priority
@@ -108,8 +115,6 @@ const sortApplicantsBasedOnRentalRules = (
     //sort by queue points (descending)
     return b.queuePoints - a.queuePoints
   })
-
-  return applicants
 }
 
 //todo: should use and return defined interface type from onecore-types
@@ -131,8 +136,10 @@ const assignPriorityToApplicantBasedOnRentalRules = (
       applicant.currentHousingContract.residentialArea.code ===
       listing.districtCode
     ) {
-      applicant.priority = 1
-      return applicant
+      return {
+        ...applicant,
+        priority: 1,
+      }
     }
 
     //Applicant has no active parking space contract and has upcoming housing contract in same area as listing
@@ -141,8 +148,10 @@ const assignPriorityToApplicantBasedOnRentalRules = (
         applicant.upcomingHousingContract.residentialArea.code ===
         listing.districtCode
       ) {
-        applicant.priority = 1
-        return applicant
+        return {
+          ...applicant,
+          priority: 1,
+        }
       }
     }
   }
@@ -152,8 +161,10 @@ const assignPriorityToApplicantBasedOnRentalRules = (
     applicant.parkingSpaceContracts.length === 1 &&
     applicant.applicationType === 'Replace'
   ) {
-    applicant.priority = 1
-    return applicant
+    return {
+      ...applicant,
+      priority: 1,
+    }
   }
 
   //priority 2
@@ -163,8 +174,10 @@ const assignPriorityToApplicantBasedOnRentalRules = (
     applicant.parkingSpaceContracts.length === 1 &&
     applicant.applicationType === 'Additional'
   ) {
-    applicant.priority = 2
-    return applicant
+    return {
+      ...applicant,
+      priority: 2,
+    }
   }
 
   //Applicant has more than 1 active parking space contract and wishes to replace 1 parking space contract
@@ -172,16 +185,20 @@ const assignPriorityToApplicantBasedOnRentalRules = (
     applicant.parkingSpaceContracts.length > 1 &&
     applicant.applicationType === 'Replace'
   ) {
-    applicant.priority = 2
-    return applicant
+    return {
+      ...applicant,
+      priority: 2,
+    }
   }
 
   //priority 3
 
   //Applicant has more 2 or more active parking space and wishes to rent an additional parking space
 
-  applicant.priority = 3
-  return applicant
+  return {
+    ...applicant,
+    priority: 3,
+  }
 }
 
 //helper function to filter all non-terminated and all still active contracts with a last debit date
@@ -283,6 +300,7 @@ const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] | undefined => {
 
 export {
   getDetailedApplicantInformation,
+  addPriorityToApplicantsBasedOnRentalRules,
   sortApplicantsBasedOnRentalRules,
   assignPriorityToApplicantBasedOnRentalRules,
   parseWaitingListForInternalParkingSpace,
