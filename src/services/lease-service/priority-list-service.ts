@@ -99,42 +99,55 @@ const sortApplicantsBasedOnRentalRules = (
     assignPriorityToApplicantBasedOnRentalRules(listing, applicant)
   }
 
+  applicants.sort((a, b) => {
+    //sort by priority (ascending)
+    if (a.priority !== b.priority) {
+      return a.priority - b.priority
+    }
+
+    //sort by queue points (descending)
+    return b.queuePoints - a.queuePoints
+  })
+
   return applicants
 }
 
-//todo: should use and return defined interface type
+//todo: should use and return defined interface type from onecore-types
 const assignPriorityToApplicantBasedOnRentalRules = (
   listing: Listing,
   applicant: any
 ): any => {
-  //todo: add base validation that applicant belongs to same listing?
+  if (applicant.listingId !== listing.id) {
+    throw new Error(
+      `applicant ${applicant.contactCode} does not belong to listing ${listing.id}`
+    )
+  }
 
   //priority  1
-  //Hyresgäst utan bilplats, gällande/kommande kontrakt i området
-  //Applicant has no active contract for parking space and is current or future tenant in same area as listing
+
+  //Applicant has no active parking space contract and is tenant in same area as listing
   if (!applicant.parkingSpaceContracts.length) {
     if (
       applicant.currentHousingContract.residentialArea.code ===
-        listing.districtCode ||
-      applicant.upcomingHousingContract.residentialArea.code ===
-        listing.districtCode
+      listing.districtCode
     ) {
       applicant.priority = 1
       return applicant
     }
 
-    // if (
-    //   applicant.upcomingHousingContract.residentialArea.code ===
-    //   listing.districtCode
-    // ) {
-    //   applicant.priority = 1
-    //   return applicant
-    // }
+    //Applicant has no active parking space contract and has upcoming housing contract in same area as listing
+    if (applicant.upcomingHousingContract) {
+      if (
+        applicant.upcomingHousingContract.residentialArea.code ===
+        listing.districtCode
+      ) {
+        applicant.priority = 1
+        return applicant
+      }
+    }
   }
 
-  //Hyresgäst med bilplats, önskar byta
-  //Applicant has 1 active contract for parking space but wishes to replace current parking space
-  //todo: write test tomorrow
+  //Applicant has 1 active contract for parking space and wishes to replace current parking space
   if (
     applicant.parkingSpaceContracts.length === 1 &&
     applicant.applicationType === 'Replace'
@@ -144,7 +157,8 @@ const assignPriorityToApplicantBasedOnRentalRules = (
   }
 
   //priority 2
-  //Hyresgäst har en bilplats, söker en till.
+
+  //Applicant has 1 active parking space contract and wishes to rent an additional parking space
   if (
     applicant.parkingSpaceContracts.length === 1 &&
     applicant.applicationType === 'Additional'
@@ -152,7 +166,8 @@ const assignPriorityToApplicantBasedOnRentalRules = (
     applicant.priority = 2
     return applicant
   }
-  //Hyresgäst med två/flera bilplatser, önskar byta mot annan
+
+  //Applicant has more than 1 active parking space contract and wishes to replace 1 parking space contract
   if (
     applicant.parkingSpaceContracts.length > 1 &&
     applicant.applicationType === 'Replace'
@@ -162,7 +177,8 @@ const assignPriorityToApplicantBasedOnRentalRules = (
   }
 
   //priority 3
-  //Hyresgäst med fler än två bilplatser söker en till
+
+  //Applicant has more 2 or more active parking space and wishes to rent an additional parking space
 
   applicant.priority = 3
   return applicant

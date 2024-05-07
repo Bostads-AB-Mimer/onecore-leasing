@@ -530,6 +530,8 @@ export const routes = (router: KoaRouter) => {
         }
       }
 
+      console.log(applicants)
+
       const applicantsSortedByRentalRules = sortApplicantsBasedOnRentalRules(
         listing,
         applicants
