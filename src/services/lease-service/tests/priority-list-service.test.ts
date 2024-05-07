@@ -555,9 +555,7 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
   it('applicant should get priority 2 if has active parking space contract and applicationType equals Additional', () => {
     const listing = ListingFactory.build()
 
-    const parkingSpaceContract = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const parkingSpaceContract = LeaseFactory.build()
 
     const applicant = ApplicantFactory.params({
       applicationType: 'Additional', //todo: add as enum
@@ -577,13 +575,9 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
   it('applicant should get priority 2 if has more than 1 active parking space contracts and applicationType equals Replace', () => {
     const listing = ListingFactory.build()
 
-    const parkingSpaceContract1 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const parkingSpaceContract1 = LeaseFactory.build()
 
-    const parkingSpaceContract2 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const parkingSpaceContract2 = LeaseFactory.build()
 
     const applicant = ApplicantFactory.params({
       applicationType: 'Replace', //todo: add as enum
@@ -678,9 +672,7 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
     //priority 1 applicant
     //active parking space contract and applicationType equals Replace
-    const applicant3ParkingSpaceContract = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const applicant3ParkingSpaceContract = LeaseFactory.build()
 
     const applicant3 = ApplicantFactory.params({
       applicationType: 'Replace', //todo: add as enum
@@ -692,9 +684,7 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
     //priority 2 applicant
     //active parking space contract and applicationType equals Additional
-    const applicant4ParkingSpaceContract = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const applicant4ParkingSpaceContract = LeaseFactory.build()
 
     const applicant4 = ApplicantFactory.params({
       applicationType: 'Additional', //todo: add as enum
@@ -706,13 +696,8 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
     //priority 2 applicant
     //more than 1 active parking space contracts and applicationType equals Replace
-    const applicant5ParkingSpaceContract1 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
-
-    const applicant5ParkingSpaceContract2 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const applicant5ParkingSpaceContract1 = LeaseFactory.build()
+    const applicant5ParkingSpaceContract2 = LeaseFactory.build()
 
     const applicant5 = ApplicantFactory.params({
       applicationType: 'Replace', //todo: add as enum
@@ -727,17 +712,9 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
     //priority 3 applicant
     //has more than 2 active parking space contracts applicationType equals Additional
-    const Applicant6parkingSpaceContract1 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
-
-    const Applicant6parkingSpaceContract2 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
-
-    const Applicant6parkingSpaceContract3 = LeaseFactory.params({
-      type: 'P-plats (intern)', //todo: use onecore-type translation
-    }).build()
+    const Applicant6parkingSpaceContract1 = LeaseFactory.build()
+    const Applicant6parkingSpaceContract2 = LeaseFactory.build()
+    const Applicant6parkingSpaceContract3 = LeaseFactory.build()
 
     const applicant6 = ApplicantFactory.params({
       applicationType: 'Additional', //todo: add as enum
@@ -780,11 +757,23 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
     expect(sortedApplicantsBasedOnRentalRules).toHaveLength(applicants.length)
 
-    expect(sortedApplicantsBasedOnRentalRules[0]).toEqual(applicant3) //priority 1 and highest queuePoints
-    expect(sortedApplicantsBasedOnRentalRules[1]).toEqual(applicant2) //priority 1 and second highest queuePoints
-    expect(sortedApplicantsBasedOnRentalRules[2]).toEqual(applicant1) //priority 1 and third highest queuePoints
-    expect(sortedApplicantsBasedOnRentalRules[3]).toEqual(applicant5) //priority 2 and fourth highest queuePoints
-    expect(sortedApplicantsBasedOnRentalRules[4]).toEqual(applicant4) //priority 2 and fifth highest queuePoints
-    expect(sortedApplicantsBasedOnRentalRules[5]).toEqual(applicant6) //priority 3 and lowest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[0].contactCode).toEqual(
+      applicant3.contactCode
+    ) //priority 1 and highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[1].contactCode).toEqual(
+      applicant2.contactCode
+    ) //priority 1 and second highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[2].contactCode).toEqual(
+      applicant1.contactCode
+    ) //priority 1 and third highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[3].contactCode).toEqual(
+      applicant5.contactCode
+    ) //priority 2 and fourth highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[4].contactCode).toEqual(
+      applicant4.contactCode
+    ) //priority 2 and fifth highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[5].contactCode).toEqual(
+      applicant6.contactCode
+    ) //priority 3 and lowest queuePoints
   })
 })
