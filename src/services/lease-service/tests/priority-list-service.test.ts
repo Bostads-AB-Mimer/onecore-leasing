@@ -190,12 +190,10 @@ describe('parseWaitingList', () => {
 
 describe('parseLeasesForHousingContract', () => {
   it('should return 1 housing contract if only 1 active housing contract', async () => {
-    //todo: remove redudant dates
     const terminatedHousingContract = LeaseFactory.params({
       type: leaseTypes.housingContract,
       leaseStartDate: new Date('2011-01-01T00:00:00.000Z'),
       noticeDate: new Date('2019-09-04T00:00:00.000Z'),
-      preferredMoveOutDate: new Date('2019-09-30T00:00:00.000Z'),
       contractDate: new Date('2010-12-28T00:00:00.000Z'),
       lastDebitDate: new Date('2019-09-30T00:00:00.000Z'),
       approvalDate: new Date('2010-12-28T00:00:00.000Z'),
@@ -238,8 +236,6 @@ describe('parseLeasesForHousingContract', () => {
   })
 
   it('should return 1 active housing contract and 1 upcoming housing contract', async () => {
-    //still active but soon to be terminated housing contract
-    //todo: this needs to updated to reproduce the bug
     const soonToBeTerminatedHousingContract = LeaseFactory.params({
       type: leaseTypes.housingContract,
       leaseStartDate: new Date('2022-02-01T00:00:00.000Z'),
@@ -516,7 +512,7 @@ describe('sortApplicantsBasedOnRentalRules', () => {
     }).build()
 
     //priority 1 applicant
-    //has no parking space contract and valid housing contract in same residential area as listing
+    //has no parking space contract and active housing contract in same residential area as listing
     const applicant1HousingContract = LeaseFactory.params({
       residentialArea: {
         code: 'XYZ',
@@ -657,13 +653,13 @@ describe('sortApplicantsBasedOnRentalRules', () => {
     ) //priority 3 and lowest queuePoints
   })
 
-  it('should handle priority 1 applicants with upcoming housing contracts', () => {
+  it('should handle priority 1 applicants with current and upcoming housing contracts', () => {
     const listing = ListingFactory.params({
       districtCode: 'XYZ',
     }).build()
 
     //priority 1 applicant
-    //has no parking space contract and valid housing contract in same residential area as listing
+    //has no parking space contract and active housing contract in same residential area as listing
     const applicant1HousingContract = LeaseFactory.params({
       residentialArea: {
         code: 'XYZ',
@@ -713,9 +709,9 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
     expect(sortedApplicantsBasedOnRentalRules[0].contactCode).toEqual(
       applicant1.contactCode
-    ) //priority 1 and highest queuePoints
+    )
     expect(sortedApplicantsBasedOnRentalRules[1].contactCode).toEqual(
       applicant2.contactCode
-    ) //priority 1 and second highest queuePoints
+    )
   })
 })
