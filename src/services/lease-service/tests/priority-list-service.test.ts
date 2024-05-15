@@ -245,7 +245,7 @@ describe('parseLeasesForHousingContract', () => {
       leaseStartDate: new Date('2022-02-01T00:00:00.000Z'),
       noticeGivenBy: 'G',
       noticeDate: thirtyDaysInThePastDate,
-      noticeTimeTenant: '3', //todo: redudant?
+      noticeTimeTenant: '3',
       preferredMoveOutDate: thirtyDaysInTheFutureDate,
       terminationDate: thirtyDaysInTheFutureDate,
       contractDate: new Date('2021-09-08T00:00:00.000Z'),
@@ -284,6 +284,29 @@ describe('parseLeasesForHousingContract', () => {
     expect(result).toBeDefined()
     if (result) {
       expect(result[0]).toBeDefined()
+      expect(result[1]).toBeDefined()
+    }
+  })
+
+  it('should return empty active housing contract and 1 upcoming housing contract', async () => {
+    const upcomingHousingContract = LeaseFactory.params({
+      type: leaseTypes.housingContract,
+      leaseStartDate: thirtyDaysInTheFutureDate,
+      contractDate: new Date('2024-03-11T00:00:00.000Z'),
+      approvalDate: new Date('2024-03-11T00:00:00.000Z'),
+      status: LeaseStatus.Upcoming,
+    }).build()
+
+    const leases = [upcomingHousingContract]
+
+    const filteredLeases: Lease[] = leases.filter(isLeaseActiveOrUpcoming)
+    const result = parseLeasesForHousingContracts(filteredLeases)
+
+    expect(filteredLeases).toHaveLength(1)
+
+    expect(result).toBeDefined()
+    if (result) {
+      expect(result[0]).toBeUndefined()
       expect(result[1]).toBeDefined()
     }
   })
@@ -487,7 +510,7 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
 })
 
 describe('sortApplicantsBasedOnRentalRules', () => {
-  it('should short applicants in expected order based on rental rules', () => {
+  it('should sort applicants in expected order based on rental rules', () => {
     const listing = ListingFactory.params({
       districtCode: 'XYZ',
     }).build()
@@ -632,5 +655,67 @@ describe('sortApplicantsBasedOnRentalRules', () => {
     expect(sortedApplicantsBasedOnRentalRules[5].contactCode).toEqual(
       applicant6.contactCode
     ) //priority 3 and lowest queuePoints
+  })
+
+  it('should handle priority 1 applicants with upcoming housing contracts', () => {
+    const listing = ListingFactory.params({
+      districtCode: 'XYZ',
+    }).build()
+
+    //priority 1 applicant
+    //has no parking space contract and valid housing contract in same residential area as listing
+    const applicant1HousingContract = LeaseFactory.params({
+      residentialArea: {
+        code: 'XYZ',
+      },
+    }).build()
+
+    const applicant1 = ApplicantFactory.params({
+      currentHousingContract: applicant1HousingContract,
+      listingId: listing.id,
+      queuePoints: 20,
+    }).build()
+
+    //priority 1 applicant
+    //has no parking space contract and upcoming housing contract in same residential area as listing
+    const applicant2UpcomingHousingContract = LeaseFactory.params({
+      type: leaseTypes.housingContract,
+      leaseStartDate: thirtyDaysInTheFutureDate,
+      contractDate: new Date('2024-03-11T00:00:00.000Z'),
+      approvalDate: new Date('2024-03-11T00:00:00.000Z'),
+      status: LeaseStatus.Upcoming,
+      residentialArea: {
+        code: 'XYZ',
+      },
+    }).build()
+
+    const applicant2 = ApplicantFactory.params({
+      upcomingHousingContract: applicant2UpcomingHousingContract,
+      listingId: listing.id,
+      queuePoints: 10,
+    }).build()
+
+    const applicants = [applicant1, applicant2]
+
+    const applicantsWithPriority = addPriorityToApplicantsBasedOnRentalRules(
+      listing,
+      applicants
+    )
+    expect(
+      applicantsWithPriority.filter((applicant) => applicant.priority === 1)
+    ).toHaveLength(2)
+
+    const sortedApplicantsBasedOnRentalRules = sortApplicantsBasedOnRentalRules(
+      applicantsWithPriority
+    )
+
+    expect(sortedApplicantsBasedOnRentalRules).toHaveLength(applicants.length)
+
+    expect(sortedApplicantsBasedOnRentalRules[0].contactCode).toEqual(
+      applicant1.contactCode
+    ) //priority 1 and highest queuePoints
+    expect(sortedApplicantsBasedOnRentalRules[1].contactCode).toEqual(
+      applicant2.contactCode
+    ) //priority 1 and second highest queuePoints
   })
 })
