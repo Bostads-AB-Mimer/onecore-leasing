@@ -127,24 +127,21 @@ export const routes = (router: KoaRouter) => {
   /**
    * Gets a person by national registration number.
    */
-  router.get(
-    '(.*)/contact/nationalRegistrationNumber/:pnr',
-    async (ctx: any) => {
-      const responseData = await getContactByNationalRegistrationNumber(
-        ctx.params.pnr,
-        ctx.query.includeTerminatedLeases
-      )
+  router.get('(.*)/contact/nationalRegistrationNumber/:pnr', async (ctx) => {
+    const responseData = await getContactByNationalRegistrationNumber(
+      ctx.params.pnr,
+      ctx.query.includeTerminatedLeases
+    )
 
-      ctx.body = {
-        data: responseData,
-      }
+    ctx.body = {
+      data: responseData,
     }
-  )
+  })
 
   /**
    * Gets a person by contact code.
    */
-  router.get('(.*)/contact/contactCode/:contactCode', async (ctx: any) => {
+  router.get('(.*)/contact/contactCode/:contactCode', async (ctx) => {
     const responseData = await getContactByContactCode(
       ctx.params.contactCode,
       ctx.query.includeTerminatedLeases
@@ -158,7 +155,7 @@ export const routes = (router: KoaRouter) => {
   /**
    * Gets a person by phone number.
    */
-  router.get('(.*)/contact/phoneNumber/:phoneNumber', async (ctx: any) => {
+  router.get('(.*)/contact/phoneNumber/:phoneNumber', async (ctx) => {
     const responseData = await getContactForPhoneNumber(
       ctx.params.phoneNumber
       //ctx.query.includeTerminatedLeases /TODO: Implement this?
@@ -172,25 +169,20 @@ export const routes = (router: KoaRouter) => {
   /**
    * Gets all invoices for a contact, filtered on paid and unpaid.
    */
-  router.get(
-    '(.*)/contact/invoices/contactCode/:contactCode',
-    async (ctx: any) => {
-      const responseData = await getInvoicesByContactCode(
-        ctx.params.contactCode
-      )
+  router.get('(.*)/contact/invoices/contactCode/:contactCode', async (ctx) => {
+    const responseData = await getInvoicesByContactCode(ctx.params.contactCode)
 
-      ctx.body = {
-        data: responseData,
-      }
+    ctx.body = {
+      data: responseData,
     }
-  )
+  })
 
   /**
    * Gets the detailed status of a persons unpaid invoices.
    */
   router.get(
     '(.*)/contact/unpaidInvoices/contactCode/:contactCode',
-    async (ctx: any) => {
+    async (ctx) => {
       const responseData = await getUnpaidInvoicesByContactCode(
         ctx.params.contactCode
       )
@@ -451,7 +443,7 @@ export const routes = (router: KoaRouter) => {
    */
   router.get(
     '(.*)/contact/waitingList/:nationalRegistrationNumber',
-    async (ctx: any) => {
+    async (ctx) => {
       try {
         const responseData = await getWaitingList(
           ctx.params.nationalRegistrationNumber
@@ -477,7 +469,7 @@ export const routes = (router: KoaRouter) => {
    */
   router.post(
     '(.*)/contact/waitingList/:nationalRegistrationNumber',
-    async (ctx: any) => {
+    async (ctx) => {
       const request = <CreateWaitingListRequest>ctx.request.body
       try {
         await addApplicantToToWaitingList(
