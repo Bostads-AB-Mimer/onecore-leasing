@@ -1,14 +1,7 @@
-import knex from 'knex'
 import { Applicant } from 'onecore-types'
+import { db } from './db'
 
-import Config from '../../../common/config'
 import * as dbUtils from './utils'
-
-// TODO: Don't use a separate db connection
-const db = knex({
-  client: 'mssql',
-  connection: Config.leasingDatabase,
-})
 
 // TODO: Move to onecore-types
 export enum OfferStatus {

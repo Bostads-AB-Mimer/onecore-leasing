@@ -1,12 +1,5 @@
 import { Applicant, Listing, ApplicantStatus } from 'onecore-types'
-
-import knex from 'knex'
-import Config from '../../../common/config'
-
-const db = knex({
-  client: 'mssql',
-  connection: Config.leasingDatabase,
-})
+import { db } from './db'
 
 function transformFromDbListing(row: any): Listing {
   // TODO: Listing has some properties T | undefined.
