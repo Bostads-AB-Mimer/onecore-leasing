@@ -23,17 +23,21 @@ describe('offers', () => {
 
     it('responds with 400 if request params are invalid', async () => {
       const payload = {
-        status: OfferStatus.Active,
+        status: 'foo',
         listingId: 1,
         applicantId: 1,
+        selectedApplicants: [],
+        expiresAt: new Date().toISOString(),
       }
 
       const res = await request(app.callback()).post('/offer').send(payload)
 
       expect(res.status).toBe(400)
       expect(res.body.data).toEqual([
-        { message: 'Invalid date', path: ['expiresAt'] },
-        { message: 'Required', path: ['selectedApplicants'] },
+        {
+          message: "Invalid enum value. Expected 1 | 2 | 3 | 4, received 'foo'",
+          path: ['status'],
+        },
       ])
     })
 
