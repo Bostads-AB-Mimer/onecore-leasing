@@ -11,7 +11,7 @@ const db = knex({
 })
 
 // TODO: Move to onecore-types
-enum OfferStatus {
+export enum OfferStatus {
   Active,
   Accepted,
   Declined,
@@ -32,26 +32,19 @@ type Offer = {
 
 type DbOffer = dbUtils.CamelToPascalObject<Offer>
 
-type AdapterContext = { log: any }
-
 type CreateOfferParams = Omit<Offer, 'id' | 'sentAt' | 'answeredAt'>
 
-export async function create(ctx: AdapterContext, params: CreateOfferParams) {
-  try {
-    const result = await db<DbOffer>('offer')
-      .insert(dbUtils.camelToPascal(params))
-      .returning('*')
-      .first()
+export async function create(params: CreateOfferParams) {
+  const result = await db<DbOffer>('offer')
+    .insert(dbUtils.camelToPascal(params))
+    .returning('*')
+    .first()
 
-    if (!result) {
-      throw new Error('Unexpected error')
-    }
-
-    return transformFromDbOffer(result)
-  } catch (err) {
-    ctx.log.push('Error inserting offer', err)
-    throw err
+  if (!result) {
+    throw new Error('Unexpected error')
   }
+
+  return transformFromDbOffer(result)
 }
 
 const transformFromDbOffer = (v: DbOffer): Offer => dbUtils.pascalToCamel(v)

@@ -11,6 +11,7 @@ export const parseRequestBody =
     const parseResult = schema.safeParse(ctx.request.body)
     if (!parseResult.success) {
       ctx.status = 400
+      // TODO: Use error response type for this
       ctx.body = {
         status: 'error',
         data: parseResult.error.issues.map(({ message, path }) => ({

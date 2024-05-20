@@ -1,4 +1,6 @@
 import KoaRouter from '@koa/router'
+import { Applicant, ApplicantStatus, Listing } from 'onecore-types'
+import { z } from 'zod'
 
 import {
   getContactByContactCode,
@@ -36,7 +38,9 @@ import {
   getDetailedApplicantInformation,
   sortApplicantsBasedOnRentalRules,
 } from './priority-list-service'
-import { Applicant, ApplicantStatus, Listing } from 'onecore-types'
+
+import * as offerAdapter from './adapters/offer-adapter'
+import { parseRequestBody } from '../../middlewares/parse-request-body'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -532,4 +536,31 @@ export const routes = (router: KoaRouter) => {
       }
     }
   })
+
+  const createOfferRequestParams = z.object({
+    expiresAt: z.coerce.date(),
+    status: z.nativeEnum(offerAdapter.OfferStatus),
+    selectionSnapshot: z.any().array(),
+    listingId: z.coerce.number(),
+    applicantId: z.coerce.number(),
+  })
+
+  // TODO: Use response type
+  const createSuccessResponse = (data: unknown) => ({ data })
+
+  router.post(
+    '(.*)/offer',
+    parseRequestBody(createOfferRequestParams),
+    async (ctx) => {
+      try {
+        const offer = await offerAdapter.create(ctx.request.body)
+
+        ctx.status = 201
+        ctx.body = createSuccessResponse(offer)
+      } catch (err) {
+        console.log('Error creating offer: ', JSON.stringify(err, null, 2))
+        ctx.status = 500
+      }
+    }
+  )
 }
