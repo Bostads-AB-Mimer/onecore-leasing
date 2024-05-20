@@ -6,6 +6,7 @@ import bodyParser from 'koa-bodyparser'
 import { routes } from '../offers'
 import * as offerAdapter from '../adapters/offer-adapter'
 import { OfferFactory } from './factory'
+import { OfferStatus } from 'onecore-types'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -22,9 +23,9 @@ describe('offers', () => {
 
     it('responds with 400 if request params are invalid', async () => {
       const payload = {
-        status: offerAdapter.OfferStatus.Active,
+        status: OfferStatus.Active,
         listingId: 1,
-        offeredApplicant: 1,
+        applicantId: 1,
       }
 
       const res = await request(app.callback()).post('/offer').send(payload)
@@ -41,9 +42,9 @@ describe('offers', () => {
       jest.spyOn(offerAdapter, 'create').mockResolvedValueOnce(offer)
 
       const payload = {
-        status: offerAdapter.OfferStatus.Active,
+        status: OfferStatus.Active,
         listingId: 1,
-        offeredApplicant: 1,
+        applicantId: 1,
         selectedApplicants: [],
         expiresAt: new Date().toISOString(),
       }

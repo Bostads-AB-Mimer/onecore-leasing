@@ -2,7 +2,7 @@ import { ExtendableContext, Next } from 'koa'
 import { z, ZodSchema } from 'zod'
 
 type ContextWithParsedRequestBody<T extends ZodSchema> = ExtendableContext & {
-  request: Request & { body: z.infer<T> }
+  request: { body: z.infer<T> }
 }
 
 export const parseRequestBody =

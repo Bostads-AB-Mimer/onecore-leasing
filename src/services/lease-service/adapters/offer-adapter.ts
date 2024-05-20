@@ -1,27 +1,8 @@
-import { Applicant } from 'onecore-types'
+import { Offer, OfferStatus } from 'onecore-types'
 import { db } from './db'
+import { DbApplicant } from './types'
 
 import * as dbUtils from './utils'
-
-// TODO: Move to onecore-types
-export enum OfferStatus {
-  Active,
-  Accepted,
-  Declined,
-  Expired,
-}
-
-// TODO: Move to onecore-types
-export type Offer = {
-  id: number
-  sentAt: Date | null
-  expiresAt: Date
-  answeredAt: Date | null
-  selectedApplicants: Array<Applicant>
-  status: OfferStatus
-  listingId: number
-  offeredApplicant: number
-}
 
 type DbOffer = {
   Id: number
@@ -34,38 +15,53 @@ type DbOffer = {
   ApplicantId: number
 }
 
-type CreateOfferParams = Omit<Offer, 'id' | 'sentAt' | 'answeredAt'>
+type CreateOfferParams = Omit<
+  Offer,
+  'id' | 'sentAt' | 'answeredAt' | 'offeredApplicant'
+> & { applicantId: number }
 
 export async function create(params: CreateOfferParams) {
-  const { selectedApplicants, offeredApplicant: applicantId, ...rest } = params
+  const { selectedApplicants, ...rest } = params
   const values = {
     ...rest,
-    applicantId,
     selectionSnapshot: JSON.stringify(selectedApplicants),
   }
 
-  const result = await db<DbOffer>('offer')
-    .insert(dbUtils.camelToPascal(values))
-    .returning('*')
-    .first()
+  const [offer, applicant] = await db.transaction(async (trx) => {
+    const offer = await trx<DbOffer>('offer')
+      .insert(dbUtils.camelToPascal(values))
+      .returning('*')
+      .first()
 
-  if (!result) {
-    throw new Error('Unexpected error')
-  }
+    if (!offer) {
+      throw new Error('Unexpected missing offer')
+    }
 
-  return transformFromDbOffer(result)
+    const applicant = await trx<DbApplicant>('applicant')
+      .select('*')
+      .where('Id', offer.Id)
+      .first()
+
+    if (!applicant) {
+      throw new Error('Unexpected missing applicant')
+    }
+
+    return [offer, applicant]
+  })
+
+  return transformFromDbOffer(offer, applicant)
 }
 
-const transformFromDbOffer = (v: DbOffer): Offer => {
+const transformFromDbOffer = (o: DbOffer, a: DbApplicant): Offer => {
   const {
     selectionSnapshot: selectedApplicants,
-    applicantId: offeredApplicant,
+    applicantId: _applicantId,
     ...offer
-  } = dbUtils.pascalToCamel(v)
+  } = dbUtils.pascalToCamel(o)
 
   return {
     ...offer,
     selectedApplicants: JSON.parse(selectedApplicants),
-    offeredApplicant,
+    offeredApplicant: dbUtils.pascalToCamel(a),
   }
 }

@@ -1,4 +1,5 @@
 import KoaRouter from '@koa/router'
+import { OfferStatus } from 'onecore-types'
 import { z } from 'zod'
 
 import * as offerAdapter from './adapters/offer-adapter'
@@ -7,10 +8,10 @@ import { parseRequestBody } from '../../middlewares/parse-request-body'
 export const routes = (router: KoaRouter) => {
   const createOfferRequestParams = z.object({
     expiresAt: z.coerce.date(),
-    status: z.nativeEnum(offerAdapter.OfferStatus),
+    status: z.nativeEnum(OfferStatus),
     selectedApplicants: z.any().array(),
     listingId: z.coerce.number(),
-    offeredApplicant: z.coerce.number(),
+    applicantId: z.number(),
   })
 
   // TODO: Use response type
