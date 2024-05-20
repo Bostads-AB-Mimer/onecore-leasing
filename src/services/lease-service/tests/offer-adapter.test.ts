@@ -35,7 +35,7 @@ jest.mock('knex', () => () => ({
 }))
 
 describe(offerAdapter.create, () => {
-  it('returns a formatted list of listings and corresponding applicants', async () => {
+  it('creates and returns an offer', async () => {
     const result = await offerAdapter.create({
       expiresAt: new Date(),
       listingId: 1,
