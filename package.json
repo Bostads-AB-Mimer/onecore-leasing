@@ -16,7 +16,8 @@
     "migrate:make": "knex migrate:make",
     "migrate:up": "knex migrate:latest --env dev",
     "migrate:down": "knex migrate:down --env dev",
-    "seed": "knex seed:run --env dev"
+    "seed": "knex seed:run --env dev",
+    "ts:watch": "tsc --watch --noEmit"
   },
   "author": "",
   "license": "MIT",
