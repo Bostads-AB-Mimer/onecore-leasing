@@ -1,19 +1,8 @@
-import { Offer, OfferStatus } from 'onecore-types'
+import { Offer } from 'onecore-types'
 import { db } from './db'
-import { DbApplicant } from './types'
+import { DbApplicant, DbOffer } from './types'
 
 import * as dbUtils from './utils'
-
-type DbOffer = {
-  Id: number
-  SentAt: Date | null
-  ExpiresAt: Date
-  AnsweredAt: Date | null
-  SelectionSnapshot: string
-  Status: OfferStatus
-  ListingId: number
-  ApplicantId: number
-}
 
 type CreateOfferParams = Omit<
   Offer,
