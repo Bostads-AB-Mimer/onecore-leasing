@@ -12,7 +12,7 @@ export enum OfferStatus {
 }
 
 // TODO: Move to onecore-types
-type Offer = {
+export type Offer = {
   id: number
   sentAt: Date | null
   expiresAt: Date

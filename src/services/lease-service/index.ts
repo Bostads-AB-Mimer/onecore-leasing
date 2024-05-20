@@ -38,6 +38,8 @@ import {
   sortApplicantsBasedOnRentalRules,
 } from './priority-list-service'
 
+import { routes as offerRoutes } from './offers'
+
 interface CreateLeaseRequest {
   parkingSpaceId: string
   contactCode: string
@@ -51,6 +53,7 @@ interface CreateWaitingListRequest {
 }
 
 export const routes = (router: KoaRouter) => {
+  offerRoutes(router)
   /**
    * Returns leases for a national registration number with populated sub objects
    */
