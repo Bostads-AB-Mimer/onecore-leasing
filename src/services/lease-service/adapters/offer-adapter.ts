@@ -28,7 +28,7 @@ type DbOffer = {
   SentAt: Date | null
   ExpiresAt: Date
   AnsweredAt: Date | null
-  SelectionSnapshot: Array<Applicant>
+  SelectionSnapshot: string
   Status: OfferStatus
   ListingId: number
   ApplicantId: number
@@ -37,8 +37,15 @@ type DbOffer = {
 type CreateOfferParams = Omit<Offer, 'id' | 'sentAt' | 'answeredAt'>
 
 export async function create(params: CreateOfferParams) {
+  const { selectedApplicants, offeredApplicant: applicantId, ...rest } = params
+  const values = {
+    ...rest,
+    applicantId,
+    selectionSnapshot: JSON.stringify(selectedApplicants),
+  }
+
   const result = await db<DbOffer>('offer')
-    .insert(dbUtils.camelToPascal(params))
+    .insert(dbUtils.camelToPascal(values))
     .returning('*')
     .first()
 
@@ -56,5 +63,9 @@ const transformFromDbOffer = (v: DbOffer): Offer => {
     ...offer
   } = dbUtils.pascalToCamel(v)
 
-  return { ...offer, selectedApplicants, offeredApplicant }
+  return {
+    ...offer,
+    selectedApplicants: JSON.parse(selectedApplicants),
+    offeredApplicant,
+  }
 }
