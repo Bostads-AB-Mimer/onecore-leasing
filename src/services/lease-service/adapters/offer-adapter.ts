@@ -17,13 +17,22 @@ type Offer = {
   sentAt: Date | null
   expiresAt: Date
   answeredAt: Date | null
-  selectionSnapshot: Applicant[]
+  selectedApplicants: Array<Applicant>
   status: OfferStatus
   listingId: number
-  applicantId: number
+  offeredApplicant: number
 }
 
-type DbOffer = dbUtils.CamelToPascalObject<Offer>
+type DbOffer = {
+  Id: number
+  SentAt: Date | null
+  ExpiresAt: Date
+  AnsweredAt: Date | null
+  SelectionSnapshot: Array<Applicant>
+  Status: OfferStatus
+  ListingId: number
+  ApplicantId: number
+}
 
 type CreateOfferParams = Omit<Offer, 'id' | 'sentAt' | 'answeredAt'>
 
@@ -40,4 +49,12 @@ export async function create(params: CreateOfferParams) {
   return transformFromDbOffer(result)
 }
 
-const transformFromDbOffer = (v: DbOffer): Offer => dbUtils.pascalToCamel(v)
+const transformFromDbOffer = (v: DbOffer): Offer => {
+  const {
+    selectionSnapshot: selectedApplicants,
+    applicantId: offeredApplicant,
+    ...offer
+  } = dbUtils.pascalToCamel(v)
+
+  return { ...offer, selectedApplicants, offeredApplicant }
+}
