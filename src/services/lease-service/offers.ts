@@ -8,9 +8,9 @@ export const routes = (router: KoaRouter) => {
   const createOfferRequestParams = z.object({
     expiresAt: z.coerce.date(),
     status: z.nativeEnum(offerAdapter.OfferStatus),
-    selectionSnapshot: z.any().array(),
+    selectedApplicants: z.any().array(),
     listingId: z.coerce.number(),
-    applicantId: z.coerce.number(),
+    offeredApplicant: z.coerce.number(),
   })
 
   // TODO: Use response type
