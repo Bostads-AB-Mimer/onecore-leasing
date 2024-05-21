@@ -2,11 +2,11 @@ import request from 'supertest'
 import Koa from 'koa'
 import KoaRouter from '@koa/router'
 import bodyParser from 'koa-bodyparser'
+import { OfferStatus } from 'onecore-types'
 
 import { routes } from '../offers'
 import * as offerAdapter from '../adapters/offer-adapter'
 import { OfferFactory } from './factory'
-import { OfferStatus } from 'onecore-types'
 
 const app = new Koa()
 const router = new KoaRouter()
