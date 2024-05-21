@@ -27,7 +27,7 @@ export const routes = (router: KoaRouter) => {
         ctx.status = 201
         ctx.body = createSuccessResponse(offer)
       } catch (err) {
-        console.log('Error creating offer: ', JSON.stringify(err, null, 2))
+        console.log('Error creating offer: ', err)
         ctx.status = 500
       }
     }

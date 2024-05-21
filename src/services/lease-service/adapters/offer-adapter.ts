@@ -1,4 +1,5 @@
 import { Offer } from 'onecore-types'
+
 import { db } from './db'
 import { DbApplicant, DbOffer } from './types'
 
