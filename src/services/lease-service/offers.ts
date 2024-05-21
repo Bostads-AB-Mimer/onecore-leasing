@@ -14,9 +14,6 @@ export const routes = (router: KoaRouter) => {
     applicantId: z.number(),
   })
 
-  // TODO: Use response type
-  const createSuccessResponse = (data: unknown) => ({ data })
-
   router.post(
     '(.*)/offer',
     parseRequestBody(createOfferRequestParams),
@@ -25,7 +22,7 @@ export const routes = (router: KoaRouter) => {
         const offer = await offerAdapter.create(ctx.request.body)
 
         ctx.status = 201
-        ctx.body = createSuccessResponse(offer)
+        ctx.body = { data: offer }
       } catch (err) {
         console.log('Error creating offer: ', err)
         ctx.status = 500
