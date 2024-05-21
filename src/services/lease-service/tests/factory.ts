@@ -95,6 +95,7 @@ const OfferFactory = Factory.define<Offer>(({ sequence }) => ({
   selectedApplicants: [],
   sentAt: null,
   status: OfferStatus.Active,
+  createdAt: new Date(),
 }))
 
 export { LeaseFactory, ApplicantFactory, ListingFactory, OfferFactory }
