@@ -89,7 +89,7 @@ const ListingFactory = Factory.define<Listing>(({ sequence }) => ({
 const OfferFactory = Factory.define<Offer>(({ sequence }) => ({
   answeredAt: null,
   expiresAt: new Date(),
-  id: sequence + 1,
+  id: sequence,
   listingId: 1,
   offeredApplicant: ApplicantFactory.build(),
   selectedApplicants: [],
