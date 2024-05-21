@@ -16,27 +16,18 @@ export async function create(params: CreateOfferParams) {
     selectionSnapshot: JSON.stringify(selectedApplicants),
   }
 
-  const [offer, applicant] = await db.transaction(async (trx) => {
-    const offer = await trx<DbOffer>('offer')
-      .insert(dbUtils.camelToPascal(values))
-      .returning('*')
-      .first()
+  const applicant = await db<DbApplicant>('applicant')
+    .select('*')
+    .where('Id', params.applicantId)
+    .first()
 
-    if (!offer) {
-      throw new Error('Unexpected missing offer')
-    }
+  if (!applicant) {
+    throw new Error('applicant not found')
+  }
 
-    const applicant = await trx<DbApplicant>('applicant')
-      .select('*')
-      .where('Id', offer.Id)
-      .first()
-
-    if (!applicant) {
-      throw new Error('Unexpected missing applicant')
-    }
-
-    return [offer, applicant]
-  })
+  const [offer] = await db<DbOffer>('offer')
+    .insert(dbUtils.camelToPascal(values))
+    .returning('*')
 
   return transformFromDbOffer(offer, applicant)
 }
