@@ -43,7 +43,12 @@ import {
   getDetailedApplicantInformation,
   sortApplicantsBasedOnRentalRules,
 } from './priority-list-service'
-import { Applicant, ApplicantStatus, Listing } from 'onecore-types'
+import {
+  Applicant,
+  ApplicantStatus,
+  DetailedApplicant,
+  Listing,
+} from 'onecore-types'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -521,7 +526,7 @@ export const routes = (router: KoaRouter) => {
         return
       }
 
-      const applicants: any = []
+      const applicants: DetailedApplicant[] = []
 
       if (listing.applicants) {
         for (const applicant of listing.applicants) {

@@ -1,5 +1,11 @@
 import { Factory } from 'fishery'
-import { Lease, LeaseStatus, Listing, ListingStatus } from 'onecore-types'
+import {
+  DetailedApplicant,
+  Lease,
+  LeaseStatus,
+  Listing,
+  ListingStatus,
+} from 'onecore-types'
 import { leaseTypes } from '../../../constants/leaseTypes'
 
 const LeaseFactory = Factory.define<Lease>(({ sequence }) => ({
@@ -34,16 +40,16 @@ const LeaseFactory = Factory.define<Lease>(({ sequence }) => ({
   },
 }))
 
-//todo: use properly defined interface
-const ApplicantFactory = Factory.define<any, { currentHousingContract: Lease }>(
-  ({ sequence, params }) => ({
-    id: `${sequence}`,
+const DetailedApplicantFactory = Factory.define<DetailedApplicant>(
+  ({ sequence }) => ({
+    id: sequence,
     name: 'Test Testsson',
+    nationalRegistrationNumber: '199404084924',
     contactCode: `P${158769 + sequence}`,
-    applicationDate: new Date().toISOString(),
+    applicationDate: new Date(),
     applicationType: 'Additional',
     status: 1,
-    listingId: `${sequence}`,
+    listingId: sequence, //maybe keep as undefined?
     queuePoints: 10,
     address: {
       street: 'Aromas väg 8B',
@@ -51,15 +57,15 @@ const ApplicantFactory = Factory.define<any, { currentHousingContract: Lease }>(
       postalCode: '73439',
       city: 'Hallstahammar',
     },
-    currentHousingContract: params.currentHousingContract,
-    upcomingHousingContract: params.upcomingHousingContract,
+    currentHousingContract: undefined,
+    upcomingHousingContract: undefined,
     parkingSpaceContracts: [],
-    priority: 0,
+    priority: undefined,
   })
 )
 
 const ListingFactory = Factory.define<Listing>(({ sequence }) => ({
-  id: sequence + 1,
+  id: sequence,
   rentalObjectCode: `R${sequence + 1000}`,
   address: 'Sample Address',
   monthlyRent: 1000,
@@ -79,4 +85,4 @@ const ListingFactory = Factory.define<Listing>(({ sequence }) => ({
   applicants: [],
 }))
 
-export { LeaseFactory, ApplicantFactory, ListingFactory }
+export { LeaseFactory, DetailedApplicantFactory, ListingFactory }
