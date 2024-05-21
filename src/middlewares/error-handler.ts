@@ -5,7 +5,6 @@ export default function errorHandler() {
     try {
       await next()
     } catch (err) {
-      console.log('***************HELLO*')
       ctx.status = 500
       let errorMessage = 'Unknown error'
 
