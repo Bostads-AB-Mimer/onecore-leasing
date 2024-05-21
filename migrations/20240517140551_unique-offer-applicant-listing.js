@@ -3,7 +3,9 @@
  * @returns { Promise<void> }
  */
 exports.up = function (knex) {
-  knex.schema.table('offer', (t) => t.unique(['ListingId', 'ApplicantId']))
+  return knex.schema.table('offer', (t) =>
+    t.unique(['ListingId', 'ApplicantId'])
+  )
 }
 
 /**
@@ -11,5 +13,7 @@ exports.up = function (knex) {
  * @returns { Promise<void> }
  */
 exports.down = function (knex) {
-  knex.schema.table('offer', (t) => t.dropUnique(['ListingId', 'ApplicantId']))
+  return knex.schema.table('offer', (t) =>
+    t.dropUnique(['ListingId', 'ApplicantId'])
+  )
 }
