@@ -259,25 +259,6 @@ const getApplicantsByContactCodeAndRentalObjectCode = async (
 }
 
 /**
- * Gets an applicant by listing id
- *
- * @param {number} listingId - The ID of the listing the applicant belongs to.
- * @returns {Promise<Applicant[] | []> } - Returns a list of applicants or empty list if not found.
- */
-// TODO: Remove if unused..?
-const getApplicantByListingId = async (listingId: number) => {
-  const dbApplicants = await db('Applicant')
-    .where('ListingId', listingId)
-    .select('*')
-  const transformedApplicants: Applicant[] = []
-  for (const applicant of dbApplicants) {
-    transformedApplicants.push(transformDbApplicant(applicant))
-  }
-
-  return transformedApplicants
-}
-
-/**
  * Checks if an applicant has a applied for a listing
  *
  * @param {string} contactCode - The applicants contact code.
