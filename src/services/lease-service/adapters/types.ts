@@ -9,6 +9,7 @@ export type DbOffer = {
   Status: OfferStatus
   ListingId: number
   ApplicantId: number
+  CreatedAt: Date
 }
 
 export type DbApplicant = {
