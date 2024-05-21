@@ -7,7 +7,7 @@ import * as dbUtils from './utils'
 
 type CreateOfferParams = Omit<
   Offer,
-  'id' | 'sentAt' | 'answeredAt' | 'offeredApplicant'
+  'id' | 'sentAt' | 'answeredAt' | 'offeredApplicant' | 'createdAt'
 > & { applicantId: number }
 
 export async function create(params: CreateOfferParams) {
