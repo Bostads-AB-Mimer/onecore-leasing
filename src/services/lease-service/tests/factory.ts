@@ -5,6 +5,8 @@ import {
   LeaseStatus,
   Listing,
   ListingStatus,
+  Offer,
+  OfferStatus,
 } from 'onecore-types'
 import { leaseTypes } from '../../../constants/leaseTypes'
 
@@ -85,4 +87,16 @@ const ListingFactory = Factory.define<Listing>(({ sequence }) => ({
   applicants: [],
 }))
 
-export { LeaseFactory, DetailedApplicantFactory, ListingFactory }
+const OfferFactory = Factory.define<Offer>(({ sequence }) => ({
+  answeredAt: null,
+  expiresAt: new Date(),
+  id: sequence,
+  listingId: 1,
+  offeredApplicant: DetailedApplicantFactory.build(),
+  selectedApplicants: [],
+  sentAt: null,
+  status: OfferStatus.Active,
+  createdAt: new Date(),
+}))
+
+export { LeaseFactory, DetailedApplicantFactory, ListingFactory, OfferFactory }
