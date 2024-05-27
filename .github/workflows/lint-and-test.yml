@@ -18,3 +18,7 @@ jobs:
         run: npm ci
       - name: Run tests
         run: npm run test:ci
+      - name: Run linting
+        run: npm run lint
+      - name: Check TS
+        run: npm run ts:ci
