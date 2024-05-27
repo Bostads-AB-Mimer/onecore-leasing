@@ -1,4 +1,4 @@
-name: Run Tests
+name: Test, lint and check TS
 
 on:
   pull_request:
