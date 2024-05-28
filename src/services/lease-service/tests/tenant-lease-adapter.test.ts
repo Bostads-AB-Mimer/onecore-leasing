@@ -5,6 +5,7 @@ jest.mock('knex', () => () => ({
   select: jest.fn().mockReturnThis(),
   from: jest.fn().mockReturnThis(),
   innerJoin: jest.fn().mockReturnThis(),
+  leftJoin: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
   then: jest
