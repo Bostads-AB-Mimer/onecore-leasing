@@ -44,6 +44,7 @@ import {
 } from './priority-list-service'
 
 import { routes as offerRoutes } from './offers'
+import { isListingInAreaWithSpecificRentalRules } from './rental-rules-validator'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -523,6 +524,16 @@ export const routes = (router: KoaRouter) => {
         }
       }
 
+      //todo: apply rental rules first
+      /*if (isListingInAreaWithSpecificRentalRules(listing)) {
+        applicants = validateAndUpdateApplicantBasedOnRentalRules(
+          listing,
+          applicants
+        )
+      }*/
+
+      //todo: addPriorityToApplicantsBasedOnRentalRules should not add priority to rejected applicants
+      //todo: rename, something with "generic"?
       const applicantsWithPriority = addPriorityToApplicantsBasedOnRentalRules(
         listing,
         applicants
@@ -540,3 +551,5 @@ export const routes = (router: KoaRouter) => {
     }
   })
 }
+
+//todo: expose validateThatApplicantsIsEligableForParkingSpaceInArea as an endpoint
