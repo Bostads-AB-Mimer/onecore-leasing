@@ -7,7 +7,7 @@ import {
   isListingInAreaWithSpecificRentalRules,
   isHousingContractsOfApplicantInSameAreaAsListing,
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
-} from '../rental-rules-validator'
+} from '../residential-area-rental-rules-validator'
 
 describe('isListingInAreaWithSpecificRentalRules', () => {
   it('shouldReturnFalseIfListingIsInAreaWithSpecificRentalRules', async () => {
@@ -120,8 +120,8 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
     })
 
     const result = doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
-      detailedApplicant,
-      ListingFactory.build()
+      ListingFactory.build(),
+      detailedApplicant
     )
 
     expect(result).toBeFalsy()
@@ -137,8 +137,8 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
     })
 
     const result = doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
-      detailedApplicant,
-      listing
+      listing,
+      detailedApplicant
     )
 
     expect(result).toBeFalsy()
@@ -155,10 +155,20 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
     })
 
     const result = doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
-      detailedApplicant,
-      listing
+      listing,
+      detailedApplicant
     )
 
     expect(result).toBeTruthy()
   })
 })
+
+/*describe('canApplicantApplyForParkingSpaceInAreaWithSpecificRentalRules', () => {
+  it('shouldReturnFalseIfHousingContractAreaDoesNotMatchListingsArea', async () => {
+    console.log('implement')
+  })
+
+  it('shouldReturnFalseIf', async () => {
+    console.log('implement')
+  })
+})*/

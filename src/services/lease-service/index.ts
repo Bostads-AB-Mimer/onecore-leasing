@@ -44,7 +44,12 @@ import {
 } from './priority-list-service'
 
 import { routes as offerRoutes } from './offers'
-import { isListingInAreaWithSpecificRentalRules } from './rental-rules-validator'
+import {
+  canApplicantApplyForParkingSpaceInAreaWithSpecificRentalRules,
+  doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
+  isHousingContractsOfApplicantInSameAreaAsListing,
+  isListingInAreaWithSpecificRentalRules,
+} from './residential-area-rental-rules-validator'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -525,6 +530,7 @@ export const routes = (router: KoaRouter) => {
       }
 
       //todo: apply rental rules first
+      //todo: if applicant is rejected, we should write that status to the db
       /*if (isListingInAreaWithSpecificRentalRules(listing)) {
         applicants = validateAndUpdateApplicantBasedOnRentalRules(
           listing,
@@ -550,6 +556,90 @@ export const routes = (router: KoaRouter) => {
       }
     }
   })
+
+  //todo: define better slug
+  //todo: follow dig-rest-standard
+  router.get(
+    '(.*)/applicants/isEligibleForParkingSpace/:contactCode/:listingId',
+    async (ctx) => {
+      try {
+        const { contactCode, listingId } = ctx.params // Extracting from URL parameters
+        const listing = await getListingById(listingId) //todo: write test for 404
+        if (listing == undefined) {
+          return undefined //todo: return proper status
+        }
+        if (!isListingInAreaWithSpecificRentalRules(listing)) {
+          //special rental rules does not apply to this listing
+          // return success status
+          ctx.body = {
+            reason: 'No residential area rental rules applies to this listing',
+          }
+          ctx.status = 200
+          return
+        }
+
+        const applicant = await getApplicantByContactCodeAndListingId(
+          contactCode,
+          parseInt(listingId)
+        ) //todo: write test for 404
+
+        if (applicant == undefined) {
+          return undefined //todo: return proper status
+        }
+
+        const detailedApplicant =
+          await getDetailedApplicantInformation(applicant)
+
+        if (
+          !isHousingContractsOfApplicantInSameAreaAsListing(
+            listing,
+            detailedApplicant
+          )
+        ) {
+          // applicant does not have a housing contract in the same area as the listing
+          // return error status
+          ctx.body = {
+            reason:
+              'User does not have any current or upcoming housing contracts in the residential area',
+          }
+          ctx.status = 403
+          return
+        }
+
+        const doesUserHaveExistingParkingSpaceInSameAreaAsListing =
+          doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
+            listing,
+            detailedApplicant
+          )
+
+        if (!doesUserHaveExistingParkingSpaceInSameAreaAsListing) {
+          //return success status, applicant is eligible for parking space
+          ctx.body = {
+            reason:
+              'User does not have any active parking space contracts in the listings residential area',
+          }
+          ctx.status = 203 //??
+          return
+        }
+
+        //applicant have an active parking space contract in the same area as the listing
+        //only option is to replace that parking space contract
+        ctx.body = {
+          reason:
+            'User already have an active parking space contract in the listings residential area',
+        }
+        ctx.status = 409
+      } catch (error: unknown) {
+        ctx.status = 500
+
+        if (error instanceof Error) {
+          ctx.body = {
+            error: error.message,
+          }
+        }
+      }
+    }
+  )
 }
 
 //todo: expose validateThatApplicantsIsEligableForParkingSpaceInArea as an endpoint

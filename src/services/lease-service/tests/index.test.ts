@@ -475,4 +475,148 @@ describe('lease-service', () => {
       expect(tenantLeaseAdapter.isLeaseActive(lease)).toBe(false)
     })
   })
+
+  describe('GET applicants/isEligibleForParkingSpace/:contactCode/:listingId', () => {
+    it('responds with 200 if rental rules does not apply to listing', async () => {
+      const listing = ListingFactory.params({
+        districtCode: 'AREA_WHERE_RULES_DO_NOT_APPLY',
+      }).build()
+      const getListingSpy = jest
+        .spyOn(listingAdapter, 'getListingById')
+        .mockResolvedValue(listing)
+
+      const res = await request(app.callback()).get(
+        `/applicants/isEligibleForParkingSpace/123/${listing.id}`
+      )
+
+      expect(getListingSpy).toHaveBeenCalled()
+      expect(res.status).toBe(200)
+      expect(res.body.reason).toBe(
+        'No residential area rental rules applies to this listing'
+      )
+    })
+
+    it('responds with 403 if applicant does not have a current or upcoming housing contract in same area as listing', async () => {
+      const listing = ListingFactory.params({
+        districtCode: 'OXB',
+      }).build()
+      const applicant = ApplicantFactory.params({
+        listingId: listing.id,
+      }).build()
+
+      const getListingSpy = jest
+        .spyOn(listingAdapter, 'getListingById')
+        .mockResolvedValue(listing)
+
+      const getApplicantByContactCodeAndListingIdSpy = jest
+        .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
+        .mockResolvedValue(applicant)
+
+      const detailedApplicant = DetailedApplicantFactory.build({
+        currentHousingContract: undefined,
+        upcomingHousingContract: undefined,
+      })
+
+      const getDetailedApplicantInformationSpy = jest
+        .spyOn(priorityListService, 'getDetailedApplicantInformation')
+        .mockResolvedValue(detailedApplicant)
+
+      const res = await request(app.callback()).get(
+        `/applicants/isEligibleForParkingSpace/${applicant.contactCode}/${listing.id}`
+      )
+
+      expect(getListingSpy).toHaveBeenCalled()
+      expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
+      expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
+      expect(res.status).toBe(403)
+      expect(res.body.reason).toBe(
+        'User does not have any current or upcoming housing contracts in the residential area'
+      )
+    })
+
+    it('responds with 203 if user has no current parking space in the same area as listing', async () => {
+      const listing = ListingFactory.params({
+        districtCode: 'OXB',
+      }).build()
+      const applicant = ApplicantFactory.params({
+        listingId: listing.id,
+      }).build()
+
+      const getListingSpy = jest
+        .spyOn(listingAdapter, 'getListingById')
+        .mockResolvedValue(listing)
+
+      const getApplicantByContactCodeAndListingIdSpy = jest
+        .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
+        .mockResolvedValue(applicant)
+
+      const detailedApplicant = DetailedApplicantFactory.build({
+        currentHousingContract: LeaseFactory.build({
+          residentialArea: { code: 'OXB' },
+        }),
+        upcomingHousingContract: undefined,
+      })
+
+      const getDetailedApplicantInformationSpy = jest
+        .spyOn(priorityListService, 'getDetailedApplicantInformation')
+        .mockResolvedValue(detailedApplicant)
+
+      const res = await request(app.callback()).get(
+        `/applicants/isEligibleForParkingSpace/${applicant.contactCode}/${listing.id}`
+      )
+
+      expect(getListingSpy).toHaveBeenCalled()
+      expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
+      expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
+      expect(res.status).toBe(203)
+      expect(res.body.reason).toBe(
+        'User does not have any active parking space contracts in the listings residential area'
+      )
+    })
+
+    it('responds with 409 if user has a current parking space in the same area as listing', async () => {
+      const listing = ListingFactory.params({
+        districtCode: 'OXB',
+      }).build()
+      const applicant = ApplicantFactory.params({
+        listingId: listing.id,
+      }).build()
+
+      const getListingSpy = jest
+        .spyOn(listingAdapter, 'getListingById')
+        .mockResolvedValue(listing)
+
+      const getApplicantByContactCodeAndListingIdSpy = jest
+        .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
+        .mockResolvedValue(applicant)
+
+      const detailedApplicant = DetailedApplicantFactory.build({
+        currentHousingContract: LeaseFactory.build({
+          residentialArea: { code: 'OXB' },
+        }),
+        upcomingHousingContract: undefined,
+        parkingSpaceContracts: [
+          LeaseFactory.build({
+            residentialArea: { code: 'OXB' },
+          }),
+        ],
+      })
+
+      const getDetailedApplicantInformationSpy = jest
+        .spyOn(priorityListService, 'getDetailedApplicantInformation')
+        .mockResolvedValue(detailedApplicant)
+
+      const res = await request(app.callback()).get(
+        `/applicants/isEligibleForParkingSpace/${applicant.contactCode}/${listing.id}`
+      )
+
+      expect(getListingSpy).toHaveBeenCalled()
+      expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
+      expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
+      expect(res.status).toBe(409)
+      expect(res.body.reason).toBe(
+        'User already have an active parking space contract in the listings residential area'
+      )
+    })
+  })
 })

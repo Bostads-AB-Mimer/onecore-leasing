@@ -1,16 +1,21 @@
 //Centrum, Oxbacken,
 
-import { DetailedApplicant, Listing, ResidentialArea } from 'onecore-types'
+import {
+  ApplicantStatus,
+  DetailedApplicant,
+  Listing,
+  ResidentialArea,
+} from 'onecore-types'
 
 //todo: rename this file with a better name
 
 const residentialAreaWithSpecificRentalRules: ResidentialArea[] = [
   {
-    code: '', //todo: find correct code
+    code: 'CEN',
     caption: 'Centrum',
   },
   {
-    code: 'OXB', //todo: find correct code
+    code: 'OXB',
     caption: 'Oxbacken',
   },
 ]
@@ -40,8 +45,6 @@ const isHousingContractsOfApplicantInSameAreaAsListing = (
     return false
   }
 
-  //check that listing is in an area where these rental rules apply
-
   //applicants current housing contract area does not match listings area
   if (
     currentHousingContractDistrictCode &&
@@ -65,8 +68,8 @@ const isHousingContractsOfApplicantInSameAreaAsListing = (
 }
 
 const doesApplicantHaveParkingSpaceContractsInSameAreaAsListing = (
-  applicant: DetailedApplicant,
-  listing: Listing
+  listing: Listing,
+  applicant: DetailedApplicant
 ) => {
   if (!applicant.parkingSpaceContracts) {
     return false
@@ -78,26 +81,67 @@ const doesApplicantHaveParkingSpaceContractsInSameAreaAsListing = (
   )
 }
 
-//todo: rename
-/*const validateAndUpdateApplicantBasedOnRentalRules = (
-  listing: Listing,
-  applicants: DetailedApplicant[]
-): DetailedApplicant[] => {
-  console.log('implement')
-  const updatedApplicants: DetailedApplicant[] = []
-  //todo: don't mutate org object
-  for (const applicant of applicants) {
-        const updatedApplicant =
-      validateThatApplicantIsEligibleForParkingSpaceInArea(listing, applicant)
-    updatedApplicants.push(updatedApplicant)
+//todo: return tuple? canApplyBool and reason String
+const canApplicantApplyForParkingSpaceInAreaWithSpecificRentalRules = (
+  applicant: DetailedApplicant,
+  listing: Listing
+) => {
+  //if (isListingInAreaWithSpecificRentalRules(listing)) {
+  if (isHousingContractsOfApplicantInSameAreaAsListing(listing, applicant)) {
+    if (
+      doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
+        listing,
+        applicant
+      )
+    ) {
+      //user has an existing parking space contract in same area as listing
+      return false
+    }
+    //user has no current parking space contract and a housing contract in same area as listing
+    return true
   }
+  //the user does not live in the area
+  return false
+  /*}
+  //todo: this case is a bit weird?
+  return true //listing is not in area with specific rental rules*/
+}
 
-  return updatedApplicants
-}*/
+const validateIfUserHas = (applicant: DetailedApplicant, listing: Listing) => {
+  if (
+    doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
+      listing,
+      applicant
+    )
+  ) {
+    //user has an existing parking space contract in same area as listing
+    return false
+  }
+  //user has no current parking space contract and a housing contract in same area as listing
+  return true
+}
+
+//todo: rename
+// const validateAndUpdateApplicantBasedOnRentalRules = (
+//   listing: Listing,
+//   applicants: DetailedApplicant[]
+// ): DetailedApplicant[] => {
+//   console.log('implement')
+//   const updatedApplicants: DetailedApplicant[] = []
+//   //todo: don't mutate org object
+//   for (const applicant of applicants) {
+//         const updatedApplicant =
+//       validateThatApplicantIsEligibleForParkingSpaceInArea(listing, applicant)
+//     updatedApplicants.push(updatedApplicant)
+//   }
+//
+//   return updatedApplicants
+// }
 
 export {
   isListingInAreaWithSpecificRentalRules,
   //validateAndUpdateApplicantBasedOnRentalRules,
   isHousingContractsOfApplicantInSameAreaAsListing,
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
+  canApplicantApplyForParkingSpaceInAreaWithSpecificRentalRules,
 }
