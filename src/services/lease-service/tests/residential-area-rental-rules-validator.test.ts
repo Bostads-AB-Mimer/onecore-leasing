@@ -7,10 +7,11 @@ import {
   isListingInAreaWithSpecificRentalRules,
   isHousingContractsOfApplicantInSameAreaAsListing,
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
+  doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
 } from '../residential-area-rental-rules-validator'
 
 describe('isListingInAreaWithSpecificRentalRules', () => {
-  it('shouldReturnFalseIfListingIsInAreaWithSpecificRentalRules', async () => {
+  it('shouldReturnFalseIfListingIsNotInAreaWithSpecificRentalRules', async () => {
     const listing = ListingFactory.build({
       districtCode: 'AREA_WHERE_RULES_DO_NOT_APPLY',
     })
@@ -22,10 +23,29 @@ describe('isListingInAreaWithSpecificRentalRules', () => {
 
   it('shouldReturnTrueIfListingIsInAreaWithSpecificRentalRules', async () => {
     const listing = ListingFactory.build({
-      districtCode: 'OXB', //todo: update to correct caption
+      districtCode: 'OXB',
     })
 
     const result = isListingInAreaWithSpecificRentalRules(listing)
+
+    expect(result).toBeTruthy()
+  })
+})
+
+describe('doesPropertyHaveSpecificRentalRules', () => {
+  it('shouldReturnFalseIfPropertyDoesNotHaveSpecificRentalRules', async () => {
+    const estateCode = 'ESTATE_CODE_WITHOUT_SPECIFIC_RENTAL_RULES'
+    const result =
+      doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules(estateCode)
+
+    expect(result).toBeFalsy()
+  })
+
+  it('shouldReturnTrueIfPropertyHaveSpecificRentalRules', async () => {
+    const estateCode = '24104'
+
+    const result =
+      doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules(estateCode)
 
     expect(result).toBeTruthy()
   })

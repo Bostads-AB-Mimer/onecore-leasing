@@ -476,7 +476,39 @@ describe('lease-service', () => {
     })
   })
 
-  describe('GET applicants/isEligibleForParkingSpace/:contactCode/:listingId', () => {
+  describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listingId', () => {
+    it('responds with 404 if listing does not exist', async () => {
+      const getListingSpy = jest
+        .spyOn(listingAdapter, 'getListingById')
+        .mockResolvedValue(undefined)
+
+      const res = await request(app.callback()).get(
+        `/applicants/validateResidentialAreaRentalRules/123/456}`
+      )
+
+      expect(getListingSpy).toHaveBeenCalled()
+      expect(res.status).toBe(404)
+      expect(res.body.reason).toBe('Listing was not found')
+    })
+
+    it('responds with 404 if applicant does not exist', async () => {
+      const listing = ListingFactory.params({
+        districtCode: 'AREA_WHERE_RULES_DO_NOT_APPLY',
+      }).build()
+
+      const getListingSpy = jest
+        .spyOn(listingAdapter, 'getListingById')
+        .mockResolvedValue(listing)
+
+      const res = await request(app.callback()).get(
+        `/applicants/validateResidentialAreaRentalRules/123/456}`
+      )
+
+      expect(getListingSpy).toHaveBeenCalled()
+      expect(res.status).toBe(404)
+      expect(res.body.reason).toBe('Listing was not found')
+    })
+
     it('responds with 200 if rental rules does not apply to listing', async () => {
       const listing = ListingFactory.params({
         districtCode: 'AREA_WHERE_RULES_DO_NOT_APPLY',
@@ -486,7 +518,7 @@ describe('lease-service', () => {
         .mockResolvedValue(listing)
 
       const res = await request(app.callback()).get(
-        `/applicants/isEligibleForParkingSpace/123/${listing.id}`
+        `/applicants/validateResidentialAreaRentalRules/123/${listing.id}`
       )
 
       expect(getListingSpy).toHaveBeenCalled()
@@ -522,7 +554,7 @@ describe('lease-service', () => {
         .mockResolvedValue(detailedApplicant)
 
       const res = await request(app.callback()).get(
-        `/applicants/isEligibleForParkingSpace/${applicant.contactCode}/${listing.id}`
+        `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
       )
 
       expect(getListingSpy).toHaveBeenCalled()
@@ -562,7 +594,7 @@ describe('lease-service', () => {
         .mockResolvedValue(detailedApplicant)
 
       const res = await request(app.callback()).get(
-        `/applicants/isEligibleForParkingSpace/${applicant.contactCode}/${listing.id}`
+        `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
       )
 
       expect(getListingSpy).toHaveBeenCalled()

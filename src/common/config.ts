@@ -5,6 +5,11 @@ dotenv.config()
 
 export interface Config {
   port: number
+  core: {
+    url: string
+    username: string
+    password: string
+  }
   xpandDatabase: {
     host: string
     user: string
@@ -37,6 +42,9 @@ const config = configPackage({
   file: `${__dirname}/../config.json`,
   defaults: {
     port: 5020,
+    core: {
+      url: 'http://localhost:5010',
+    },
     xpandDatabase: {
       host: '',
       user: '',
@@ -68,6 +76,7 @@ const config = configPackage({
 
 export default {
   port: config.get('port'),
+  core: config.get('core'),
   xpandDatabase: config.get('xpandDatabase'),
   leasingDatabase: config.get('leasingDatabase'),
   xpandSoap: config.get('xpandSoap'),
