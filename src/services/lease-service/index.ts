@@ -255,6 +255,16 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
+  const CreateApplicantRequestParamsSchema = z.object({
+    name: z.string(),
+    nationalRegistrationNumber: z.string(),
+    contactCode: z.string(),
+    applicationDate: z.coerce.date(),
+    applicationType: z.string().optional(),
+    status: z.nativeEnum(ApplicantStatus),
+    listingId: z.number(),
+  })
+
   /**
    * Endpoint to apply for a listing.
    */
@@ -263,32 +273,39 @@ export const routes = (router: KoaRouter) => {
   //cannot add duplicate applicant
   //handle non existing applicant contact code
 
-  router.post('(.*)/listings/apply', async (ctx) => {
-    try {
-      const applicantData = <Applicant>ctx.request.body
+  router.post(
+    '(.*)/listings/apply',
+    parseRequestBody(CreateApplicantRequestParamsSchema),
+    async (ctx) => {
+      try {
+        const applicantData = ctx.request.body
 
-      const exists = await applicationExists(
-        applicantData.contactCode,
-        applicantData.listingId
-      )
-      if (exists) {
-        ctx.status = 409 // Conflict
-        ctx.body = { error: 'Applicant has already applied for this listing.' }
-        return
-      }
+        const exists = await applicationExists(
+          applicantData.contactCode,
+          applicantData.listingId
+        )
 
-      const applicationId = await createApplication(applicantData)
-      ctx.status = 201 // HTTP status code for Created
-      ctx.body = { applicationId }
-    } catch (error) {
-      ctx.status = 500 // Internal Server Error
-      if (error instanceof Error) {
-        ctx.body = { error: error.message }
-      } else {
-        ctx.body = { error: 'An unexpected error occurred.' }
+        if (exists) {
+          ctx.status = 409 // Conflict
+          ctx.body = {
+            error: 'Applicant has already applied for this listing.',
+          }
+          return
+        }
+
+        const applicationId = await createApplication(applicantData)
+        ctx.status = 201 // HTTP status code for Created
+        ctx.body = { applicationId }
+      } catch (error) {
+        ctx.status = 500 // Internal Server Error
+        if (error instanceof Error) {
+          ctx.body = { error: error.message }
+        } else {
+          ctx.body = { error: 'An unexpected error occurred.' }
+        }
       }
     }
-  })
+  )
 
   router.get('/listings/by-id/:listingId', async (ctx) => {
     try {
