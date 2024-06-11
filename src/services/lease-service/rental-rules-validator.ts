@@ -2,19 +2,19 @@ import { DetailedApplicant, Listing, ResidentialArea } from 'onecore-types'
 import { getPropertyInfoFromCore } from './adapters/core-adapter'
 
 //todo: we might need to consider and validate if a housing contract is ending
+//todo: if so we need datetime logic for checkin contract end dates etc
 
 const residentialAreasWithSpecificRentalRules: ResidentialArea[] = [
   {
     code: 'CEN',
-    caption: 'Centrum', //skip?
+    caption: 'Centrum',
   },
   {
     code: 'OXB',
-    caption: 'Oxbacken', //skip?
+    caption: 'Oxbacken',
   },
 ]
 
-//todo: add type?
 const propertiesWithSpecificRentalRules: any[] = [
   {
     estateCode: '24104', //Sjöodjuret 2

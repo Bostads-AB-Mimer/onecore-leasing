@@ -228,7 +228,6 @@ const getAllListingsWithApplicants = async () => {
  * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
 
-//todo singular?
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant')
     .where({ ContactCode: contactCode })

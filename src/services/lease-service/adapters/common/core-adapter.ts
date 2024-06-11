@@ -41,7 +41,6 @@ const getFromCore = async (
 
   try {
     config.headers = createHeaders(accessToken ?? '')
-    console.log('getFromCore')
     return await axios(config)
   } catch (error) {
     const axiosErr = error as AxiosError

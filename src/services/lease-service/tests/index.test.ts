@@ -689,9 +689,7 @@ describe('lease-service', () => {
     })
 
     it('responds with 203 if property info does not exist', async () => {
-      const listing = ListingFactory.params({
-        districtCode: 'OXB',
-      }).build()
+      const listing = ListingFactory.params({}).build()
 
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
@@ -711,9 +709,7 @@ describe('lease-service', () => {
     })
 
     it('responds with 200 if rental rules does not apply to property', async () => {
-      const listing = ListingFactory.params({
-        districtCode: 'OXB',
-      }).build()
+      const listing = ListingFactory.params({}).build()
 
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
@@ -735,9 +731,7 @@ describe('lease-service', () => {
     })
 
     it('responds with 404 if applicant does not exist', async () => {
-      const listing = ListingFactory.params({
-        districtCode: 'OXB',
-      }).build()
+      const listing = ListingFactory.params({}).build()
 
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
@@ -762,9 +756,7 @@ describe('lease-service', () => {
     })
 
     it('responds with 200 if rental rules does not apply to listing', async () => {
-      const listing = ListingFactory.params({
-        districtCode: 'AREA_WHERE_RULES_DO_NOT_APPLY',
-      }).build()
+      const listing = ListingFactory.params({}).build()
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
         .mockResolvedValue(listing)
@@ -785,9 +777,7 @@ describe('lease-service', () => {
     })
 
     it('responds with 403 if applicant does not have a current or upcoming housing contract in same area as listing', async () => {
-      const listing = ListingFactory.params({
-        districtCode: 'OXB',
-      }).build()
+      const listing = ListingFactory.params({}).build()
       const applicant = ApplicantFactory.params({
         listingId: listing.id,
       }).build()
@@ -827,9 +817,7 @@ describe('lease-service', () => {
     })
 
     it('responds with 403 if user has no current parking space in the same property as listing', async () => {
-      const listing = ListingFactory.params({
-        districtCode: 'OXB', //todo: remove all distroc codes, we only need estate code??
-      }).build()
+      const listing = ListingFactory.params({}).build()
       const applicant = ApplicantFactory.params({
         listingId: listing.id,
       }).build()
@@ -878,9 +866,7 @@ describe('lease-service', () => {
     })
 
     it('responds with 409 if user already has parking space in the same property as listing', async () => {
-      const listing = ListingFactory.params({
-        districtCode: 'OXB', //todo: remove all distroc codes, we only need estate code??
-      }).build()
+      const listing = ListingFactory.params({}).build()
       const applicant = ApplicantFactory.params({
         listingId: listing.id,
       }).build()
@@ -940,9 +926,7 @@ describe('lease-service', () => {
     })
 
     it('responds with 403 if user already has parking space but not in the same property as listing', async () => {
-      const listing = ListingFactory.params({
-        districtCode: 'OXB', //todo: remove all distroc codes, we only need estate code??
-      }).build()
+      const listing = ListingFactory.params({}).build()
       const applicant = ApplicantFactory.params({
         listingId: listing.id,
       }).build()

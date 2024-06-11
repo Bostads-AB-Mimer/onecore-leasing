@@ -671,7 +671,7 @@ export const routes = (router: KoaRouter) => {
             listingPropertyInfo.data.estateCode
           )
         ) {
-          //special residential area rental rules does not apply to this listing
+          //special property rental rules does not apply to this listing
           ctx.body = {
             reason: 'No property rental rules applies to this listing',
           }
@@ -698,7 +698,8 @@ export const routes = (router: KoaRouter) => {
         //1. fetch the estateCode for the applicant's current or upcoming housing contract
         //2. check that the housing contract(s) matches the listings estate code
         //3. if not, the user cannot apply for the parking space
-
+        //todo: a better future scenario is to include the estate code in onecore database(s)
+        //todo: a lot of this code could be simplified if we did not need to round trip to xpand to get the estate code
         const applicantHasHousingContractInSamePropertyAsListing =
           await doesUserHaveHousingContractInSamePropertyAsListing(
             detailedApplicant,
@@ -735,31 +736,20 @@ export const routes = (router: KoaRouter) => {
         //4. else, the user can apply with applicationType 'additional'
 
         let applicantNeedsToReplaceContractToBeAbleToApply = false
-        for (const parkingspaceContract of detailedApplicant.parkingSpaceContracts) {
+        for (const parkingSpaceContract of detailedApplicant.parkingSpaceContracts) {
           //
           const parkingSpacePropertyInfo = await getPropertyInfoFromCore(
-            parkingspaceContract.rentalPropertyId
+            parkingSpaceContract.rentalPropertyId
           )
 
           if (
             listingPropertyInfo.data.estateCode ==
             parkingSpacePropertyInfo.data.estateCode
           ) {
-            console.log(
-              'match: ' +
-                parkingSpacePropertyInfo.data.estateCode +
-                ' - ' +
-                parkingSpacePropertyInfo.data.estateCode
-            )
             applicantNeedsToReplaceContractToBeAbleToApply = true
             break
           }
         }
-
-        console.log(
-          'applicantNeedsToReplaceContractToBeAbleToApply: ',
-          applicantNeedsToReplaceContractToBeAbleToApply
-        )
 
         if (applicantNeedsToReplaceContractToBeAbleToApply) {
           //applicant have an active parking space contract in the same property as the listing
@@ -772,8 +762,7 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        //todo: test
-        //user has parkingspace contracts but none in the same property as the listing
+        //user has parking space contracts but none in the same property as the listing
         ctx.body = {
           reason:
             'User does not have any active parking space contracts in the listings residential area',
@@ -783,7 +772,6 @@ export const routes = (router: KoaRouter) => {
         ctx.status = 500
 
         if (error instanceof Error) {
-          console.log(error.message)
           ctx.body = {
             error: error.message,
           }
