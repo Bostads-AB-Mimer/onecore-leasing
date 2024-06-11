@@ -146,23 +146,6 @@ async function doesUserHaveHousingContractInSamePropertyAsListing(
     estateCodeOfUpcomingHousingContract ===
       parkingSpacePropertyInfo.data.estateCode
 
-  console.log(
-    'estateCodeOfCurrentHousingContract: ',
-    estateCodeOfCurrentHousingContract
-  )
-  console.log(
-    'estateCodeOfUpcomingHousingContract: ',
-    estateCodeOfUpcomingHousingContract
-  )
-
-  console.log(
-    'applicantHasCurrentHousingContractInProperty: ',
-    applicantHasCurrentHousingContractInProperty
-  )
-  console.log(
-    'applicantHasUpcomingHousingContractInProperty: ',
-    applicantHasUpcomingHousingContractInProperty
-  )
   return (
     applicantHasCurrentHousingContractInProperty ||
     applicantHasUpcomingHousingContractInProperty

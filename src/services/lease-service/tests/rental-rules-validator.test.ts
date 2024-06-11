@@ -192,6 +192,7 @@ const mockedParkingSpacePropertyInf = {
   },
 }
 
+//todo: there should be 3 nock calls being mocked here, is this true?
 describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
   beforeEach(() => {
     nock(config.core.url)
@@ -199,7 +200,12 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
         username: config.core.username,
         password: config.core.password,
       })
+      .times(Infinity) //allow multiple calls to this mock
       .reply(200, {})
+  })
+
+  afterEach(() => {
+    nock.cleanAll()
   })
 
   it('shouldReturnFalseIfNoHousingContract', async () => {
@@ -217,7 +223,7 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
 
   it('shouldReturnFalseIfNoCurrentHousingContractAndUpcomingHousingContractInWrongProperty', async () => {
     nock(config.core.url)
-      .get('/rentalPropertyInfo/123')
+      .get('/propertyInfoFromXpand/123')
       .reply(200, { estateCode: 'NON_MATCHING_ESTATE_CODE' })
 
     const detailedApplicant = DetailedApplicantFactory.build({
@@ -236,7 +242,7 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
 
   it('shouldReturnFalseIfNoUpcomingHousingContractAndCurrentHousingContractInWrongProperty', async () => {
     nock(config.core.url)
-      .get('/rentalPropertyInfo/123')
+      .get('/propertyInfoFromXpand/123')
       .reply(200, { estateCode: 'NON_MATCHING_ESTATE_CODE' })
 
     const detailedApplicant = DetailedApplicantFactory.build({
@@ -255,7 +261,7 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
 
   it('shouldReturnTrueIfCurrentHousingContractInSameProperty', async () => {
     nock(config.core.url)
-      .get('/rentalPropertyInfo/123')
+      .get('/propertyInfoFromXpand/123')
       .reply(200, { estateCode: '24104' })
 
     const detailedApplicant = DetailedApplicantFactory.build({
@@ -274,7 +280,7 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
 
   it('shouldReturnTrueIfUpcomingHousingContractInSameProperty', async () => {
     nock(config.core.url)
-      .get('/rentalPropertyInfo/123')
+      .get('/propertyInfoFromXpand/123')
       .reply(200, { estateCode: '24104' })
 
     const detailedApplicant = DetailedApplicantFactory.build({
