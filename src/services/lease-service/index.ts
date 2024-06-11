@@ -44,6 +44,7 @@ import {
 } from './priority-list-service'
 
 import { routes as offerRoutes } from './offers'
+
 import {
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
   doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
@@ -53,6 +54,10 @@ import {
 } from './rental-rules-validator'
 import { getPropertyInfoFromCore } from './adapters/core-adapter'
 import { HttpStatusCode } from 'axios'
+
+import { logger } from 'onecore-utilities'
+import { z } from 'zod'
+import { parseRequestBody } from '../../middlewares/parse-request-body'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -319,7 +324,7 @@ export const routes = (router: KoaRouter) => {
       ctx.body = listing
       ctx.status = 200
     } catch (error) {
-      console.error('Error fetching listing:', ctx.params.listingId, error)
+      logger.error(error, 'Error fetching listing: ' + ctx.params.listingId)
       ctx.status = 500 // Internal Server Error
       ctx.body = {
         error:
@@ -341,10 +346,9 @@ export const routes = (router: KoaRouter) => {
       ctx.body = listing
       ctx.status = 200
     } catch (error) {
-      console.error(
-        'Error fetching listing:',
-        ctx.params.rentalObjectCode,
-        error
+      logger.error(
+        error,
+        'Error fetching listing: ' + ctx.params.rentalObjectCode
       )
       ctx.status = 500 // Internal Server Error
       ctx.body = {
@@ -361,7 +365,7 @@ export const routes = (router: KoaRouter) => {
       ctx.body = listingsWithApplicants
       ctx.status = 200
     } catch (error) {
-      console.error('Error fetching listings with applicants:', error)
+      logger.error(error, 'Error fetching listings with applicants:')
       ctx.status = 500 // Internal Server Error
       ctx.body = {
         error: 'An error occurred while fetching listings with applicants.',
@@ -386,7 +390,7 @@ export const routes = (router: KoaRouter) => {
         ctx.body = applicants
       }
     } catch (error) {
-      console.error('Error fetching applicant by contactCode:', error)
+      logger.error(error, 'Error fetching applicant by contactCode:')
       ctx.status = 500 // Internal Server Error
       ctx.body = { error: 'An error occurred while fetching the applicant.' }
     }
@@ -413,46 +417,55 @@ export const routes = (router: KoaRouter) => {
         ctx.body = applicant
       }
     } catch (error) {
-      console.error(
-        'Error fetching applicant by contactCode and listingId:',
-        error
+      logger.error(
+        error,
+        'Error fetching applicant by contactCode and rentalObjectCode:'
       )
       ctx.status = 500 // Internal Server Error
       ctx.body = { error: 'An error occurred while fetching the applicant.' }
     }
   })
 
-  router.patch('/applicants/:id/status', async (ctx) => {
-    const { id } = ctx.params
-    const { status, contactCode } = ctx.request.body as any
+  const updateApplicantStatusParams = z.object({
+    status: z.nativeEnum(ApplicantStatus),
+    contactCode: z.string(),
+  })
 
-    try {
-      //if the applicant is withdrawn by the user, make sure the application belongs to that particular user
-      if (status == ApplicantStatus.WithdrawnByUser) {
-        const applicant = await getApplicantById(Number(id))
-        if (applicant?.contactCode != contactCode) {
+  router.patch(
+    '/applicants/:id/status',
+    parseRequestBody(updateApplicantStatusParams),
+    async (ctx) => {
+      const { id } = ctx.params
+      const { status, contactCode } = ctx.request.body
+
+      try {
+        //if the applicant is withdrawn by the user, make sure the application belongs to that particular user
+        if (status === ApplicantStatus.WithdrawnByUser) {
+          const applicant = await getApplicantById(Number(id))
+          if (applicant?.contactCode != contactCode) {
+            ctx.status = 404
+            ctx.body = { error: 'Applicant not found for this contactCode' }
+            return
+          }
+        }
+
+        const applicantUpdated = await updateApplicantStatus(Number(id), status)
+        if (applicantUpdated) {
+          ctx.status = 200
+          ctx.body = { message: 'Applicant status updated successfully' }
+        } else {
           ctx.status = 404
-          ctx.body = { error: 'Applicant not found for this contactCode' }
-          return
+          ctx.body = { error: 'Applicant not found' }
+        }
+      } catch (error) {
+        logger.error(error, 'Error updating applicant status')
+        ctx.status = 500 // Internal Server Error
+        ctx.body = {
+          error: 'An error occurred while updating the applicant status.',
         }
       }
-
-      const applicantUpdated = await updateApplicantStatus(Number(id), status)
-      if (applicantUpdated) {
-        ctx.status = 200
-        ctx.body = { message: 'Applicant status updated successfully' }
-      } else {
-        ctx.status = 404
-        ctx.body = { error: 'Applicant not found' }
-      }
-    } catch (error) {
-      console.error('Error updating applicant status:', error)
-      ctx.status = 500 // Internal Server Error
-      ctx.body = {
-        error: 'An error occurred while updating the applicant status.',
-      }
     }
-  })
+  )
 
   /**
    * Gets the waiting lists of a person.
@@ -469,6 +482,10 @@ export const routes = (router: KoaRouter) => {
           data: responseData,
         }
       } catch (error: unknown) {
+        logger.error(
+          error,
+          'Error getting waiting lists for contact by national identity number'
+        )
         ctx.status = 500
 
         if (error instanceof Error) {
@@ -496,6 +513,7 @@ export const routes = (router: KoaRouter) => {
 
         ctx.status = 201
       } catch (error: unknown) {
+        logger.error(error, 'Error adding contact to waitingList')
         ctx.status = 500
 
         if (error instanceof Error) {
@@ -539,6 +557,7 @@ export const routes = (router: KoaRouter) => {
 
       ctx.body = sortApplicantsBasedOnRentalRules(applicantsWithPriority)
     } catch (error: unknown) {
+      logger.error(error, 'Error getting applicants for waiting list')
       ctx.status = 500
 
       if (error instanceof Error) {
