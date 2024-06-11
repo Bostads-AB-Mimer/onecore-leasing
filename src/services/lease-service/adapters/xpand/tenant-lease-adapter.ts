@@ -258,6 +258,25 @@ const getResidentialAreaByRentalPropertyId = async (
   }
 }
 
+type AdapterResult<T, E> = { ok: true; data: T } | { ok: false; err: E }
+
+const getContactsBySearchQuery = async (
+  q: string
+): Promise<AdapterResult<Array<Contact>>> => {
+  const rows = await getContactQuery()
+    .where('cmctc.cmctckod', 'like', `%${q}%`)
+    .orWhere('cmctc.persorgnr', 'like', `%${q}%`)
+
+  if (rows && rows.length > 0) {
+    const phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
+    const leases = await getLeaseIds(rows[0].contactKey, undefined)
+
+    return transformFromDbContact(rows[0], phoneNumbers, leases)
+  }
+
+  return null
+}
+
 const getContactByNationalRegistrationNumber = async (
   nationalRegistrationNumber: string,
   includeTerminatedLeases: string | string[] | undefined
