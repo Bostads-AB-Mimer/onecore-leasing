@@ -8,7 +8,10 @@ import {
   isHousingContractsOfApplicantInSameAreaAsListing,
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
   doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
-} from '../residential-area-rental-rules-validator'
+  doesUserHaveHousingContractInSamePropertyAsListing,
+} from '../rental-rules-validator'
+import config from '../../../common/config'
+import nock from 'nock'
 
 describe('isListingInAreaWithSpecificRentalRules', () => {
   it('shouldReturnFalseIfListingIsNotInAreaWithSpecificRentalRules', async () => {
@@ -163,7 +166,7 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
 
     expect(result).toBeFalsy()
   })
-
+  //todo: remove all redudant async...
   it('shouldReturnTrueIfApplicantHaveParkingSpaceInSameAreaAsListing', async () => {
     const listing = ListingFactory.build({ districtCode: 'ABC' })
 
@@ -183,12 +186,108 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
   })
 })
 
-/*describe('canApplicantApplyForParkingSpaceInAreaWithSpecificRentalRules', () => {
-  it('shouldReturnFalseIfHousingContractAreaDoesNotMatchListingsArea', async () => {
-    console.log('implement')
+const mockedParkingSpacePropertyInf = {
+  data: {
+    estateCode: '24104',
+  },
+}
+
+describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
+  beforeEach(() => {
+    nock(config.core.url)
+      .post('/auth/generatetoken', {
+        username: config.core.username,
+        password: config.core.password,
+      })
+      .reply(200, {})
   })
 
-  it('shouldReturnFalseIf', async () => {
-    console.log('implement')
+  it('shouldReturnFalseIfNoHousingContract', async () => {
+    const detailedApplicant = DetailedApplicantFactory.build({
+      currentHousingContract: undefined,
+      upcomingHousingContract: undefined,
+    })
+
+    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+      detailedApplicant,
+      mockedParkingSpacePropertyInf
+    )
+    expect(result).toBeFalsy()
   })
-})*/
+
+  it('shouldReturnFalseIfNoCurrentHousingContractAndUpcomingHousingContractInWrongProperty', async () => {
+    nock(config.core.url)
+      .get('/rentalPropertyInfo/123')
+      .reply(200, { estateCode: 'NON_MATCHING_ESTATE_CODE' })
+
+    const detailedApplicant = DetailedApplicantFactory.build({
+      currentHousingContract: undefined,
+      upcomingHousingContract: LeaseFactory.build({
+        rentalPropertyId: '123',
+      }),
+    })
+
+    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+      detailedApplicant,
+      mockedParkingSpacePropertyInf
+    )
+    expect(result).toBeFalsy()
+  })
+
+  it('shouldReturnFalseIfNoUpcomingHousingContractAndCurrentHousingContractInWrongProperty', async () => {
+    nock(config.core.url)
+      .get('/rentalPropertyInfo/123')
+      .reply(200, { estateCode: 'NON_MATCHING_ESTATE_CODE' })
+
+    const detailedApplicant = DetailedApplicantFactory.build({
+      currentHousingContract: LeaseFactory.build({
+        rentalPropertyId: '123',
+      }),
+      upcomingHousingContract: undefined,
+    })
+
+    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+      detailedApplicant,
+      mockedParkingSpacePropertyInf
+    )
+    expect(result).toBeFalsy()
+  })
+
+  it('shouldReturnTrueIfCurrentHousingContractInSameProperty', async () => {
+    nock(config.core.url)
+      .get('/rentalPropertyInfo/123')
+      .reply(200, { estateCode: '24104' })
+
+    const detailedApplicant = DetailedApplicantFactory.build({
+      currentHousingContract: LeaseFactory.build({
+        rentalPropertyId: '123',
+      }),
+      upcomingHousingContract: undefined,
+    })
+
+    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+      detailedApplicant,
+      mockedParkingSpacePropertyInf
+    )
+    expect(result).toBeTruthy()
+  })
+
+  it('shouldReturnTrueIfUpcomingHousingContractInSameProperty', async () => {
+    nock(config.core.url)
+      .get('/rentalPropertyInfo/123')
+      .reply(200, { estateCode: '24104' })
+
+    const detailedApplicant = DetailedApplicantFactory.build({
+      currentHousingContract: undefined,
+      upcomingHousingContract: LeaseFactory.build({
+        rentalPropertyId: '123',
+      }),
+    })
+
+    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+      detailedApplicant,
+      mockedParkingSpacePropertyInf
+    )
+    expect(result).toBeTruthy()
+  })
+})

@@ -493,20 +493,25 @@ describe('lease-service', () => {
 
     it('responds with 404 if applicant does not exist', async () => {
       const listing = ListingFactory.params({
-        districtCode: 'AREA_WHERE_RULES_DO_NOT_APPLY',
+        districtCode: 'OXB',
       }).build()
 
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
         .mockResolvedValue(listing)
 
+      const getApplicantByContactCodeAndListingIdSpy = jest
+        .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
+        .mockResolvedValue(undefined)
+
       const res = await request(app.callback()).get(
-        `/applicants/validateResidentialAreaRentalRules/123/456}`
+        `/applicants/validateResidentialAreaRentalRules/123/${listing.id}`
       )
 
       expect(getListingSpy).toHaveBeenCalled()
+      expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
       expect(res.status).toBe(404)
-      expect(res.body.reason).toBe('Listing was not found')
+      expect(res.body.reason).toBe('Applicant was not found')
     })
 
     it('responds with 200 if rental rules does not apply to listing', async () => {
@@ -639,7 +644,7 @@ describe('lease-service', () => {
         .mockResolvedValue(detailedApplicant)
 
       const res = await request(app.callback()).get(
-        `/applicants/isEligibleForParkingSpace/${applicant.contactCode}/${listing.id}`
+        `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
       )
 
       expect(getListingSpy).toHaveBeenCalled()

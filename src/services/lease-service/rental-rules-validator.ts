@@ -1,4 +1,7 @@
 import { DetailedApplicant, Listing, ResidentialArea } from 'onecore-types'
+import { getPropertyInfoFromCore } from './adapters/core-adapter'
+
+//todo: we might need to consider and validate if a housing contract is ending
 
 const residentialAreasWithSpecificRentalRules: ResidentialArea[] = [
   {
@@ -112,10 +115,65 @@ const canApplicantApplyForParkingSpaceInAreaWithSpecificRentalRules = (
   return false
 }
 
+async function doesUserHaveHousingContractInSamePropertyAsListing(
+  detailedApplicant: DetailedApplicant,
+  parkingSpacePropertyInfo: any
+) {
+  let estateCodeOfCurrentHousingContract = undefined
+  let estateCodeOfUpcomingHousingContract = undefined
+
+  if (detailedApplicant.currentHousingContract) {
+    const response = await getPropertyInfoFromCore(
+      detailedApplicant.currentHousingContract.rentalPropertyId
+    )
+    estateCodeOfCurrentHousingContract = response.data.estateCode
+  }
+
+  if (detailedApplicant.upcomingHousingContract) {
+    const response = await getPropertyInfoFromCore(
+      detailedApplicant.upcomingHousingContract.rentalPropertyId
+    )
+    estateCodeOfUpcomingHousingContract = response.data.estateCode
+  }
+
+  const applicantHasCurrentHousingContractInProperty =
+    estateCodeOfCurrentHousingContract &&
+    estateCodeOfCurrentHousingContract ===
+      parkingSpacePropertyInfo.data.estateCode
+
+  const applicantHasUpcomingHousingContractInProperty =
+    estateCodeOfUpcomingHousingContract &&
+    estateCodeOfUpcomingHousingContract ===
+      parkingSpacePropertyInfo.data.estateCode
+
+  console.log(
+    'estateCodeOfCurrentHousingContract: ',
+    estateCodeOfCurrentHousingContract
+  )
+  console.log(
+    'estateCodeOfUpcomingHousingContract: ',
+    estateCodeOfUpcomingHousingContract
+  )
+
+  console.log(
+    'applicantHasCurrentHousingContractInProperty: ',
+    applicantHasCurrentHousingContractInProperty
+  )
+  console.log(
+    'applicantHasUpcomingHousingContractInProperty: ',
+    applicantHasUpcomingHousingContractInProperty
+  )
+  return (
+    applicantHasCurrentHousingContractInProperty ||
+    applicantHasUpcomingHousingContractInProperty
+  )
+}
+
 export {
   isListingInAreaWithSpecificRentalRules,
   doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
   isHousingContractsOfApplicantInSameAreaAsListing,
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
   canApplicantApplyForParkingSpaceInAreaWithSpecificRentalRules,
+  doesUserHaveHousingContractInSamePropertyAsListing,
 }
