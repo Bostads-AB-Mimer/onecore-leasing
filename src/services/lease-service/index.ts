@@ -47,13 +47,9 @@ import { routes as offerRoutes } from './offers'
 
 import {
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
-  doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
-  doesUserHaveHousingContractInSamePropertyAsListing,
   isHousingContractsOfApplicantInSameAreaAsListing,
   isListingInAreaWithSpecificRentalRules,
 } from './rental-rules-validator'
-import { getPropertyInfoFromCore } from './adapters/core-adapter'
-import { HttpStatusCode } from 'axios'
 
 import { logger } from 'onecore-utilities'
 import { z } from 'zod'
@@ -651,146 +647,6 @@ export const routes = (router: KoaRouter) => {
 
         if (error instanceof Error) {
           console.log(error.message)
-          ctx.body = {
-            error: error.message,
-          }
-        }
-      }
-    }
-  )
-
-  router.get(
-    '(.*)/applicants/validatePropertyRentalRules/:contactCode/:listingId',
-    async (ctx) => {
-      try {
-        const { contactCode, listingId } = ctx.params // Extracting from URL parameters
-        const listing = await getListingById(listingId)
-        if (listing == undefined) {
-          ctx.status = 404
-          ctx.body = {
-            reason: 'Listing was not found',
-          }
-          return
-        }
-
-        const listingPropertyInfo = await getPropertyInfoFromCore(
-          listing.rentalObjectCode
-        )
-
-        if (listingPropertyInfo.status != HttpStatusCode.Ok) {
-          ctx.status = listingPropertyInfo.status
-          ctx.body = {
-            reason: 'Property info for listing was not found',
-          }
-          return
-        }
-
-        if (
-          !doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules(
-            listingPropertyInfo.data.estateCode
-          )
-        ) {
-          //special property rental rules does not apply to this listing
-          ctx.body = {
-            reason: 'No property rental rules applies to this listing',
-          }
-          ctx.status = 200
-          return
-        }
-
-        const applicant = await getApplicantByContactCodeAndListingId(
-          contactCode,
-          parseInt(listingId)
-        )
-
-        if (applicant == undefined) {
-          ctx.status = 404
-          ctx.body = {
-            reason: 'Applicant was not found',
-          }
-          return
-        }
-
-        const detailedApplicant =
-          await getDetailedApplicantInformation(applicant)
-
-        //1. fetch the estateCode for the applicant's current or upcoming housing contract
-        //2. check that the housing contract(s) matches the listings estate code
-        //3. if not, the user cannot apply for the parking space
-        //todo: a better future scenario is to include the estate code in onecore database(s)
-        //todo: a lot of this code could be simplified if we did not need to round trip to xpand to get the estate code
-        const applicantHasHousingContractInSamePropertyAsListing =
-          await doesUserHaveHousingContractInSamePropertyAsListing(
-            detailedApplicant,
-            listingPropertyInfo
-          )
-
-        if (!applicantHasHousingContractInSamePropertyAsListing) {
-          ctx.body = {
-            reason:
-              'Applicant is not a current or coming tenant in the property',
-          }
-          ctx.status = 403
-          return
-        }
-
-        //if applicant has no parking space contracts but is a tenant in the property
-        if (
-          !detailedApplicant.parkingSpaceContracts ||
-          detailedApplicant.parkingSpaceContracts.length == 0
-        ) {
-          //applicant is eligible for parking space, applicationType for application should be 'additonal'
-          ctx.body = {
-            reason:
-              'User does not have any active parking space contracts in the listings residential area',
-          }
-          ctx.status = 403
-          return
-        }
-
-        //1. fetch the estateCode for each of the applicant's parking space contracts
-        //validation:
-        //2. Check if any of the users parking space contracts matches the listings estate code
-        //3. if any parking space contract matches the listing estatecode, user needs to replace that parking space contract
-        //4. else, the user can apply with applicationType 'additional'
-
-        let applicantNeedsToReplaceContractToBeAbleToApply = false
-        for (const parkingSpaceContract of detailedApplicant.parkingSpaceContracts) {
-          //
-          const parkingSpacePropertyInfo = await getPropertyInfoFromCore(
-            parkingSpaceContract.rentalPropertyId
-          )
-
-          if (
-            listingPropertyInfo.data.estateCode ==
-            parkingSpacePropertyInfo.data.estateCode
-          ) {
-            applicantNeedsToReplaceContractToBeAbleToApply = true
-            break
-          }
-        }
-
-        if (applicantNeedsToReplaceContractToBeAbleToApply) {
-          //applicant have an active parking space contract in the same property as the listing
-          //only option is to replace that parking space contract
-          ctx.body = {
-            reason:
-              'User already have an active parking space contract in the listings residential area',
-          }
-          ctx.status = 409
-          return
-        }
-
-        //user has parking space contracts but none in the same property as the listing
-        ctx.body = {
-          reason:
-            'User does not have any active parking space contracts in the listings residential area',
-        }
-        ctx.status = 403
-      } catch (error: unknown) {
-        ctx.status = 500
-
-        if (error instanceof Error) {
           ctx.body = {
             error: error.message,
           }
