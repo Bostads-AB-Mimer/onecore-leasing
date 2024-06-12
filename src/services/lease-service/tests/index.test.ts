@@ -582,11 +582,11 @@ describe('lease-service', () => {
       expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
       expect(res.status).toBe(403)
       expect(res.body.reason).toBe(
-        'User does not have any current or upcoming housing contracts in the residential area'
+        'Applicant does not have any current or upcoming housing contracts in the residential area'
       )
     })
 
-    it('responds with 203 if user has no current parking space in the same area as listing', async () => {
+    it('responds with 203 if applicant has no current parking space in the same area as listing', async () => {
       const listing = ListingFactory.params({
         districtCode: 'OXB',
       }).build()
@@ -622,11 +622,11 @@ describe('lease-service', () => {
       expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
       expect(res.status).toBe(203)
       expect(res.body.reason).toBe(
-        'User does not have any active parking space contracts in the listings residential area'
+        'Applicant does not have any active parking space contracts in the listings residential area'
       )
     })
 
-    it('responds with 409 if user has a current parking space in the same area as listing', async () => {
+    it('responds with 409 if applicant has a current parking space in the same area as listing', async () => {
       const listing = ListingFactory.params({
         districtCode: 'OXB',
       }).build()
@@ -667,7 +667,7 @@ describe('lease-service', () => {
       expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
       expect(res.status).toBe(409)
       expect(res.body.reason).toBe(
-        'User already have an active parking space contract in the listings residential area'
+        'Applicant already have an active parking space contract in the listings residential area'
       )
     })
   })
