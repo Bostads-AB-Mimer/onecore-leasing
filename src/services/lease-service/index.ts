@@ -679,7 +679,6 @@ export const routes = (router: KoaRouter) => {
             listing.rentalObjectCode
           )
 
-        //todo: update tests
         if (listingEstateCode == undefined) {
           ctx.status = 404
           ctx.body = {
@@ -757,7 +756,6 @@ export const routes = (router: KoaRouter) => {
         //3. if any parking space contract matches the listing estatecode, user needs to replace that parking space contract
         //4. else, the user can apply with applicationType 'additional'
 
-        //todo: update tests
         //todo: refactor and move to property rules validator?
         let applicantNeedsToReplaceContractToBeAbleToApply = false
         for (const parkingSpaceContract of detailedApplicant.parkingSpaceContracts) {
