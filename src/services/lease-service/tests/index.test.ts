@@ -1,3 +1,5 @@
+import * as estateCodeAdapter from '../adapters/xpand/estate-code-adapter'
+
 jest.mock('onecore-utilities', () => {
   return {
     logger: {
@@ -29,8 +31,6 @@ import {
   LeaseFactory,
   ListingFactory,
 } from './factory'
-import nock from 'nock'
-import config from '../../../common/config'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -673,20 +673,6 @@ describe('lease-service', () => {
   })
 
   describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', () => {
-    beforeEach(() => {
-      nock(config.core.url)
-        .post('/auth/generatetoken', {
-          username: config.core.username,
-          password: config.core.password,
-        })
-        .times(Infinity) //allow multiple calls to this mock
-        .reply(200, undefined)
-    })
-
-    afterEach(() => {
-      nock.cleanAll()
-    })
-
     it('responds with 404 if listing does not exist', async () => {
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
@@ -701,23 +687,25 @@ describe('lease-service', () => {
       expect(res.body.reason).toBe('Listing was not found')
     })
 
-    it('responds with 203 if property info does not exist', async () => {
+    it('responds with 404 if property info does not exist', async () => {
       const listing = ListingFactory.params({}).build()
 
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
         .mockResolvedValue(listing)
 
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${listing.rentalObjectCode}`)
-        .reply(203, undefined)
+      jest
+        .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
+        .mockImplementation(async (rentalObjectCode: string) => {
+          return undefined
+        })
 
       const res = await request(app.callback()).get(
         `/applicants/validatePropertyRentalRules/123/456}`
       )
 
       expect(getListingSpy).toHaveBeenCalled()
-      expect(res.status).toBe(203)
+      expect(res.status).toBe(404)
       expect(res.body.reason).toBe('Property info for listing was not found')
     })
 
@@ -728,9 +716,15 @@ describe('lease-service', () => {
         .spyOn(listingAdapter, 'getListingById')
         .mockResolvedValue(listing)
 
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${listing.rentalObjectCode}`)
-        .reply(200, { estateCode: 'ESTATE_CODE_WITHOUT_RENTAL_RULES' })
+      jest
+        .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
+        .mockImplementation(async (rentalObjectCode: string) => {
+          const mockData: { [key: string]: string | undefined } = {
+            [listing.rentalObjectCode]: 'ESTATE_CODE_WITHOUT_RENTAL_RULES',
+          }
+
+          return mockData[rentalObjectCode]
+        })
 
       const res = await request(app.callback()).get(
         `/applicants/validatePropertyRentalRules/123/456}`
@@ -750,9 +744,15 @@ describe('lease-service', () => {
         .spyOn(listingAdapter, 'getListingById')
         .mockResolvedValue(listing)
 
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${listing.rentalObjectCode}`)
-        .reply(200, { estateCode: '24104' })
+      jest
+        .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
+        .mockImplementation(async (rentalObjectCode: string) => {
+          const mockData: { [key: string]: string | undefined } = {
+            [listing.rentalObjectCode]: '24104',
+          }
+
+          return mockData[rentalObjectCode]
+        })
 
       const getApplicantByContactCodeAndListingIdSpy = jest
         .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
@@ -766,27 +766,6 @@ describe('lease-service', () => {
       expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
       expect(res.status).toBe(404)
       expect(res.body.reason).toBe('Applicant was not found')
-    })
-
-    it('responds with 200 if rental rules does not apply to listing', async () => {
-      const listing = ListingFactory.params({}).build()
-      const getListingSpy = jest
-        .spyOn(listingAdapter, 'getListingById')
-        .mockResolvedValue(listing)
-
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${listing.rentalObjectCode}`)
-        .reply(200, { estateCode: 'ESTATE_CODE_WHERE_RULES_DO_NOT_APPLY' })
-
-      const res = await request(app.callback()).get(
-        `/applicants/validatePropertyRentalRules/123/${listing.id}`
-      )
-
-      expect(getListingSpy).toHaveBeenCalled()
-      expect(res.status).toBe(200)
-      expect(res.body.reason).toBe(
-        'No property rental rules applies to this listing'
-      )
     })
 
     it('responds with 403 if applicant does not have a current or upcoming housing contract in same area as listing', async () => {
@@ -803,9 +782,15 @@ describe('lease-service', () => {
         .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
         .mockResolvedValue(applicant)
 
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${listing.rentalObjectCode}`)
-        .reply(200, { estateCode: '24104' })
+      jest
+        .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
+        .mockImplementation(async (rentalObjectCode: string) => {
+          const mockData: { [key: string]: string | undefined } = {
+            [listing.rentalObjectCode]: '24104',
+          }
+
+          return mockData[rentalObjectCode]
+        })
 
       const detailedApplicant = DetailedApplicantFactory.build({
         currentHousingContract: undefined,
@@ -843,23 +828,28 @@ describe('lease-service', () => {
         .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
         .mockResolvedValue(applicant)
 
-      //mock the listings property info
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${listing.rentalObjectCode}`)
-        .reply(200, { estateCode: '24104' })
-
+      const currentHousingContractRentalObjectCode =
+        'CURRENT_HOUSING_CONTRACT_RENTAL_OBJECT_CODE'
       const detailedApplicant = DetailedApplicantFactory.build({
-        currentHousingContract: LeaseFactory.build(),
+        currentHousingContract: LeaseFactory.build({
+          rentalPropertyId: currentHousingContractRentalObjectCode,
+        }),
         upcomingHousingContract: undefined,
         parkingSpaceContracts: [],
       })
 
+      //mock the listings property info
       //mock the applicants housing contract property info
-      nock(config.core.url)
-        .get(
-          `/propertyInfoFromXpand/${detailedApplicant?.currentHousingContract?.rentalPropertyId}`
-        )
-        .reply(200, { estateCode: '24104' })
+      jest
+        .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
+        .mockImplementation(async (rentalObjectCode: string) => {
+          const mockData: { [key: string]: string | undefined } = {
+            [listing.rentalObjectCode]: '24104',
+            [currentHousingContractRentalObjectCode]: '24104',
+          }
+
+          return mockData[rentalObjectCode]
+        })
 
       const getDetailedApplicantInformationSpy = jest
         .spyOn(priorityListService, 'getDetailedApplicantInformation')
@@ -892,14 +882,13 @@ describe('lease-service', () => {
         .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
         .mockResolvedValue(applicant)
 
-      //mock the listings property info
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${listing.rentalObjectCode}`)
-        .reply(200, { estateCode: '24104' })
-
+      const currentHousingContractRentalObjectCode =
+        'CURRENT_HOUSING_CONTRACT_RENTAL_OBJECT_CODE'
       const parkingSpaceRentalObjectCode = 'PARKING_SPACE_RENTAL_OBJECT_CODE'
       const detailedApplicant = DetailedApplicantFactory.build({
-        currentHousingContract: LeaseFactory.build(),
+        currentHousingContract: LeaseFactory.build({
+          rentalPropertyId: currentHousingContractRentalObjectCode,
+        }),
         upcomingHousingContract: undefined,
         parkingSpaceContracts: [
           LeaseFactory.build({
@@ -909,17 +898,20 @@ describe('lease-service', () => {
         ],
       })
 
-      //mock the applicants housing contract property info
-      nock(config.core.url)
-        .get(
-          `/propertyInfoFromXpand/${detailedApplicant?.currentHousingContract?.rentalPropertyId}`
-        )
-        .reply(200, { estateCode: '24104' })
-
+      //mock the listings property info
       //mock the applicants parking space property contract property info
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${parkingSpaceRentalObjectCode}`)
-        .reply(200, { estateCode: '24104' })
+      //mock the applicants housing contract property info
+      jest
+        .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
+        .mockImplementation(async (rentalObjectCode: string) => {
+          const mockData: { [key: string]: string | undefined } = {
+            [listing.rentalObjectCode]: '24104',
+            [currentHousingContractRentalObjectCode]: '24104',
+            [parkingSpaceRentalObjectCode]: '24104',
+          }
+
+          return mockData[rentalObjectCode]
+        })
 
       const getDetailedApplicantInformationSpy = jest
         .spyOn(priorityListService, 'getDetailedApplicantInformation')
@@ -952,14 +944,13 @@ describe('lease-service', () => {
         .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
         .mockResolvedValue(applicant)
 
-      //mock the listings property info
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${listing.rentalObjectCode}`)
-        .reply(200, { estateCode: '24104' })
-
+      const currentHousingContractRentalObjectCode =
+        'CURRENT_HOUSING_CONTRACT_RENTAL_OBJECT_CODE'
       const parkingSpaceRentalObjectCode = 'PARKING_SPACE_RENTAL_OBJECT_CODE'
       const detailedApplicant = DetailedApplicantFactory.build({
-        currentHousingContract: LeaseFactory.build(),
+        currentHousingContract: LeaseFactory.build({
+          rentalPropertyId: currentHousingContractRentalObjectCode,
+        }),
         upcomingHousingContract: undefined,
         parkingSpaceContracts: [
           LeaseFactory.build({
@@ -969,17 +960,20 @@ describe('lease-service', () => {
         ],
       })
 
-      //mock the applicants housing contract property info
-      nock(config.core.url)
-        .get(
-          `/propertyInfoFromXpand/${detailedApplicant?.currentHousingContract?.rentalPropertyId}`
-        )
-        .reply(200, { estateCode: '24104' })
-
+      //mock the listings property info
       //mock the applicants parking space property contract property info
-      nock(config.core.url)
-        .get(`/propertyInfoFromXpand/${parkingSpaceRentalObjectCode}`)
-        .reply(200, { estateCode: 'ESTATE_CODE_FOR_ANOTHER_PROPERTY' })
+      //mock the applicants housing contract property info
+      jest
+        .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
+        .mockImplementation(async (rentalObjectCode: string) => {
+          const mockData: { [key: string]: string | undefined } = {
+            [listing.rentalObjectCode]: '24104',
+            [currentHousingContractRentalObjectCode]: '24104',
+            [parkingSpaceRentalObjectCode]: 'ESTATE_CODE_FOR_ANOTHER_PROPERTY',
+          }
+
+          return mockData[rentalObjectCode]
+        })
 
       const getDetailedApplicantInformationSpy = jest
         .spyOn(priorityListService, 'getDetailedApplicantInformation')

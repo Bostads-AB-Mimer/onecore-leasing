@@ -47,17 +47,18 @@ import { routes as offerRoutes } from './offers'
 
 import {
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
-  doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
-  doesUserHaveHousingContractInSamePropertyAsListing,
   isHousingContractsOfApplicantInSameAreaAsListing,
   isListingInAreaWithSpecificRentalRules,
 } from './rental-rules-validator'
-import { getPropertyInfoFromCore } from './adapters/core-adapter'
-import { HttpStatusCode } from 'axios'
 
 import { logger } from 'onecore-utilities'
 import { z } from 'zod'
 import { parseRequestBody } from '../../middlewares/parse-request-body'
+import { getEstateCodeFromXpandByRentalObjectCode } from './adapters/xpand/estate-code-adapter'
+import {
+  doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
+  doesUserHaveHousingContractInSamePropertyAsListing,
+} from './property-rental-rules-validator'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -673,12 +674,14 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        const listingPropertyInfo = await getPropertyInfoFromCore(
-          listing.rentalObjectCode
-        )
+        const listingEstateCode =
+          await getEstateCodeFromXpandByRentalObjectCode(
+            listing.rentalObjectCode
+          )
 
-        if (listingPropertyInfo.status != HttpStatusCode.Ok) {
-          ctx.status = listingPropertyInfo.status
+        //todo: update tests
+        if (listingEstateCode == undefined) {
+          ctx.status = 404
           ctx.body = {
             reason: 'Property info for listing was not found',
           }
@@ -687,7 +690,7 @@ export const routes = (router: KoaRouter) => {
 
         if (
           !doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules(
-            listingPropertyInfo.data.estateCode
+            listingEstateCode
           )
         ) {
           //special property rental rules does not apply to this listing
@@ -722,7 +725,7 @@ export const routes = (router: KoaRouter) => {
         const applicantHasHousingContractInSamePropertyAsListing =
           await doesUserHaveHousingContractInSamePropertyAsListing(
             detailedApplicant,
-            listingPropertyInfo
+            listingEstateCode
           )
 
         if (!applicantHasHousingContractInSamePropertyAsListing) {
@@ -754,19 +757,21 @@ export const routes = (router: KoaRouter) => {
         //3. if any parking space contract matches the listing estatecode, user needs to replace that parking space contract
         //4. else, the user can apply with applicationType 'additional'
 
+        //todo: update tests
+        //todo: refactor and move to property rules validator?
         let applicantNeedsToReplaceContractToBeAbleToApply = false
         for (const parkingSpaceContract of detailedApplicant.parkingSpaceContracts) {
           //
-          const parkingSpacePropertyInfo = await getPropertyInfoFromCore(
-            parkingSpaceContract.rentalPropertyId
-          )
+          const parkingSpaceEstateCode =
+            await getEstateCodeFromXpandByRentalObjectCode(
+              parkingSpaceContract.rentalPropertyId
+            )
 
-          if (
-            listingPropertyInfo.data.estateCode ==
-            parkingSpacePropertyInfo.data.estateCode
-          ) {
-            applicantNeedsToReplaceContractToBeAbleToApply = true
-            break
+          if (parkingSpaceEstateCode != undefined) {
+            if (listingEstateCode == parkingSpaceEstateCode) {
+              applicantNeedsToReplaceContractToBeAbleToApply = true
+              break
+            }
           }
         }
 
