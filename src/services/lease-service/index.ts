@@ -49,7 +49,7 @@ import {
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
   isHousingContractsOfApplicantInSameAreaAsListing,
   isListingInAreaWithSpecificRentalRules,
-} from './rental-rules-validator'
+} from './residential-area-rental-rules-validator'
 
 import { logger } from 'onecore-utilities'
 import { z } from 'zod'

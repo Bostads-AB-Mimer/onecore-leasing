@@ -31,8 +31,6 @@ import {
   LeaseFactory,
   ListingFactory,
 } from './factory'
-import nock from 'nock'
-import config from '../../../common/config'
 
 const app = new Koa()
 const router = new KoaRouter()

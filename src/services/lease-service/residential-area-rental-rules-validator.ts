@@ -3,7 +3,6 @@ import { DetailedApplicant, Listing, ResidentialArea } from 'onecore-types'
 //todo: we might need to consider and validate if a housing contract is ending
 //todo: if so we need datetime logic for checkin contract end dates etc
 
-//todo: refactor name to residential-area-rental-rules-validator
 const residentialAreasWithSpecificRentalRules: ResidentialArea[] = [
   {
     code: 'CEN',

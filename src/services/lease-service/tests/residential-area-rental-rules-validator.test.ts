@@ -7,7 +7,7 @@ import {
   isListingInAreaWithSpecificRentalRules,
   isHousingContractsOfApplicantInSameAreaAsListing,
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
-} from '../rental-rules-validator'
+} from '../residential-area-rental-rules-validator'
 
 describe('isListingInAreaWithSpecificRentalRules', () => {
   it('shouldReturnFalseIfListingIsNotInAreaWithSpecificRentalRules', () => {
