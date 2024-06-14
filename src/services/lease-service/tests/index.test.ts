@@ -677,7 +677,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
   it('responds with 404 if listing does not exist', async () => {
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValue(undefined)
+      .mockResolvedValueOnce(undefined)
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/123/456}`
@@ -693,7 +693,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValue(listing)
+      .mockResolvedValueOnce(listing)
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
@@ -715,7 +715,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValue(listing)
+      .mockResolvedValueOnce(listing)
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
@@ -743,7 +743,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValue(listing)
+      .mockResolvedValueOnce(listing)
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
@@ -757,7 +757,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getApplicantByContactCodeAndListingIdSpy = jest
       .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValue(undefined)
+      .mockResolvedValueOnce(undefined)
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/123/${listing.id}`
@@ -777,11 +777,11 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValue(listing)
+      .mockResolvedValueOnce(listing)
 
     const getApplicantByContactCodeAndListingIdSpy = jest
       .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValue(applicant)
+      .mockResolvedValueOnce(applicant)
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
@@ -800,7 +800,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValue(detailedApplicant)
+      .mockResolvedValueOnce(detailedApplicant)
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
@@ -823,11 +823,11 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValue(listing)
+      .mockResolvedValueOnce(listing)
 
     const getApplicantByContactCodeAndListingIdSpy = jest
       .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValue(applicant)
+      .mockResolvedValueOnce(applicant)
 
     const currentHousingContractRentalObjectCode =
       'CURRENT_HOUSING_CONTRACT_RENTAL_OBJECT_CODE'
@@ -854,7 +854,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValue(detailedApplicant)
+      .mockResolvedValueOnce(detailedApplicant)
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
@@ -877,11 +877,11 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValue(listing)
+      .mockResolvedValueOnce(listing)
 
     const getApplicantByContactCodeAndListingIdSpy = jest
       .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValue(applicant)
+      .mockResolvedValueOnce(applicant)
 
     const currentHousingContractRentalObjectCode =
       'CURRENT_HOUSING_CONTRACT_RENTAL_OBJECT_CODE'
@@ -916,7 +916,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValue(detailedApplicant)
+      .mockResolvedValueOnce(detailedApplicant)
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
@@ -939,11 +939,11 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValue(listing)
+      .mockResolvedValueOnce(listing)
 
     const getApplicantByContactCodeAndListingIdSpy = jest
       .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValue(applicant)
+      .mockResolvedValueOnce(applicant)
 
     const currentHousingContractRentalObjectCode =
       'CURRENT_HOUSING_CONTRACT_RENTAL_OBJECT_CODE'
@@ -978,7 +978,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValue(detailedApplicant)
+      .mockResolvedValueOnce(detailedApplicant)
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`

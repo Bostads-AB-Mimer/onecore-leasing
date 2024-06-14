@@ -13,7 +13,7 @@ describe('doesPropertyHaveSpecificRentalRules', () => {
     const result =
       doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules(estateCode)
 
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnTrueIfPropertyHaveSpecificRentalRules', () => {
@@ -22,7 +22,7 @@ describe('doesPropertyHaveSpecificRentalRules', () => {
     const result =
       doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules(estateCode)
 
-    expect(result).toBeTruthy()
+    expect(result).toBe(true)
   })
 })
 
@@ -39,7 +39,7 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       detailedApplicant,
       listingEstateCode
     )
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnFalseIfNoCurrentHousingContractAndUpcomingHousingContractInWrongProperty', async () => {
@@ -70,7 +70,7 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       detailedApplicant,
       listingEstateCode
     )
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnFalseIfNoUpcomingHousingContractAndCurrentHousingContractInWrongProperty', async () => {
@@ -97,7 +97,7 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       detailedApplicant,
       listingEstateCode
     )
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnTrueIfCurrentHousingContractInSameProperty', async () => {
@@ -124,7 +124,7 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       detailedApplicant,
       listingEstateCode
     )
-    expect(result).toBeTruthy()
+    expect(result).toBe(true)
   })
 
   it('shouldReturnTrueIfUpcomingHousingContractInSameProperty', async () => {
@@ -151,6 +151,6 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       detailedApplicant,
       listingEstateCode
     )
-    expect(result).toBeTruthy()
+    expect(result).toBe(true)
   })
 })
