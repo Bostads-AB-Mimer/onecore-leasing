@@ -260,21 +260,33 @@ const getResidentialAreaByRentalPropertyId = async (
 
 type AdapterResult<T, E> = { ok: true; data: T } | { ok: false; err: E }
 
-const getContactsBySearchQuery = async (
+const getContactsDataBySearchQuery = async (
   q: string
-): Promise<AdapterResult<Array<Contact>>> => {
-  const rows = await getContactQuery()
-    .where('cmctc.cmctckod', 'like', `%${q}%`)
-    .orWhere('cmctc.persorgnr', 'like', `%${q}%`)
+): Promise<
+  AdapterResult<
+    Array<{ contactCode: string; fullName: string }>,
+    'internal-error'
+  >
+> => {
+  try {
+    const rows = await db
+      .from('cmctc')
+      .select('cmctc.cmctckod as contactCode', 'cmctc.cmctcben as fullName')
+      .where('cmctc.cmctckod', 'like', `%${q}%`)
+      .orWhere('cmctc.persorgnr', 'like', `%${q}%`)
+      .limit(5)
 
-  if (rows && rows.length > 0) {
-    const phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
-    const leases = await getLeaseIds(rows[0].contactKey, undefined)
-
-    return transformFromDbContact(rows[0], phoneNumbers, leases)
+    return {
+      ok: true,
+      data: rows,
+    }
+  } catch (err) {
+    console.log({ err }, 'tenant-lease-adapter.getContactsDataBySearchQuery')
+    return {
+      ok: false,
+      err: 'internal-error',
+    }
   }
-
-  return null
 }
 
 const getContactByNationalRegistrationNumber = async (
@@ -513,4 +525,5 @@ export {
   getContactForPhoneNumber,
   isLeaseActive,
   getResidentialAreaByRentalPropertyId,
+  getContactsDataBySearchQuery,
 }

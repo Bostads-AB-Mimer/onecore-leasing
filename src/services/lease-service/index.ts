@@ -1,5 +1,6 @@
 import KoaRouter from '@koa/router'
-import { Applicant, Listing, DetailedApplicant } from 'onecore-types'
+import { ApplicantStatus, Listing, DetailedApplicant } from 'onecore-types'
+import { z } from 'zod'
 
 import {
   getContactByContactCode,
@@ -36,6 +37,8 @@ import {
 
 import { routes as offerRoutes } from './offers'
 import { logger } from 'onecore-utilities'
+import { routes as contactRoutes } from './contacts'
+import { parseRequestBody } from '../../middlewares/parse-request-body'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
@@ -51,6 +54,7 @@ interface CreateWaitingListRequest {
 
 export const routes = (router: KoaRouter) => {
   offerRoutes(router)
+  contactRoutes(router)
   /**
    * Returns leases for a national registration number with populated sub objects
    */
