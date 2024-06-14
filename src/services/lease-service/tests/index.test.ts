@@ -622,7 +622,7 @@ describe('lease-service', () => {
       expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
       expect(res.status).toBe(200)
       expect(res.body.reason).toBe(
-        'Applicant does not have any active parking space contracts in the listings residential area'
+        'Applicant does not have any active parking space contracts in the listings residential area. Applicant is eligible to apply to parking space.'
       )
     })
 
