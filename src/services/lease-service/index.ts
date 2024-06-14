@@ -586,10 +586,10 @@ export const routes = (router: KoaRouter) => {
 
         if (!isListingInAreaWithSpecificRentalRules(listing)) {
           //special residential area rental rules does not apply to this listing
+          ctx.status = 200
           ctx.body = {
             reason: 'No residential area rental rules applies to this listing',
           }
-          ctx.status = 200
           return
         }
 
@@ -618,7 +618,7 @@ export const routes = (router: KoaRouter) => {
           // applicant does not have a housing contract in the same area as the listing
           ctx.body = {
             reason:
-              'User does not have any current or upcoming housing contracts in the residential area',
+              'Applicant does not have any current or upcoming housing contracts in the residential area',
           }
           ctx.status = 403
           return
@@ -634,9 +634,9 @@ export const routes = (router: KoaRouter) => {
           //applicant is eligible for parking space, applicationType for application should be 'additonal'
           ctx.body = {
             reason:
-              'User does not have any active parking space contracts in the listings residential area',
+              'Applicant does not have any active parking space contracts in the listings residential area. Applicant is eligible to apply to parking space.',
           }
-          ctx.status = 203 //??
+          ctx.status = 200
           return
         }
 
@@ -644,14 +644,17 @@ export const routes = (router: KoaRouter) => {
         //only option is to replace that parking space contract
         ctx.body = {
           reason:
-            'User already have an active parking space contract in the listings residential area',
+            'Applicant already have an active parking space contract in the listings residential area',
         }
         ctx.status = 409
       } catch (error: unknown) {
         ctx.status = 500
 
         if (error instanceof Error) {
-          console.log(error.message)
+          logger.error(
+            { err: error },
+            'error when validating residential rules'
+          )
           ctx.body = {
             error: error.message,
           }
@@ -794,6 +797,10 @@ export const routes = (router: KoaRouter) => {
         ctx.status = 500
 
         if (error instanceof Error) {
+          logger.error(
+            { err: error },
+            'error when validating residential rules'
+          )
           ctx.body = {
             error: error.message,
           }
