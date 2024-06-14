@@ -19,7 +19,7 @@ describe('isListingInAreaWithSpecificRentalRules', () => {
 
     const result = isListingInAreaWithSpecificRentalRules(listing)
 
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnTrueIfListingIsInAreaWithSpecificRentalRules', () => {
@@ -29,7 +29,7 @@ describe('isListingInAreaWithSpecificRentalRules', () => {
 
     const result = isListingInAreaWithSpecificRentalRules(listing)
 
-    expect(result).toBeTruthy()
+    expect(result).toBe(true)
   })
 })
 
@@ -45,7 +45,7 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
       detailedApplicant
     )
 
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnFalseIfCurrentHousingContractInOtherAreaThanListing', () => {
@@ -61,7 +61,7 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
       detailedApplicant
     )
 
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnFalseIfUpcomingHousingContractInOtherAreaThanListing', () => {
@@ -78,7 +78,7 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
       detailedApplicant
     )
 
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnTrueIfCurrentHousingContractInSameAreaAsListing', () => {
@@ -94,7 +94,7 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
       detailedApplicant
     )
 
-    expect(result).toBeTruthy()
+    expect(result).toBe(true)
   })
 
   it('shouldReturnTrueIfUpcomingHousingContractInSameAreaAsListing', () => {
@@ -111,7 +111,7 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
       detailedApplicant
     )
 
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 })
 
@@ -126,7 +126,7 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
       detailedApplicant
     )
 
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnFalseIfApplicantDoesNotHaveParkingSpaceInSameAreaAsListing', () => {
@@ -143,7 +143,7 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
       detailedApplicant
     )
 
-    expect(result).toBeFalsy()
+    expect(result).toBe(false)
   })
 
   it('shouldReturnTrueIfApplicantHaveParkingSpaceInSameAreaAsListing', () => {
@@ -161,6 +161,6 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
       detailedApplicant
     )
 
-    expect(result).toBeTruthy()
+    expect(result).toBe(true)
   })
 })

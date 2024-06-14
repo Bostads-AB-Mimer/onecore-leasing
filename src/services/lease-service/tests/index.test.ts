@@ -495,7 +495,7 @@ describe('lease-service', () => {
     it('responds with 404 if listing does not exist', async () => {
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
-        .mockResolvedValue(undefined)
+        .mockResolvedValueOnce(undefined)
 
       const res = await request(app.callback()).get(
         `/applicants/validateResidentialAreaRentalRules/123/456}`
@@ -513,11 +513,11 @@ describe('lease-service', () => {
 
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
-        .mockResolvedValue(listing)
+        .mockResolvedValueOnce(listing)
 
       const getApplicantByContactCodeAndListingIdSpy = jest
         .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-        .mockResolvedValue(undefined)
+        .mockResolvedValueOnce(undefined)
 
       const res = await request(app.callback()).get(
         `/applicants/validateResidentialAreaRentalRules/123/${listing.id}`
@@ -535,7 +535,7 @@ describe('lease-service', () => {
       }).build()
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
-        .mockResolvedValue(listing)
+        .mockResolvedValueOnce(listing)
 
       const res = await request(app.callback()).get(
         `/applicants/validateResidentialAreaRentalRules/123/${listing.id}`
@@ -558,11 +558,11 @@ describe('lease-service', () => {
 
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
-        .mockResolvedValue(listing)
+        .mockResolvedValueOnce(listing)
 
       const getApplicantByContactCodeAndListingIdSpy = jest
         .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-        .mockResolvedValue(applicant)
+        .mockResolvedValueOnce(applicant)
 
       const detailedApplicant = DetailedApplicantFactory.build({
         currentHousingContract: undefined,
@@ -571,7 +571,7 @@ describe('lease-service', () => {
 
       const getDetailedApplicantInformationSpy = jest
         .spyOn(priorityListService, 'getDetailedApplicantInformation')
-        .mockResolvedValue(detailedApplicant)
+        .mockResolvedValueOnce(detailedApplicant)
 
       const res = await request(app.callback()).get(
         `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
@@ -586,7 +586,7 @@ describe('lease-service', () => {
       )
     })
 
-    it('responds with 203 if applicant has no current parking space in the same area as listing', async () => {
+    it('responds with 200 if applicant has no current parking space in the same area as listing', async () => {
       const listing = ListingFactory.params({
         districtCode: 'OXB',
       }).build()
@@ -596,11 +596,11 @@ describe('lease-service', () => {
 
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
-        .mockResolvedValue(listing)
+        .mockResolvedValueOnce(listing)
 
       const getApplicantByContactCodeAndListingIdSpy = jest
         .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-        .mockResolvedValue(applicant)
+        .mockResolvedValueOnce(applicant)
 
       const detailedApplicant = DetailedApplicantFactory.build({
         currentHousingContract: LeaseFactory.build({
@@ -611,7 +611,7 @@ describe('lease-service', () => {
 
       const getDetailedApplicantInformationSpy = jest
         .spyOn(priorityListService, 'getDetailedApplicantInformation')
-        .mockResolvedValue(detailedApplicant)
+        .mockResolvedValueOnce(detailedApplicant)
 
       const res = await request(app.callback()).get(
         `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
@@ -620,7 +620,7 @@ describe('lease-service', () => {
       expect(getListingSpy).toHaveBeenCalled()
       expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
       expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
-      expect(res.status).toBe(203)
+      expect(res.status).toBe(200)
       expect(res.body.reason).toBe(
         'Applicant does not have any active parking space contracts in the listings residential area'
       )
@@ -636,11 +636,11 @@ describe('lease-service', () => {
 
       const getListingSpy = jest
         .spyOn(listingAdapter, 'getListingById')
-        .mockResolvedValue(listing)
+        .mockResolvedValueOnce(listing)
 
       const getApplicantByContactCodeAndListingIdSpy = jest
         .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-        .mockResolvedValue(applicant)
+        .mockResolvedValueOnce(applicant)
 
       const detailedApplicant = DetailedApplicantFactory.build({
         currentHousingContract: LeaseFactory.build({
@@ -656,7 +656,7 @@ describe('lease-service', () => {
 
       const getDetailedApplicantInformationSpy = jest
         .spyOn(priorityListService, 'getDetailedApplicantInformation')
-        .mockResolvedValue(detailedApplicant)
+        .mockResolvedValueOnce(detailedApplicant)
 
       const res = await request(app.callback()).get(
         `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`

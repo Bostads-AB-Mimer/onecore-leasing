@@ -581,10 +581,11 @@ export const routes = (router: KoaRouter) => {
 
         if (!isListingInAreaWithSpecificRentalRules(listing)) {
           //special residential area rental rules does not apply to this listing
+          ctx.status = 200
           ctx.body = {
             reason: 'No residential area rental rules applies to this listing',
           }
-          ctx.status = 200
+
           return
         }
 
@@ -629,9 +630,9 @@ export const routes = (router: KoaRouter) => {
           //applicant is eligible for parking space, applicationType for application should be 'additonal'
           ctx.body = {
             reason:
-              'Applicant does not have any active parking space contracts in the listings residential area',
+              'Applicant does not have any active parking space contracts in the listings residential area. Applicant is eligible to apply to parking space.',
           }
-          ctx.status = 203 //??
+          ctx.status = 200
           return
         }
 
@@ -646,7 +647,10 @@ export const routes = (router: KoaRouter) => {
         ctx.status = 500
 
         if (error instanceof Error) {
-          console.log(error.message)
+          logger.error(
+            { err: error },
+            'error when validating residential rules'
+          )
           ctx.body = {
             error: error.message,
           }
