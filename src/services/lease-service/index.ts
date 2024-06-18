@@ -27,10 +27,6 @@ import {
   getWaitingList,
 } from './adapters/xpand/xpand-soap-adapter'
 import {
-  getInvoicesByContactCode,
-  getUnpaidInvoicesByContactCode,
-} from './adapters/xpand/invoices-adapter'
-import {
   addPriorityToApplicantsBasedOnRentalRules,
   getDetailedApplicantInformation,
   sortApplicantsBasedOnRentalRules,
@@ -38,6 +34,7 @@ import {
 
 import { routes as offerRoutes } from './routes/offers'
 import { routes as contactRoutes } from './routes/contacts'
+import { routes as invoiceRoutes } from './routes/invoices'
 import { parseRequestBody } from '../../middlewares/parse-request-body'
 
 interface CreateLeaseRequest {
@@ -55,6 +52,7 @@ interface CreateWaitingListRequest {
 export const routes = (router: KoaRouter) => {
   offerRoutes(router)
   contactRoutes(router)
+  invoiceRoutes(router)
   /**
    * Returns leases for a national registration number with populated sub objects
    */
@@ -169,33 +167,6 @@ export const routes = (router: KoaRouter) => {
       data: responseData,
     }
   })
-
-  /**
-   * Gets all invoices for a contact, filtered on paid and unpaid.
-   */
-  router.get('(.*)/contact/invoices/contactCode/:contactCode', async (ctx) => {
-    const responseData = await getInvoicesByContactCode(ctx.params.contactCode)
-
-    ctx.body = {
-      data: responseData,
-    }
-  })
-
-  /**
-   * Gets the detailed status of a persons unpaid invoices.
-   */
-  router.get(
-    '(.*)/contact/unpaidInvoices/contactCode/:contactCode',
-    async (ctx) => {
-      const responseData = await getUnpaidInvoicesByContactCode(
-        ctx.params.contactCode
-      )
-
-      ctx.body = {
-        data: responseData,
-      }
-    }
-  )
 
   /**
    * Creates or updates a lease.

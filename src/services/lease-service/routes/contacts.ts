@@ -5,7 +5,7 @@ import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 export const routes = (router: KoaRouter) => {
   router.get('(.*)/contacts/search', async (ctx) => {
     if (typeof ctx.query.q !== 'string') {
-      ctx.body = 400
+      ctx.status = 400
       return
     }
 
