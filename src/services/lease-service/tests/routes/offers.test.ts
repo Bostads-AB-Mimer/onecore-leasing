@@ -19,7 +19,7 @@ import { OfferStatus } from 'onecore-types'
 
 import { routes } from '../../routes/offers'
 import * as offerAdapter from '../../adapters/offer-adapter'
-import { OfferFactory } from '../factory'
+import * as factory from '../factories'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -55,7 +55,7 @@ describe('offers', () => {
     })
 
     it('creates an offer', async () => {
-      const offer = OfferFactory.build()
+      const offer = factory.offer.build()
       jest.spyOn(offerAdapter, 'create').mockResolvedValueOnce(offer)
 
       const payload = {
