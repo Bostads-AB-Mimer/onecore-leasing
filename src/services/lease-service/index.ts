@@ -1,5 +1,6 @@
 import KoaRouter from '@koa/router'
 import { ApplicantStatus, Listing, DetailedApplicant } from 'onecore-types'
+import { logger } from 'onecore-utilities'
 import { z } from 'zod'
 
 import {
@@ -35,9 +36,8 @@ import {
   sortApplicantsBasedOnRentalRules,
 } from './priority-list-service'
 
-import { routes as offerRoutes } from './offers'
-import { logger } from 'onecore-utilities'
-import { routes as contactRoutes } from './contacts'
+import { routes as offerRoutes } from './routes/offers'
+import { routes as contactRoutes } from './routes/contacts'
 import { parseRequestBody } from '../../middlewares/parse-request-body'
 
 interface CreateLeaseRequest {

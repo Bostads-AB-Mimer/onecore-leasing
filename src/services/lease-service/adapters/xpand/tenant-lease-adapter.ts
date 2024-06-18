@@ -3,6 +3,7 @@ import { Lease, Contact } from 'onecore-types'
 import knex from 'knex'
 import Config from '../../../../common/config'
 import { logger } from 'onecore-utilities'
+import { AdapterResult } from '../types'
 
 const db = knex({
   client: 'mssql',
@@ -258,8 +259,6 @@ const getResidentialAreaByRentalPropertyId = async (
   }
 }
 
-type AdapterResult<T, E> = { ok: true; data: T } | { ok: false; err: E }
-
 const getContactsDataBySearchQuery = async (
   q: string
 ): Promise<
@@ -281,7 +280,7 @@ const getContactsDataBySearchQuery = async (
       data: rows,
     }
   } catch (err) {
-    console.log({ err }, 'tenant-lease-adapter.getContactsDataBySearchQuery')
+    logger.error({ err }, 'tenant-lease-adapter.getContactsDataBySearchQuery')
     return {
       ok: false,
       err: 'internal-error',

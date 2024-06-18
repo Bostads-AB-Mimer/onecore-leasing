@@ -1,6 +1,6 @@
 import KoaRouter from '@koa/router'
 
-import * as tenantLeaseAdapter from './adapters/xpand/tenant-lease-adapter'
+import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 
 export const routes = (router: KoaRouter) => {
   router.get('(.*)/contacts/search', async (ctx) => {
