@@ -34,6 +34,8 @@ import {
   sortApplicantsBasedOnRentalRules,
 } from './priority-list-service'
 
+import { getOffersForContact } from './adapters/offer-adapter'
+
 import { routes as offerRoutes } from './offers'
 import { logger } from 'onecore-utilities'
 
@@ -192,6 +194,17 @@ export const routes = (router: KoaRouter) => {
       }
     }
   )
+
+  /**
+   * Gets all offers for a contact by contactCode
+   */
+  router.get('(.*)/contacts/:contactCode/offers', async (ctx) => {
+    const responseData = await getOffersForContact(ctx.params.contactCode)
+
+    ctx.body = {
+      data: responseData,
+    }
+  })
 
   /**
    * Creates or updates a lease.
