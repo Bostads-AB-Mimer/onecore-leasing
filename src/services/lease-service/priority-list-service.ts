@@ -6,6 +6,7 @@
 
 import {
   Applicant,
+  Contact,
   DetailedApplicant,
   Lease,
   Listing,
@@ -13,14 +14,149 @@ import {
   parkingSpaceApplicationCategoryTranslation,
   WaitingList,
 } from 'onecore-types'
+import { logger } from 'onecore-utilities'
+
 import { getWaitingList } from './adapters/xpand/xpand-soap-adapter'
+import { leaseTypes } from '../../constants/leaseTypes'
 import {
   getContactByContactCode,
   getLeasesForContactCode,
   getResidentialAreaByRentalPropertyId,
 } from './adapters/xpand/tenant-lease-adapter'
-import { leaseTypes } from '../../constants/leaseTypes'
-import { logger } from 'onecore-utilities'
+
+export type AdapterResult<T, E> = { ok: true; data: T } | { ok: false; err: E }
+
+type GetTenantError =
+  | 'get-contact'
+  | 'contact-not-found'
+  | 'contact-not-tenant'
+  | 'get-waiting-lists'
+  | 'waiting-list-internal-parking-space-not-found'
+  | 'get-contact-leases'
+  | 'contact-leases-not-found'
+  | 'get-residential-area'
+  | 'housing-contracts-not-found'
+
+type Tenant = Contact & {
+  isTenant: true
+  queuePoints: number
+  leases: Array<Lease>
+  housingContracts: Array<Lease>
+  parkingSpaceContracts?: Array<Lease>
+}
+
+export async function getTenant(params: {
+  contactCode: string
+}): Promise<AdapterResult<Tenant, GetTenantError>> {
+  try {
+    const contact = await getContactByContactCode(params.contactCode, 'false')
+    if (!contact) {
+      return { ok: false, err: 'contact-not-found' }
+    }
+
+    if (contact.isTenant !== true) {
+      return { ok: false, err: 'contact-not-tenant' }
+    }
+
+    try {
+      const waitingList = await getWaitingList(
+        contact.nationalRegistrationNumber
+      )
+
+      const waitingListForInternalParkingSpace =
+        parseWaitingListForInternalParkingSpace(waitingList)
+
+      if (!waitingListForInternalParkingSpace) {
+        return {
+          ok: false,
+          err: 'waiting-list-internal-parking-space-not-found',
+        }
+      }
+
+      try {
+        const leases = await getLeasesForContactCode(
+          contact.contactCode,
+          'true', //this filter does not consider upcoming leases
+          undefined //do not include contacts
+        )
+
+        if (!leases) {
+          return {
+            ok: false,
+            err: 'contact-leases-not-found',
+          }
+        }
+
+        try {
+          const activeAndUpcomingLeases: Lease[] = await Promise.all(
+            leases.filter(isLeaseActiveOrUpcoming).map(async (lease) => ({
+              ...lease,
+              residentialArea: await getResidentialAreaByRentalPropertyId(
+                lease.rentalPropertyId
+              ),
+            }))
+          )
+
+          const housingContracts = parseLeasesForHousingContracts(
+            activeAndUpcomingLeases
+          )
+
+          if (!housingContracts) {
+            return { ok: false, err: 'housing-contracts-not-found' }
+          }
+
+          const [currentHousingContract, upcomingHousingContract] =
+            housingContracts
+
+          if (!currentHousingContract && !upcomingHousingContract) {
+            return { ok: false, err: 'housing-contracts-not-found' }
+          }
+
+          const contracts =
+            currentHousingContract && upcomingHousingContract
+              ? [currentHousingContract, upcomingHousingContract]
+              : currentHousingContract
+                ? [currentHousingContract]
+                : upcomingHousingContract
+                  ? [upcomingHousingContract]
+                  : []
+
+          const parkingSpaces = parseLeasesForParkingSpaces(
+            activeAndUpcomingLeases
+          )
+
+          return {
+            ok: true,
+            data: {
+              ...contact,
+              isTenant: contact.isTenant,
+              queuePoints: waitingListForInternalParkingSpace.queuePoints,
+              address: contact.address,
+              leases: activeAndUpcomingLeases,
+              housingContracts: contracts,
+              parkingSpaceContracts: parkingSpaces,
+            },
+          }
+        } catch (err) {
+          return {
+            ok: false,
+            err: 'get-residential-area',
+          }
+        }
+      } catch (err) {
+        return {
+          ok: false,
+          err: 'get-contact-leases',
+        }
+      }
+    } catch (err) {
+      return { ok: false, err: 'get-waiting-lists' }
+    }
+  } catch (err) {
+    logger.error(err, 'Error when calling getContactByContactCode')
+    return { ok: false, err: 'get-contact' }
+  }
+}
 
 const getDetailedApplicantInformation = async (
   applicant: Applicant
@@ -72,6 +208,7 @@ const getDetailedApplicantInformation = async (
     const housingContracts = parseLeasesForHousingContracts(
       activeAndUpcomingLeases
     )
+
     if (!housingContracts) {
       throw new Error(
         `Housing contracts not found for applicant ${applicant.contactCode}`
