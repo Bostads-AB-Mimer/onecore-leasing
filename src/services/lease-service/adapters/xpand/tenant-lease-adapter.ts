@@ -157,43 +157,50 @@ const getLeasesForContactCode = async (
   contactCode: string,
   includeTerminatedLeases: string | string[] | undefined,
   includeContacts: string | string[] | undefined
-) => {
+): Promise<AdapterResult<Array<any>, unknown>> => {
   logger.info({ contactCode }, 'Getting leases for contact code from Xpand DB')
-  const contact = await db
-    .from('cmctc')
-    .select('cmctc.keycmctc as contactKey')
-    .limit(1)
-    .where({
-      cmctckod: contactCode,
-    })
-    .limit(1)
+  try {
+    const contact = await db
+      .from('cmctc')
+      .select('cmctc.keycmctc as contactKey')
+      .limit(1)
+      .where({
+        cmctckod: contactCode,
+      })
+      .limit(1)
 
-  //todo: assert actual string value, now undefined equals false and every other value true
-  if (contact != undefined) {
+    //todo: assert actual string value, now undefined equals false and every other value true
+    if (contact != undefined) {
+      logger.info(
+        { contactCode },
+        'Getting leases for contact code from Xpand DB complete'
+      )
+
+      const leases = await getLeasesByContactKey(contact[0].contactKey)
+      if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
+        return { ok: true, data: leases }
+      }
+
+      if (includeContacts) {
+        for (const lease of leases) {
+          const tenants = await getContactsByLeaseId(lease.leaseId)
+          lease.tenants = tenants
+        }
+      }
+
+      return { ok: true, data: leases.filter(isLeaseActive) }
+    }
+
     logger.info(
       { contactCode },
-      'Getting leases for contact code from Xpand DB complete'
+      'Getting leases for contact code from Xpand DB complete - no leases found'
     )
 
-    const leases = await getLeasesByContactKey(contact[0].contactKey)
-    if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
-      return leases
-    }
-
-    if (includeContacts) {
-      for (const lease of leases) {
-        const tenants = await getContactsByLeaseId(lease.leaseId)
-        lease.tenants = tenants
-      }
-    }
-
-    return leases.filter(isLeaseActive)
+    return { ok: true, data: [] }
+  } catch (err) {
+    logger.error(err, 'tenantLeaseAdapter.getLeasesForContactCode')
+    return { ok: false, err }
   }
-
-  logger.info(
-    { contactCode },
-    'Getting leases for contact code from Xpand DB complete - no leases found'
-  )
 }
 
 const getLeasesForPropertyId = async (
@@ -239,22 +246,30 @@ const getLeasesForPropertyId = async (
 
 const getResidentialAreaByRentalPropertyId = async (
   rentalPropertyId: string
-) => {
-  const rows = await db
-    .from('babya')
-    .select('babya.code', 'babya.caption')
-    .innerJoin('bafst', 'bafst.keybabya', 'babya.keybabya')
-    .innerJoin('babuf', 'bafst.keycmobj', 'babuf.keyobjfst')
-    .where('babuf.hyresid', rentalPropertyId)
-    .limit(1)
+): Promise<AdapterResult<{ code: any; caption: any } | undefined, unknown>> => {
+  try {
+    const rows = await db
+      .from('babya')
+      .select('babya.code', 'babya.caption')
+      .innerJoin('bafst', 'bafst.keybabya', 'babya.keybabya')
+      .innerJoin('babuf', 'bafst.keycmobj', 'babuf.keyobjfst')
+      .where('babuf.hyresid', rentalPropertyId)
+      .limit(1)
 
-  if (!rows?.length) {
-    return undefined
-  }
-  //remove whitespaces from xpand and return
-  return {
-    code: rows[0].code.replace(/\s/g, ''),
-    caption: rows[0].caption.replace(/\s/g, ''),
+    if (!rows?.length) {
+      return { ok: true, data: undefined }
+    }
+    //remove whitespaces from xpand and return
+    return {
+      ok: true,
+      data: {
+        code: rows[0].code.replace(/\s/g, ''),
+        caption: rows[0].caption.replace(/\s/g, ''),
+      },
+    }
+  } catch (err) {
+    logger.error(err, 'tenantLeaseAdapter.getResidentialAreaByRentalPropertyId')
+    return { ok: false, err }
   }
 }
 
@@ -277,21 +292,35 @@ const getContactByNationalRegistrationNumber = async (
   return null
 }
 
+export type AdapterResult<T, E> = { ok: true; data: T } | { ok: false; err: E }
+
 const getContactByContactCode = async (
   contactKey: string,
   includeTerminatedLeases: string | string[] | undefined
-) => {
-  const rows = await getContactQuery().where({ cmctckod: contactKey }).limit(1)
-  if (rows && rows.length > 0) {
+): Promise<AdapterResult<Contact | null, unknown>> => {
+  try {
+    const rows = await getContactQuery()
+      .where({ cmctckod: contactKey })
+      .limit(1)
+
+    if (!rows?.length) {
+      return { ok: true, data: null }
+    }
+
     const phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
     const leases = await getLeaseIds(
       rows[0].contactKey,
       includeTerminatedLeases
     )
-    return transformFromDbContact(rows[0], phoneNumbers, leases)
-  }
 
-  return null
+    return {
+      ok: true,
+      data: transformFromDbContact(rows[0], phoneNumbers, leases),
+    }
+  } catch (err) {
+    logger.error(err, 'tenantLeaseAdapter.getContactByContactCode')
+    return { ok: false, err }
+  }
 }
 
 const getContactByPhoneNumber = async (
