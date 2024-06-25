@@ -1,5 +1,3 @@
-import { ApplicantFactory, ListingFactory } from './factory'
-
 jest.mock('onecore-utilities', () => {
   return {
     logger: {
@@ -316,7 +314,7 @@ describe('lease-service', () => {
     it('responds with an array of leases', async () => {
       const getLeasesSpy = jest
         .spyOn(tenantLeaseAdapter, 'getLeasesForContactCode')
-        .mockResolvedValueOnce(leaseMock)
+        .mockResolvedValueOnce({ ok: true, data: leaseMock })
 
       const res = await request(app.callback()).get(
         '/leases/for/contactCode/P965339'

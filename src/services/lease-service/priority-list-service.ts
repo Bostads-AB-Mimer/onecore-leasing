@@ -164,8 +164,8 @@ export async function getTenant(params: {
 
 const getDetailedApplicantInformation = async (
   applicant: Applicant
-): Promise<DetailedApplicant> => {
-  return Promise.resolve({} as DetailedApplicant)
+): Promise<AdapterResult<Tenant, GetTenantError>> => {
+  return getTenant({ contactCode: applicant.contactCode })
   // try {
   // const applicantFromXpand = await getContactByContactCode(
   // applicant.contactCode,

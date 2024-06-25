@@ -70,13 +70,20 @@ export const routes = (router: KoaRouter) => {
    * Returns leases for a contact code with populated sub objects
    */
   router.get('(.*)/leases/for/contactCode/:pnr', async (ctx) => {
-    const responseData = await getLeasesForContactCode(
+    const result = await getLeasesForContactCode(
       ctx.params.pnr,
       ctx.query.includeTerminatedLeases,
       ctx.query.includeContacts
     )
+
+    if (!result.ok) {
+      ctx.status = 500
+      return
+    }
+
+    ctx.status = 200
     ctx.body = {
-      data: responseData,
+      data: result.data,
     }
   })
 
@@ -430,7 +437,12 @@ export const routes = (router: KoaRouter) => {
         for (const applicant of listing.applicants) {
           const detailedApplicant =
             await getDetailedApplicantInformation(applicant)
-          applicants.push(detailedApplicant)
+          if (!detailedApplicant.ok)
+            throw new Error(
+              'Error when fetching detailed applicant information'
+            )
+
+          applicants.push(detailedApplicant.data as any) //TODO: Not tenant here
         }
       }
 
@@ -440,7 +452,7 @@ export const routes = (router: KoaRouter) => {
       )
 
       ctx.body = sortApplicantsBasedOnRentalRules(applicantsWithPriority)
-    } catch (error: unknown) {
+    } catch (error) {
       logger.error(error, 'Error getting applicants for waiting list')
       ctx.status = 500
 

@@ -183,7 +183,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce(detailedApplicant)
+      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
@@ -237,7 +237,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce(detailedApplicant)
+      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
@@ -299,7 +299,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce(detailedApplicant)
+      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
@@ -361,7 +361,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce(detailedApplicant)
+      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
@@ -457,7 +457,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce(detailedApplicant)
+      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
@@ -497,7 +497,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce(detailedApplicant)
+      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
@@ -542,7 +542,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
 
     const getDetailedApplicantInformationSpy = jest
       .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce(detailedApplicant)
+      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
