@@ -15,7 +15,7 @@ import request from 'supertest'
 import Koa from 'koa'
 import KoaRouter from '@koa/router'
 import bodyParser from 'koa-bodyparser'
-import { Lease, Listing } from 'onecore-types'
+import { DetailedApplicant, Lease, Listing } from 'onecore-types'
 
 import { routes } from '../index'
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
@@ -23,6 +23,7 @@ import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
 import * as listingAdapter from '../adapters/listing-adapter'
 import * as priorityListService from '../priority-list-service'
 import { leaseTypes } from '../../../constants/leaseTypes'
+import { DetailedApplicantFactory } from './factory'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -251,48 +252,41 @@ describe('lease-service', () => {
       },
     ],
   }
-  const detailedApplicantMock =
-    //todo: update when type interface defined
-    {
-      id: 3005,
-      name: 'Sökande Fiktiv',
-      contactCode: 'P145241',
-      applicationDate: new Date(),
-      applicationType: 'Additional',
-      status: 1,
-      listingId: 3030,
-      queuePoints: 1761,
-      address: {
-        street: 'Fiktiggatan 1',
-        number: '',
-        postalCode: '72222',
-        city: 'VÄSTERÅS',
+
+  const detailedApplicantMock = DetailedApplicantFactory.build({
+    id: 3005,
+    name: 'Sökande Fiktiv',
+    contactCode: 'P145241',
+    applicationDate: new Date(),
+    applicationType: 'Additional',
+    nationalRegistrationNumber: '1234',
+    status: 1,
+    listingId: 3030,
+    queuePoints: 1761,
+    address: {
+      street: 'Fiktiggatan 1',
+      number: '',
+      postalCode: '72222',
+      city: 'VÄSTERÅS',
+    },
+    currentHousingContract: {
+      leaseId: '306-001-01-0101/07',
+      leaseNumber: '07',
+      rentalPropertyId: '306-001-01-0101',
+      type: leaseTypes.housingContract,
+      leaseStartDate: new Date(),
+      leaseEndDate: undefined,
+      tenantContactIds: [],
+      tenants: [],
+      approvalDate: new Date(),
+      residentialArea: {
+        code: 'PET',
+        caption: 'Pettersberg',
       },
-      currentHousingContract: {
-        leaseId: '306-001-01-0101/07',
-        leaseNumber: '07',
-        rentalPropertyId: '306-001-01-0101',
-        type: leaseTypes.housingContract,
-        leaseStartDate: new Date(),
-        leaseEndDate: null,
-        tenantContactIds: [],
-        tenants: [],
-        noticeGivenBy: null,
-        noticeDate: null,
-        noticeTimeTenant: 3,
-        preferredMoveOutDate: null,
-        terminationDate: null,
-        contractDate: new Date(),
-        lastDebitDate: null,
-        approvalDate: new Date(),
-        residentialArea: {
-          code: 'PET',
-          caption: 'Pettersberg',
-        },
-      },
-      upcomingHousingContract: null,
-      parkingSpaceContracts: [],
-    }
+    },
+    upcomingHousingContract: undefined,
+    parkingSpaceContracts: [],
+  })
 
   describe('GET /getLeasesForNationalRegistrationNumber', () => {
     it('responds with an array of leases', async () => {
@@ -375,7 +369,7 @@ describe('lease-service', () => {
 
       const priorityListServiceSpy = jest
         .spyOn(priorityListService, 'getDetailedApplicantInformation')
-        .mockResolvedValue(detailedApplicantMock as any)
+        .mockResolvedValue({ ok: true, data: detailedApplicantMock })
 
       const res = await request(app.callback()).get(
         '/listing/1337/applicants/details'

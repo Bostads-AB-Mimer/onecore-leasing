@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-//@ts-nocheck
 import KoaRouter from '@koa/router'
 import {
   getApplicantByContactCodeAndListingId,
@@ -310,11 +308,18 @@ export const routes = (router: KoaRouter) => {
 
         const detailedApplicant =
           await getDetailedApplicantInformation(applicant)
+        if (!detailedApplicant.ok) {
+          ctx.status = 500
+          ctx.body = {
+            reason: 'Error when fetching detailed applicant',
+          }
+          return
+        }
         //validate listing area specific rental rules
         if (
           !isHousingContractsOfApplicantInSameAreaAsListing(
             listing,
-            detailedApplicant
+            detailedApplicant.data
           )
         ) {
           // applicant does not have a housing contract in the same area as the listing
@@ -329,7 +334,7 @@ export const routes = (router: KoaRouter) => {
         const doesUserHaveExistingParkingSpaceInSameAreaAsListing =
           doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
             listing,
-            detailedApplicant
+            detailedApplicant.data
           )
 
         if (!doesUserHaveExistingParkingSpaceInSameAreaAsListing) {

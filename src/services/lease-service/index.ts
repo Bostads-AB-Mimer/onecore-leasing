@@ -453,6 +453,7 @@ export const routes = (router: KoaRouter) => {
 
       ctx.body = sortApplicantsBasedOnRentalRules(applicantsWithPriority)
     } catch (error) {
+      console.log(error)
       logger.error(error, 'Error getting applicants for waiting list')
       ctx.status = 500
 
