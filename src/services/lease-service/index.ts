@@ -149,13 +149,24 @@ export const routes = (router: KoaRouter) => {
    * Gets a person by contact code.
    */
   router.get('(.*)/contact/contactCode/:contactCode', async (ctx) => {
-    const responseData = await getContactByContactCode(
+    const result = await getContactByContactCode(
       ctx.params.contactCode,
       ctx.query.includeTerminatedLeases
     )
 
+    if (!result.ok) {
+      ctx.status = 500
+      return
+    }
+
+    if (!result.data) {
+      ctx.status = 404
+      return
+    }
+
+    ctx.status = 200
     ctx.body = {
-      data: responseData,
+      data: result.data,
     }
   })
 
@@ -365,18 +376,20 @@ export const routes = (router: KoaRouter) => {
     '(.*)/contact/waitingList/:nationalRegistrationNumber',
     async (ctx) => {
       try {
-        const responseData = await getWaitingList(
+        const result = await getWaitingList(
           ctx.params.nationalRegistrationNumber
         )
 
+        if (!result.ok) {
+          ctx.status = 404
+          return
+        }
+
+        ctx.status = 200
         ctx.body = {
-          data: responseData,
+          data: result.data,
         }
       } catch (error: unknown) {
-        logger.error(
-          error,
-          'Error getting waiting lists for contact by national identity number'
-        )
         ctx.status = 500
 
         if (error instanceof Error) {
