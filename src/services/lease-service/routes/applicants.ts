@@ -174,6 +174,11 @@ export const routes = (router: KoaRouter) => {
 
         const detailedApplicant =
           await getDetailedApplicantInformation(applicant)
+        if (!detailedApplicant.ok) {
+          ctx.status = 500
+          ctx.body = 'Internal Error'
+          return
+        }
 
         //1. fetch the estateCode for the applicant's current or upcoming housing contract
         //2. check that the housing contract(s) matches the listings estate code
@@ -182,7 +187,7 @@ export const routes = (router: KoaRouter) => {
         //todo: a lot of this code could be simplified if we did not need to round trip to xpand to get the estate code
         const applicantHasHousingContractInSamePropertyAsListing =
           await doesUserHaveHousingContractInSamePropertyAsListing(
-            detailedApplicant,
+            detailedApplicant.data,
             listingEstateCode
           )
 
@@ -197,8 +202,8 @@ export const routes = (router: KoaRouter) => {
 
         //if applicant has no parking space contracts but is a tenant in the property
         if (
-          !detailedApplicant.parkingSpaceContracts ||
-          detailedApplicant.parkingSpaceContracts.length == 0
+          !detailedApplicant.data.parkingSpaceContracts ||
+          detailedApplicant.data.parkingSpaceContracts.length == 0
         ) {
           //applicant is eligible for parking space, applicationType for application should be 'additonal'
           ctx.body = {
@@ -217,7 +222,8 @@ export const routes = (router: KoaRouter) => {
 
         //todo: refactor and move to property rules validator?
         let applicantNeedsToReplaceContractToBeAbleToApply = false
-        for (const parkingSpaceContract of detailedApplicant.parkingSpaceContracts) {
+        for (const parkingSpaceContract of detailedApplicant.data
+          .parkingSpaceContracts) {
           //
           const parkingSpaceEstateCode =
             await getEstateCodeFromXpandByRentalObjectCode(
