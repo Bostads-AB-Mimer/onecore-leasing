@@ -75,14 +75,16 @@ describe('GET /applicants/:contactCode/:listingId', () => {
     const res = await request(app.callback()).get(
       `/applicants/${applicant.contactCode}/${listing.id}`
     )
-    expect(getListingSpy).toHaveBeenCalled()
     expect(res.status).toBe(200)
-    expect(res.body).toBeDefined()
-    expect(res.body.id).toEqual(applicant.id)
-    expect(res.body.listingId).toEqual(applicant.listingId)
-    expect(res.body.name).toEqual(applicant.name)
-    expect(res.body.contactCode).toEqual(applicant.contactCode)
-    expect(res.body.applicationType).toEqual(applicant.applicationType)
+    expect(res.body).toMatchObject({
+      id: applicant.id,
+      listingId: applicant.listingId,
+      name: applicant.name,
+      contactCode: applicant.contactCode,
+      applicationType: applicant.applicationType,
+    })
+
+    expect(getListingSpy).toHaveBeenCalled()
   })
 })
 
@@ -93,7 +95,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
       .mockResolvedValueOnce(undefined)
 
     const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/123/456}`
+      `/applicants/validatePropertyRentalRules/123/456`
     )
 
     expect(getListingSpy).toHaveBeenCalled()
@@ -115,7 +117,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
       })
 
     const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/123/456}`
+      `/applicants/validatePropertyRentalRules/123/456`
     )
 
     expect(getListingSpy).toHaveBeenCalled()
@@ -141,7 +143,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
       })
 
     const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/123/456}`
+      `/applicants/validatePropertyRentalRules/123/456`
     )
 
     expect(getListingSpy).toHaveBeenCalled()
