@@ -46,7 +46,6 @@ export type Tenant = Omit<Contact, 'leases'> & {
 }
 
 export async function getTenant(params: {
-  // export async function getDetailedContact(params: {
   contactCode: string
 }): Promise<AdapterResult<Tenant, GetTenantError>> {
   const contact = await getContactByContactCode(params.contactCode, 'false')

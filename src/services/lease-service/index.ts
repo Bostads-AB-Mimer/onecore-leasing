@@ -455,7 +455,7 @@ export const routes = (router: KoaRouter) => {
               'Error when fetching detailed applicant information'
             )
 
-          applicants.push(detailedApplicant.data as any) //TODO: Not tenant here
+          applicants.push(detailedApplicant.data)
         }
       }
 
@@ -466,7 +466,6 @@ export const routes = (router: KoaRouter) => {
 
       ctx.body = sortApplicantsBasedOnRentalRules(applicantsWithPriority)
     } catch (error) {
-      console.log(error)
       logger.error(error, 'Error getting applicants for waiting list')
       ctx.status = 500
 
