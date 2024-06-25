@@ -37,18 +37,18 @@ type GetTenantError =
   | 'get-residential-area'
   | 'housing-contracts-not-found'
 
-export type DetailedContact = Contact & {
+export type Tenant = Omit<Contact, 'leases'> & {
+  isTenant: true
   queuePoints: number
   currentHousingContract?: Lease
   upcomingHousingContract?: Lease
   parkingSpaceContracts?: Lease[]
-  priority?: number
 }
 
-// export async function getTenant(params: {
-export async function getDetailedContact(params: {
+export async function getTenant(params: {
+  // export async function getDetailedContact(params: {
   contactCode: string
-}): Promise<AdapterResult<DetailedContact, GetTenantError>> {
+}): Promise<AdapterResult<Tenant, GetTenantError>> {
   const contact = await getContactByContactCode(params.contactCode, 'false')
   if (!contact.ok) {
     return { ok: false, err: 'get-contact' }
@@ -56,6 +56,10 @@ export async function getDetailedContact(params: {
 
   if (!contact.data) {
     return { ok: false, err: 'contact-not-found' }
+  }
+
+  if (contact.data.isTenant !== true) {
+    return { ok: false, err: 'contact-not-tenant' }
   }
 
   const waitingList = await getWaitingList(
@@ -140,6 +144,7 @@ export async function getDetailedContact(params: {
     ok: true,
     data: {
       ...contact.data,
+      isTenant: contact.data.isTenant,
       queuePoints: waitingListForInternalParkingSpace.queuePoints,
       address: contact.data.address,
       currentHousingContract,

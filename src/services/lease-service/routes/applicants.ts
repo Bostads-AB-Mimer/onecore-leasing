@@ -15,10 +15,7 @@ import {
   doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
   doesUserHaveHousingContractInSamePropertyAsListing,
 } from '../property-rental-rules-validator'
-import {
-  getDetailedApplicantInformation,
-  getDetailedContact,
-} from '../priority-list-service'
+import { getTenant } from '../priority-list-service'
 import {
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
   isHousingContractsOfApplicantInSameAreaAsListing,
@@ -160,7 +157,7 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        const contact = await getDetailedContact({ contactCode })
+        const contact = await getTenant({ contactCode })
 
         if (!contact.ok) {
           ctx.status = 500
@@ -226,7 +223,7 @@ export const routes = (router: KoaRouter) => {
         }
 
         if (subjectNeedsToReplaceContractToBeAbleToApply) {
-          //applicant have an active parking space contract in the same property as the listing
+          //subject have an active parking space contract in the same property as the listing
           //only option is to replace that parking space contract
           ctx.body = {
             reason:
@@ -282,7 +279,7 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        const contact = await getDetailedContact({ contactCode })
+        const contact = await getTenant({ contactCode })
 
         if (!contact.ok) {
           ctx.status = 500
