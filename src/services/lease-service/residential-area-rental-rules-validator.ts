@@ -22,7 +22,10 @@ const isListingInAreaWithSpecificRentalRules = (listing: Listing) => {
 
 const isHousingContractsOfApplicantInSameAreaAsListing = (
   listing: Listing,
-  applicant: DetailedApplicant
+  applicant: Pick<
+    DetailedApplicant,
+    'currentHousingContract' | 'upcomingHousingContract'
+  >
 ): boolean => {
   const currentHousingContractDistrictCode =
     applicant.currentHousingContract?.residentialArea?.code
@@ -61,7 +64,7 @@ const isHousingContractsOfApplicantInSameAreaAsListing = (
 
 const doesApplicantHaveParkingSpaceContractsInSameAreaAsListing = (
   listing: Listing,
-  applicant: DetailedApplicant
+  applicant: Pick<DetailedApplicant, 'parkingSpaceContracts'>
 ) => {
   if (!applicant.parkingSpaceContracts) {
     return false

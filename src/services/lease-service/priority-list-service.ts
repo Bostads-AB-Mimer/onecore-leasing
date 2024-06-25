@@ -37,11 +37,12 @@ type GetTenantError =
   | 'get-residential-area'
   | 'housing-contracts-not-found'
 
-type DetailedContact = Contact & {
+export type DetailedContact = Contact & {
   queuePoints: number
-  leases: Array<Lease>
-  housingContracts: Array<Lease>
-  parkingSpaceContracts?: Array<Lease>
+  currentHousingContract?: Lease
+  upcomingHousingContract?: Lease
+  parkingSpaceContracts?: Lease[]
+  priority?: number
 }
 
 // export async function getTenant(params: {
@@ -131,16 +132,7 @@ export async function getDetailedContact(params: {
     return { ok: false, err: 'housing-contracts-not-found' }
   }
 
-  const contracts =
-    currentHousingContract && upcomingHousingContract
-      ? [currentHousingContract, upcomingHousingContract]
-      : currentHousingContract
-        ? [currentHousingContract]
-        : upcomingHousingContract
-          ? [upcomingHousingContract]
-          : []
-
-  const parkingSpaces = parseLeasesForParkingSpaces(
+  const parkingSpaceContracts = parseLeasesForParkingSpaces(
     activeAndUpcomingLeases.data
   )
 
@@ -148,12 +140,11 @@ export async function getDetailedContact(params: {
     ok: true,
     data: {
       ...contact.data,
-      isTenant: contact.data.isTenant,
       queuePoints: waitingListForInternalParkingSpace.queuePoints,
       address: contact.data.address,
-      leases: activeAndUpcomingLeases.data,
-      housingContracts: contracts,
-      parkingSpaceContracts: parkingSpaces,
+      currentHousingContract,
+      upcomingHousingContract,
+      parkingSpaceContracts,
     },
   }
 }
@@ -252,7 +243,7 @@ const getDetailedApplicantInformation = async (
     return { ok: false, err: 'housing-contracts-not-found' }
   }
 
-  const parkingSpaces = parseLeasesForParkingSpaces(
+  const parkingSpaceContracts = parseLeasesForParkingSpaces(
     activeAndUpcomingLeases.data
   )
 
@@ -262,9 +253,9 @@ const getDetailedApplicantInformation = async (
       ...applicant,
       queuePoints: waitingListForInternalParkingSpace.queuePoints,
       address: contact.data.address,
-      currentHousingContract: housingContracts[0],
-      upcomingHousingContract: housingContracts[1],
-      parkingSpaceContracts: parkingSpaces,
+      currentHousingContract,
+      upcomingHousingContract,
+      parkingSpaceContracts,
     },
   }
 }

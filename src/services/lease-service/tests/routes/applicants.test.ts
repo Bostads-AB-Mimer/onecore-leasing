@@ -1,4 +1,7 @@
 import request from 'supertest'
+import bodyParser from 'koa-bodyparser'
+import Koa from 'koa'
+import KoaRouter from '@koa/router'
 import {
   ApplicantFactory,
   DetailedApplicantFactory,
@@ -10,11 +13,7 @@ import * as listingAdapter from '../../adapters/listing-adapter'
 import * as estateCodeAdapter from '../../adapters/xpand/estate-code-adapter'
 import * as priorityListService from '../../priority-list-service'
 import { leaseTypes } from '../../../../constants/leaseTypes'
-
-import Koa from 'koa'
-import KoaRouter from '@koa/router'
 import { routes } from '../../routes/applicants'
-import bodyParser from 'koa-bodyparser'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -22,6 +21,20 @@ routes(router)
 app.use(bodyParser())
 app.use(router.routes())
 
+jest.mock('onecore-utilities', () => {
+  return {
+    logger: {
+      info: () => {
+        return
+      },
+      error: () => {
+        return
+      },
+    },
+  }
+})
+
+beforeEach(jest.restoreAllMocks)
 describe('GET /applicants/:contactCode/:listingId', () => {
   it('responds with 404 if no listing found', async () => {
     const getListingSpy = jest
@@ -56,6 +69,7 @@ describe('GET /applicants/:contactCode/:listingId', () => {
     expect(res.body.applicationType).toEqual(applicant.applicationType)
   })
 })
+
 describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', () => {
   it('responds with 404 if listing does not exist', async () => {
     const getListingSpy = jest
@@ -80,7 +94,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
-      .mockImplementation(async (rentalObjectCode: string) => {
+      .mockImplementation(async (_rentalObjectCode: string) => {
         return undefined
       })
 
@@ -121,37 +135,6 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
     )
   })
 
-  it('responds with 404 if applicant does not exist', async () => {
-    const listing = ListingFactory.build()
-
-    const getListingSpy = jest
-      .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValueOnce(listing)
-
-    jest
-      .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
-      .mockImplementation(async (rentalObjectCode: string) => {
-        const mockData: { [key: string]: string | undefined } = {
-          [listing.rentalObjectCode]: '24104',
-        }
-
-        return mockData[rentalObjectCode]
-      })
-
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(undefined)
-
-    const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/123/${listing.id}`
-    )
-
-    expect(getListingSpy).toHaveBeenCalled()
-    expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
-    expect(res.status).toBe(404)
-    expect(res.body.reason).toBe('Applicant was not found')
-  })
-
   it('responds with 403 if applicant does not have a current or upcoming housing contract in same area as listing', async () => {
     const listing = ListingFactory.build()
     const applicant = ApplicantFactory.params({
@@ -161,10 +144,6 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
       .mockResolvedValueOnce(listing)
-
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(applicant)
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
@@ -182,20 +161,22 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
     })
 
     const getDetailedApplicantInformationSpy = jest
-      .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
+      .spyOn(priorityListService, 'getDetailedContact')
+      .mockResolvedValueOnce({
+        ok: true,
+        data: detailedApplicant as unknown as priorityListService.DetailedContact,
+      })
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
     )
 
-    expect(getListingSpy).toHaveBeenCalled()
-    expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
-    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
     expect(res.status).toBe(403)
     expect(res.body.reason).toBe(
       'Applicant is not a current or coming tenant in the property'
     )
+    expect(getListingSpy).toHaveBeenCalled()
+    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
   })
 
   it('responds with 403 if user has no current parking space in the same property as listing', async () => {
@@ -207,10 +188,6 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
       .mockResolvedValueOnce(listing)
-
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(applicant)
 
     const currentHousingContractRentalObjectCode =
       'CURRENT_HOUSING_CONTRACT_RENTAL_OBJECT_CODE'
@@ -236,20 +213,22 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
       })
 
     const getDetailedApplicantInformationSpy = jest
-      .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
+      .spyOn(priorityListService, 'getDetailedContact')
+      .mockResolvedValueOnce({
+        ok: true,
+        data: detailedApplicant as unknown as priorityListService.DetailedContact,
+      })
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
     )
 
-    expect(getListingSpy).toHaveBeenCalled()
-    expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
-    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
     expect(res.status).toBe(403)
     expect(res.body.reason).toBe(
       'User does not have any active parking space contracts in the listings residential area'
     )
+    expect(getListingSpy).toHaveBeenCalled()
+    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
   })
 
   it('responds with 409 if user already has parking space in the same property as listing', async () => {
@@ -261,10 +240,6 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
       .mockResolvedValueOnce(listing)
-
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(applicant)
 
     const currentHousingContractRentalObjectCode =
       'CURRENT_HOUSING_CONTRACT_RENTAL_OBJECT_CODE'
@@ -298,20 +273,22 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
       })
 
     const getDetailedApplicantInformationSpy = jest
-      .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
+      .spyOn(priorityListService, 'getDetailedContact')
+      .mockResolvedValueOnce({
+        ok: true,
+        data: detailedApplicant as unknown as priorityListService.DetailedContact,
+      })
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
     )
 
-    expect(getListingSpy).toHaveBeenCalled()
-    expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
-    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
     expect(res.status).toBe(409)
     expect(res.body.reason).toBe(
       'User already have an active parking space contract in the listings residential area'
     )
+    expect(getListingSpy).toHaveBeenCalled()
+    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
   })
 
   it('responds with 403 if user already has parking space but not in the same property as listing', async () => {
@@ -323,10 +300,6 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
     const getListingSpy = jest
       .spyOn(listingAdapter, 'getListingById')
       .mockResolvedValueOnce(listing)
-
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(applicant)
 
     const currentHousingContractRentalObjectCode =
       'CURRENT_HOUSING_CONTRACT_RENTAL_OBJECT_CODE'
@@ -360,15 +333,17 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
       })
 
     const getDetailedApplicantInformationSpy = jest
-      .spyOn(priorityListService, 'getDetailedApplicantInformation')
-      .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
+      .spyOn(priorityListService, 'getDetailedContact')
+      .mockResolvedValueOnce({
+        ok: true,
+        data: detailedApplicant as unknown as priorityListService.DetailedContact,
+      })
 
     const res = await request(app.callback()).get(
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.id}`
     )
 
     expect(getListingSpy).toHaveBeenCalled()
-    expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
     expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
     expect(res.status).toBe(403)
     expect(res.body.reason).toBe(
@@ -384,35 +359,12 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
       .mockResolvedValueOnce(undefined)
 
     const res = await request(app.callback()).get(
-      `/applicants/validateResidentialAreaRentalRules/123/456}`
+      `/applicants/validateResidentialAreaRentalRules/123/456`
     )
 
     expect(getListingSpy).toHaveBeenCalled()
     expect(res.status).toBe(404)
     expect(res.body.reason).toBe('Listing was not found')
-  })
-
-  it('responds with 404 if applicant does not exist', async () => {
-    const listing = ListingFactory.params({
-      districtCode: 'OXB',
-    }).build()
-
-    const getListingSpy = jest
-      .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValueOnce(listing)
-
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(undefined)
-
-    const res = await request(app.callback()).get(
-      `/applicants/validateResidentialAreaRentalRules/123/${listing.id}`
-    )
-
-    expect(getListingSpy).toHaveBeenCalled()
-    expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
-    expect(res.status).toBe(404)
-    expect(res.body.reason).toBe('Applicant was not found')
   })
 
   it('responds with 200 if rental rules does not apply to listing', async () => {
@@ -446,30 +398,25 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
       .spyOn(listingAdapter, 'getListingById')
       .mockResolvedValueOnce(listing)
 
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(applicant)
-
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: undefined,
       upcomingHousingContract: undefined,
     })
 
     const getDetailedApplicantInformationSpy = jest
-      .spyOn(priorityListService, 'getDetailedApplicantInformation')
+      .spyOn(priorityListService, 'getDetailedContact')
       .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
     )
 
-    expect(getListingSpy).toHaveBeenCalled()
-    expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
-    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
     expect(res.status).toBe(403)
     expect(res.body.reason).toBe(
-      'Applicant does not have any current or upcoming housing contracts in the residential area'
+      'Subject does not have any current or upcoming housing contracts in the residential area'
     )
+    expect(getListingSpy).toHaveBeenCalled()
+    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
   })
 
   it('responds with 200 if applicant has no current parking space in the same area as listing', async () => {
@@ -484,10 +431,6 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
       .spyOn(listingAdapter, 'getListingById')
       .mockResolvedValueOnce(listing)
 
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(applicant)
-
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: LeaseFactory.build({
         residentialArea: { code: 'OXB' },
@@ -496,20 +439,20 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
     })
 
     const getDetailedApplicantInformationSpy = jest
-      .spyOn(priorityListService, 'getDetailedApplicantInformation')
+      .spyOn(priorityListService, 'getDetailedContact')
       .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
     )
 
-    expect(getListingSpy).toHaveBeenCalled()
-    expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
-    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
     expect(res.status).toBe(200)
     expect(res.body.reason).toBe(
-      'Applicant does not have any active parking space contracts in the listings residential area. Applicant is eligible to apply to parking space.'
+      'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space.'
     )
+
+    expect(getListingSpy).toHaveBeenCalled()
+    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
   })
 
   it('responds with 409 if applicant has a current parking space in the same area as listing', async () => {
@@ -524,10 +467,6 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
       .spyOn(listingAdapter, 'getListingById')
       .mockResolvedValueOnce(listing)
 
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(applicant)
-
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: LeaseFactory.build({
         residentialArea: { code: 'OXB' },
@@ -541,19 +480,18 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
     })
 
     const getDetailedApplicantInformationSpy = jest
-      .spyOn(priorityListService, 'getDetailedApplicantInformation')
+      .spyOn(priorityListService, 'getDetailedContact')
       .mockResolvedValueOnce({ ok: true, data: detailedApplicant as any })
 
     const res = await request(app.callback()).get(
       `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.id}`
     )
 
-    expect(getListingSpy).toHaveBeenCalled()
-    expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
-    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
     expect(res.status).toBe(409)
     expect(res.body.reason).toBe(
-      'Applicant already have an active parking space contract in the listings residential area'
+      'Subject already have an active parking space contract in the listings residential area'
     )
+    expect(getListingSpy).toHaveBeenCalled()
+    expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
   })
 })

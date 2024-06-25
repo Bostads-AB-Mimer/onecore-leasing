@@ -22,7 +22,10 @@ const doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules = (
 }
 
 async function doesUserHaveHousingContractInSamePropertyAsListing(
-  detailedApplicant: DetailedApplicant,
+  detailedApplicant: Pick<
+    DetailedApplicant,
+    'currentHousingContract' | 'upcomingHousingContract'
+  >,
   listingEstateCode: string
 ): Promise<boolean> {
   let estateCodeOfCurrentHousingContract = undefined
