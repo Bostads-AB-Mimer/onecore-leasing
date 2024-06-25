@@ -390,8 +390,12 @@ export const routes = (router: KoaRouter) => {
           data: result.data,
         }
       } catch (error: unknown) {
-        ctx.status = 500
+        logger.error(
+          error,
+          'Error getting waiting lists for contact by national registration number'
+        )
 
+        ctx.status = 500
         if (error instanceof Error) {
           ctx.body = {
             error: error.message,
