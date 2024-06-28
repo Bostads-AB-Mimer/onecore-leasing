@@ -500,15 +500,13 @@ const parseLeasesForHousingContracts = (
   return undefined
 }
 
-const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] | undefined => {
-  const parkingSpaces: Lease[] = []
-  for (const lease of leases) {
-    //use startsWith to handle whitespace issues from xpand
-    if (lease.type.includes(leaseTypes.parkingspaceContract)) {
-      parkingSpaces.push(lease)
-    }
-  }
-  return parkingSpaces
+const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] => {
+  const isParkingSpaceContract = (lease: Lease) =>
+    [leaseTypes.garageContract, leaseTypes.parkingspaceContract].includes(
+      lease.type.trim()
+    )
+
+  return leases.filter(isParkingSpaceContract)
 }
 
 export {
