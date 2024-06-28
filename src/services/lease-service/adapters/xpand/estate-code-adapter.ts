@@ -28,17 +28,18 @@ const db = knex({
 const getEstateCodeFromXpandByRentalObjectCode = async (
   rentalObjectCode: string
 ): Promise<string | undefined> => {
-  const rows = await db('cmobj')
+  const [row] = await db('cmobj')
     .select('babuf.hyresid as rentalPropertyId', 'babuf.fstcode as estateCode')
     .innerJoin('cmobt', 'cmobj.keycmobt', 'cmobt.keycmobt')
     .innerJoin('hyinf', 'cmobj.keycmobj', 'hyinf.keycmobj')
     .innerJoin('babuf', 'cmobj.keycmobj', 'babuf.keycmobj')
     .where('hyinf.hyresid', rentalObjectCode)
 
-  if (rows.length) {
-    return rows[0]
+  if (!row) {
+    return undefined
   }
-  return undefined
+
+  return row.estateCode
 }
 
 export { getEstateCodeFromXpandByRentalObjectCode }

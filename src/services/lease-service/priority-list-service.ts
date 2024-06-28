@@ -108,9 +108,13 @@ export async function getTenant(params: {
         lease.rentalPropertyId
       )
 
+      if (!residentialArea.ok) {
+        throw new Error('Err getting residential area')
+      }
+
       return {
         ...lease,
-        residentialArea,
+        residentialArea: { ...residentialArea.data },
       }
     })
   )
