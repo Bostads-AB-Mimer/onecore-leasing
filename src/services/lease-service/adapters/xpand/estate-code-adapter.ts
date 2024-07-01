@@ -39,7 +39,7 @@ const getEstateCodeFromXpandByRentalObjectCode = async (
     return undefined
   }
 
-  return row
+  return { estateCode: row.estateCode, type: row.type.trim() }
 }
 
 export { getEstateCodeFromXpandByRentalObjectCode }

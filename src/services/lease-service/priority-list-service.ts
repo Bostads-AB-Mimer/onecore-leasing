@@ -23,6 +23,7 @@ import {
   getLeasesForContactCode,
   getResidentialAreaByRentalPropertyId,
 } from './adapters/xpand/tenant-lease-adapter'
+import { getEstateCodeFromXpandByRentalObjectCode } from './adapters/xpand/estate-code-adapter'
 
 export type AdapterResult<T, E> = { ok: true; data: T } | { ok: false; err: E }
 
@@ -100,7 +101,7 @@ export async function getTenant(params: {
   }
 
   const activeAndUpcomingLeases: AdapterResult<
-    Array<any>,
+    Array<Lease>,
     unknown
   > = await Promise.all(
     leases.data.filter(isLeaseActiveOrUpcoming).map(async (lease) => {
@@ -114,7 +115,7 @@ export async function getTenant(params: {
 
       return {
         ...lease,
-        residentialArea: { ...residentialArea.data },
+        residentialArea: residentialArea.data,
       }
     })
   )
@@ -139,11 +140,19 @@ export async function getTenant(params: {
     return { ok: false, err: 'housing-contracts-not-found' }
   }
 
-  // TODO: We should not check the contract here, but rather the parking space
-  // entity. Because there are many different types of lease types that corresponds to
-  // a parking space.
+  // TODO: this can throw
+  const leasesWithPropertyInfoType = await Promise.all(
+    activeAndUpcomingLeases.data.map(async (l) => {
+      const type = await getEstateCodeFromXpandByRentalObjectCode(
+        l.rentalPropertyId
+      ).then((v) => v?.type)
+
+      return { ...l, propertyType: type }
+    })
+  )
+
   const parkingSpaceContracts = parseLeasesForParkingSpaces(
-    activeAndUpcomingLeases.data
+    leasesWithPropertyInfoType
   )
 
   return {
@@ -503,13 +512,10 @@ const parseLeasesForHousingContracts = (
   return undefined
 }
 
-const parseLeasesForParkingSpaces = (leases: Lease[]): Lease[] => {
-  const isParkingSpaceContract = (lease: Lease) =>
-    [leaseTypes.garageContract, leaseTypes.parkingspaceContract].includes(
-      lease.type.trim()
-    )
-
-  return leases.filter(isParkingSpaceContract)
+const parseLeasesForParkingSpaces = (
+  leases: Array<Lease & { propertyType?: string }>
+): Array<Lease> => {
+  return leases.filter((v) => v.propertyType === 'babps') // I think 'babps' is xpands name for "bilplats"
 }
 
 export {

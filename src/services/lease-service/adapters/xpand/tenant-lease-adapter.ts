@@ -157,7 +157,7 @@ const getLeasesForContactCode = async (
   contactCode: string,
   includeTerminatedLeases: string | string[] | undefined,
   includeContacts: string | string[] | undefined
-): Promise<AdapterResult<Array<any>, unknown>> => {
+): Promise<AdapterResult<Array<Lease>, unknown>> => {
   logger.info({ contactCode }, 'Getting leases for contact code from Xpand DB')
   try {
     const contact = await db
@@ -460,7 +460,7 @@ const getLeasesByContactKey = async (keycmctc: string) => {
 
   const leases: any[] = []
   for (const row of rows) {
-    const lease = await transformFromDbLease(row, [], [])
+    const lease = transformFromDbLease(row, [], [])
     leases.push(lease)
   }
 

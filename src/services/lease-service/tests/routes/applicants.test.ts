@@ -61,6 +61,7 @@ describe('GET /applicants/:contactCode/:listingId', () => {
     expect(getListingSpy).toHaveBeenCalled()
     expect(res.status).toBe(404)
   })
+
   it('responds with 200 on success', async () => {
     const listing = ListingFactory.build()
 
