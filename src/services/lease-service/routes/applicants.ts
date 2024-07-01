@@ -7,7 +7,6 @@ import {
   getApplicantByContactCodeAndListingId,
   getApplicantById,
   getApplicantsByContactCode,
-  getListingById,
   updateApplicantStatus,
 } from '../adapters/listing-adapter'
 import { getEstateCodeFromXpandByRentalObjectCode } from '../adapters/xpand/estate-code-adapter'
@@ -119,35 +118,14 @@ export const routes = (router: KoaRouter) => {
   )
 
   router.get(
-    '(.*)/applicants/validatePropertyRentalRules/:contactCode/:listingId',
+    '(.*)/applicants/validatePropertyRentalRules/:contactCode/:estateCode',
     async (ctx) => {
       try {
-        const { contactCode, listingId } = ctx.params
-        const listing = await getListingById(listingId)
-        if (!listing) {
-          ctx.status = 404
-          ctx.body = {
-            reason: 'Listing was not found',
-          }
-          return
-        }
-
-        const listingEstateCode =
-          await getEstateCodeFromXpandByRentalObjectCode(
-            listing.rentalObjectCode
-          )
-
-        if (!listingEstateCode) {
-          ctx.status = 404
-          ctx.body = {
-            reason: 'Property info for listing was not found',
-          }
-          return
-        }
+        const { contactCode, estateCode } = ctx.params
 
         if (
           !doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules(
-            listingEstateCode
+            estateCode
           )
         ) {
           ctx.status = 200
@@ -173,7 +151,7 @@ export const routes = (router: KoaRouter) => {
         const subjectHasHousingContractInSamePropertyAsListing =
           await doesUserHaveHousingContractInSamePropertyAsListing(
             contact.data,
-            listingEstateCode
+            estateCode
           )
 
         if (!subjectHasHousingContractInSamePropertyAsListing) {
@@ -215,7 +193,7 @@ export const routes = (router: KoaRouter) => {
             )
 
           if (parkingSpaceEstateCode != undefined) {
-            if (listingEstateCode == parkingSpaceEstateCode) {
+            if (estateCode === parkingSpaceEstateCode) {
               subjectNeedsToReplaceContractToBeAbleToApply = true
               break
             }
