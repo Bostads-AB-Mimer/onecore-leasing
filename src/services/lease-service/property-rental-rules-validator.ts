@@ -1,7 +1,7 @@
 import { DetailedApplicant } from 'onecore-types'
 import { getEstateCodeFromXpandByRentalObjectCode } from './adapters/xpand/estate-code-adapter'
 
-const propertiesWithSpecificRentalRules: any[] = [
+const propertiesWithSpecificRentalRules = [
   {
     estateCode: '24104', //Sjöodjuret 2
   },
