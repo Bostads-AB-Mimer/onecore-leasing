@@ -139,6 +139,9 @@ export async function getTenant(params: {
     return { ok: false, err: 'housing-contracts-not-found' }
   }
 
+  // TODO: We should not check the contract here, but rather the parking space
+  // entity. Because there are many different types of lease types that corresponds to
+  // a parking space.
   const parkingSpaceContracts = parseLeasesForParkingSpaces(
     activeAndUpcomingLeases.data
   )
