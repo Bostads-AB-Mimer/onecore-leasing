@@ -2,7 +2,7 @@ import { DetailedApplicantFactory, LeaseFactory } from './factory'
 
 import {
   doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
-  doesUserHaveHousingContractInSamePropertyAsListing,
+  doesTenantHaveHousingContractInSamePropertyAsListing,
 } from '../property-rental-rules-validator'
 import * as estateCodeAdapter from '../adapters/xpand/estate-code-adapter'
 import { getEstateCodeFromXpandByRentalObjectCode } from '../adapters/xpand/estate-code-adapter'
@@ -29,35 +29,28 @@ describe('doesPropertyHaveSpecificRentalRules', () => {
 const listingEstateCode = '24104'
 
 describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
-  it('shouldReturnFalseIfNoHousingContract', async () => {
+  it('should returns false if no housing contract', async () => {
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: undefined,
       upcomingHousingContract: undefined,
     })
 
-    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+    const result = await doesTenantHaveHousingContractInSamePropertyAsListing(
       detailedApplicant,
       listingEstateCode
     )
     expect(result).toBe(false)
   })
 
-  it('shouldReturnFalseIfNoCurrentHousingContractAndUpcomingHousingContractInWrongProperty', async () => {
+  it('should return false if no current housing contract and upcoming housing contract in wrong property', async () => {
     const housingContractRentalObjectCode = '123'
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
-      .mockImplementation(async (rentalObjectCode: string) => {
-        const mockData: { [key: string]: string | undefined } = {
-          [housingContractRentalObjectCode]: 'NON_MATCHING_ESTATE_CODE',
-        }
-
-        return mockData[rentalObjectCode]
+      .mockResolvedValueOnce({
+        estateCode: 'NON_MATCHING_ESTATE_CODE',
+        type: 'foo',
       })
-
-    await expect(
-      getEstateCodeFromXpandByRentalObjectCode(housingContractRentalObjectCode)
-    ).resolves.toBe('NON_MATCHING_ESTATE_CODE')
 
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: undefined,
@@ -66,24 +59,21 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       }),
     })
 
-    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+    const result = await doesTenantHaveHousingContractInSamePropertyAsListing(
       detailedApplicant,
       listingEstateCode
     )
     expect(result).toBe(false)
   })
 
-  it('shouldReturnFalseIfNoUpcomingHousingContractAndCurrentHousingContractInWrongProperty', async () => {
+  it('should return false if no upcoming housing contract and current housing contract in wrong property', async () => {
     const housingContractRentalObjectCode = '123'
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
-      .mockImplementation(async (rentalObjectCode: string) => {
-        const mockData: { [key: string]: string | undefined } = {
-          [housingContractRentalObjectCode]: 'NON_MATCHING_ESTATE_CODE',
-        }
-
-        return mockData[rentalObjectCode]
+      .mockResolvedValueOnce({
+        estateCode: 'NON_MATCHING_ESTATE_CODE',
+        type: 'foo',
       })
 
     const detailedApplicant = DetailedApplicantFactory.build({
@@ -93,25 +83,19 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       upcomingHousingContract: undefined,
     })
 
-    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+    const result = await doesTenantHaveHousingContractInSamePropertyAsListing(
       detailedApplicant,
       listingEstateCode
     )
     expect(result).toBe(false)
   })
 
-  it('shouldReturnTrueIfCurrentHousingContractInSameProperty', async () => {
+  it('should return true if curent housing contract in same property', async () => {
     const housingContractRentalObjectCode = '123'
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
-      .mockImplementation(async (rentalObjectCode: string) => {
-        const mockData: { [key: string]: string | undefined } = {
-          [housingContractRentalObjectCode]: '24104',
-        }
-
-        return mockData[rentalObjectCode]
-      })
+      .mockResolvedValueOnce({ estateCode: '24104', type: 'foo' })
 
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: LeaseFactory.build({
@@ -120,25 +104,19 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       upcomingHousingContract: undefined,
     })
 
-    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+    const result = await doesTenantHaveHousingContractInSamePropertyAsListing(
       detailedApplicant,
       listingEstateCode
     )
     expect(result).toBe(true)
   })
 
-  it('shouldReturnTrueIfUpcomingHousingContractInSameProperty', async () => {
+  it('should return true if upcoming housing contract in same property', async () => {
     const housingContractRentalObjectCode = '123'
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
-      .mockImplementation(async (rentalObjectCode: string) => {
-        const mockData: { [key: string]: string | undefined } = {
-          [housingContractRentalObjectCode]: '24104',
-        }
-
-        return mockData[rentalObjectCode]
-      })
+      .mockResolvedValueOnce({ estateCode: '24104', type: 'foo' })
 
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: undefined,
@@ -147,7 +125,7 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       }),
     })
 
-    const result = await doesUserHaveHousingContractInSamePropertyAsListing(
+    const result = await doesTenantHaveHousingContractInSamePropertyAsListing(
       detailedApplicant,
       listingEstateCode
     )

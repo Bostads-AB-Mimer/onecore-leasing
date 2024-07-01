@@ -27,9 +27,9 @@ const db = knex({
 
 const getEstateCodeFromXpandByRentalObjectCode = async (
   rentalObjectCode: string
-): Promise<string | undefined> => {
+): Promise<{ estateCode: string; type: string } | undefined> => {
   const [row] = await db('cmobj')
-    .select('babuf.hyresid as rentalPropertyId', 'babuf.fstcode as estateCode')
+    .select('babuf.fstcode as estateCode', 'cmobt.keycmobt as type')
     .innerJoin('cmobt', 'cmobj.keycmobt', 'cmobt.keycmobt')
     .innerJoin('hyinf', 'cmobj.keycmobj', 'hyinf.keycmobj')
     .innerJoin('babuf', 'cmobj.keycmobj', 'babuf.keycmobj')
@@ -39,7 +39,7 @@ const getEstateCodeFromXpandByRentalObjectCode = async (
     return undefined
   }
 
-  return row.estateCode
+  return row
 }
 
 export { getEstateCodeFromXpandByRentalObjectCode }

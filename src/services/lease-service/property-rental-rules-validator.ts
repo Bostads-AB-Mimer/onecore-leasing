@@ -1,5 +1,5 @@
-import { DetailedApplicant } from 'onecore-types'
 import { getEstateCodeFromXpandByRentalObjectCode } from './adapters/xpand/estate-code-adapter'
+import { Tenant } from './priority-list-service'
 
 const propertiesWithSpecificRentalRules = [
   {
@@ -21,49 +21,26 @@ const doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules = (
   )
 }
 
-async function doesUserHaveHousingContractInSamePropertyAsListing(
-  detailedApplicant: Pick<
-    DetailedApplicant,
-    'currentHousingContract' | 'upcomingHousingContract'
-  >,
+async function doesTenantHaveHousingContractInSamePropertyAsListing(
+  data: Pick<Tenant, 'currentHousingContract' | 'upcomingHousingContract'>,
   listingEstateCode: string
 ): Promise<boolean> {
-  let estateCodeOfCurrentHousingContract = undefined
-  let estateCodeOfUpcomingHousingContract = undefined
-
-  if (detailedApplicant.currentHousingContract) {
-    estateCodeOfCurrentHousingContract =
-      await getEstateCodeFromXpandByRentalObjectCode(
-        detailedApplicant.currentHousingContract.rentalPropertyId
+  const propertyInfo = data.upcomingHousingContract
+    ? await getEstateCodeFromXpandByRentalObjectCode(
+        data.upcomingHousingContract.rentalPropertyId
       )
-  }
+    : data.currentHousingContract
+      ? await getEstateCodeFromXpandByRentalObjectCode(
+          data.currentHousingContract.rentalPropertyId
+        )
+      : undefined
 
-  if (detailedApplicant.upcomingHousingContract) {
-    estateCodeOfUpcomingHousingContract =
-      await getEstateCodeFromXpandByRentalObjectCode(
-        detailedApplicant.upcomingHousingContract.rentalPropertyId
-      )
-  }
+  if (!propertyInfo) return false
 
-  const applicantHasCurrentHousingContractInProperty = !!(
-    estateCodeOfCurrentHousingContract &&
-    estateCodeOfCurrentHousingContract !== '' &&
-    estateCodeOfCurrentHousingContract === listingEstateCode
-  )
-
-  const applicantHasUpcomingHousingContractInProperty = !!(
-    estateCodeOfUpcomingHousingContract &&
-    estateCodeOfUpcomingHousingContract !== '' &&
-    estateCodeOfUpcomingHousingContract === listingEstateCode
-  )
-
-  return (
-    applicantHasCurrentHousingContractInProperty ||
-    applicantHasUpcomingHousingContractInProperty
-  )
+  return propertyInfo.estateCode === listingEstateCode
 }
 
 export {
   doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
-  doesUserHaveHousingContractInSamePropertyAsListing,
+  doesTenantHaveHousingContractInSamePropertyAsListing,
 }

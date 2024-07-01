@@ -12,7 +12,7 @@ import {
 import { getEstateCodeFromXpandByRentalObjectCode } from '../adapters/xpand/estate-code-adapter'
 import {
   doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
-  doesUserHaveHousingContractInSamePropertyAsListing,
+  doesTenantHaveHousingContractInSamePropertyAsListing,
 } from '../property-rental-rules-validator'
 import { getTenant } from '../priority-list-service'
 import {
@@ -143,13 +143,8 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        //1. fetch the estateCode for the applicant's current or upcoming housing contract
-        //2. check that the housing contract(s) matches the listings estate code
-        //3. if not, the user cannot apply for the parking space
-        //todo: a better future scenario is to include the estate code in onecore database(s)
-        //todo: a lot of this code could be simplified if we did not need to round trip to xpand to get the estate code
         const subjectHasHousingContractInSamePropertyAsListing =
-          await doesUserHaveHousingContractInSamePropertyAsListing(
+          await doesTenantHaveHousingContractInSamePropertyAsListing(
             contact.data,
             estateCode
           )
@@ -164,10 +159,7 @@ export const routes = (router: KoaRouter) => {
         }
 
         //if subject has no parking space contracts but is a tenant in the property
-        if (
-          !contact.data.parkingSpaceContracts ||
-          !contact.data.parkingSpaceContracts?.length
-        ) {
+        if (!contact.data.parkingSpaceContracts?.length) {
           //subject is eligible for parking space, applicationType for application should be 'additonal'
           ctx.status = 403
           ctx.body = {
@@ -177,32 +169,20 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        //1. fetch the estateCode for each of the applicant's parking space contracts
-        //validation:
-        //2. Check if any of the users parking space contracts matches the listings estate code
-        //3. if any parking space contract matches the listing estatecode, user needs to replace that parking space contract
-        //4. else, the user can apply with applicationType 'additional'
+        const getParkingSpacePropertyInfo =
+          contact.data.parkingSpaceContracts.map((lease) =>
+            getEstateCodeFromXpandByRentalObjectCode(lease.rentalPropertyId)
+          )
 
-        //todo: refactor and move to property rules validator?
-        let subjectNeedsToReplaceContractToBeAbleToApply = false
-        for (const parkingSpaceContract of contact.data.parkingSpaceContracts) {
-          //
-          const parkingSpaceEstateCode =
-            await getEstateCodeFromXpandByRentalObjectCode(
-              parkingSpaceContract.rentalPropertyId
-            )
+        const parkingSpaceEstateCodes = await Promise.all(
+          getParkingSpacePropertyInfo
+        ).then((res) => res.filter(Boolean).map((r) => r?.estateCode))
 
-          if (parkingSpaceEstateCode != undefined) {
-            if (estateCode === parkingSpaceEstateCode) {
-              subjectNeedsToReplaceContractToBeAbleToApply = true
-              break
-            }
-          }
-        }
+        const subjectNeedsToReplaceParkingSpace = parkingSpaceEstateCodes.some(
+          (v) => v === estateCode
+        )
 
-        if (subjectNeedsToReplaceContractToBeAbleToApply) {
-          //subject have an active parking space contract in the same property as the listing
-          //only option is to replace that parking space contract
+        if (subjectNeedsToReplaceParkingSpace) {
           ctx.body = {
             reason:
               'User already have an active parking space contract in the listings residential area',

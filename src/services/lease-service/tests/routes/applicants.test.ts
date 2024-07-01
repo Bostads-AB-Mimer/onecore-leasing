@@ -113,7 +113,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
           [listing.rentalObjectCode]: '24104',
         }
 
-        return mockData[rentalObjectCode]
+        return { estateCode: mockData[rentalObjectCode] as string, type: 'foo' }
       })
 
     const tenant = TenantFactory.build({
@@ -162,7 +162,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
           [currentHousingContractRentalObjectCode]: '24104',
         }
 
-        return mockData[rentalObjectCode]
+        return { estateCode: mockData[rentalObjectCode] as string, type: 'foo' }
       })
 
     const getTenantSpy = jest
@@ -214,7 +214,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
           [parkingSpaceRentalObjectCode]: '24104',
         }
 
-        return mockData[rentalObjectCode]
+        return { estateCode: mockData[rentalObjectCode] as string, type: 'foo' }
       })
 
     const getTenantSpy = jest
@@ -265,7 +265,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
           [parkingSpaceRentalObjectCode]: 'ESTATE_CODE_FOR_ANOTHER_PROPERTY',
         }
 
-        return mockData[rentalObjectCode]
+        return { estateCode: mockData[rentalObjectCode] as string, type: 'foo' }
       })
 
     const getTenantSpy = jest
