@@ -1,8 +1,4 @@
-import {
-  DetailedApplicantFactory,
-  LeaseFactory,
-  ListingFactory,
-} from './factory'
+import { DetailedApplicantFactory, LeaseFactory } from './factory'
 import {
   isListingInAreaWithSpecificRentalRules,
   isHousingContractsOfApplicantInSameAreaAsListing,
@@ -10,44 +6,30 @@ import {
 } from '../residential-area-rental-rules-validator'
 
 describe('isListingInAreaWithSpecificRentalRules', () => {
-  it('shouldReturnFalseIfListingIsNotInAreaWithSpecificRentalRules', () => {
-    const listing = ListingFactory.build({
-      districtCode: 'AREA_WHERE_RULES_DO_NOT_APPLY',
-    })
-
-    const result = isListingInAreaWithSpecificRentalRules(listing)
-
+  it('should returns false if listing is not in area with specific rental rules', () => {
+    const result = isListingInAreaWithSpecificRentalRules(
+      'AREA_WHERE_RULES_DO_NOT_APPLY'
+    )
     expect(result).toBe(false)
   })
 
-  it('shouldReturnTrueIfListingIsInAreaWithSpecificRentalRules', () => {
-    const listing = ListingFactory.build({
-      districtCode: 'OXB',
-    })
-
-    const result = isListingInAreaWithSpecificRentalRules(listing)
-
+  it('should return true if listing is in area with specific rental rules', () => {
+    const result = isListingInAreaWithSpecificRentalRules('OXB')
     expect(result).toBe(true)
   })
 })
 
 describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
-  it('shouldReturnFalseIfNoHousingContracts', () => {
-    const detailedApplicant = DetailedApplicantFactory.build({
+  it('should return false if no housing contracts', () => {
+    const result = isHousingContractsOfApplicantInSameAreaAsListing('MAL', {
       currentHousingContract: undefined,
       upcomingHousingContract: undefined,
     })
 
-    const result = isHousingContractsOfApplicantInSameAreaAsListing(
-      ListingFactory.build(),
-      detailedApplicant
-    )
-
     expect(result).toBe(false)
   })
 
-  it('shouldReturnFalseIfCurrentHousingContractInOtherAreaThanListing', () => {
-    const listing = ListingFactory.build({ districtCode: 'ABC' })
+  it('should return false if current housing contract is in other area than listing', () => {
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: LeaseFactory.build({
         residentialArea: { code: 'XYZ' },
@@ -55,15 +37,14 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
     })
 
     const result = isHousingContractsOfApplicantInSameAreaAsListing(
-      listing,
+      'ABC',
       detailedApplicant
     )
 
     expect(result).toBe(false)
   })
 
-  it('shouldReturnFalseIfUpcomingHousingContractInOtherAreaThanListing', () => {
-    const listing = ListingFactory.build({ districtCode: 'ABC' })
+  it('should return false if upcoming housing contract in other area than listing', () => {
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: undefined,
       upcomingHousingContract: LeaseFactory.build({
@@ -72,15 +53,14 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
     })
 
     const result = isHousingContractsOfApplicantInSameAreaAsListing(
-      listing,
+      'ABC',
       detailedApplicant
     )
 
     expect(result).toBe(false)
   })
 
-  it('shouldReturnTrueIfCurrentHousingContractInSameAreaAsListing', () => {
-    const listing = ListingFactory.build({ districtCode: 'ABC' })
+  it('should return true if current housing contract in same area as listing', () => {
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: LeaseFactory.build({
         residentialArea: { code: 'ABC' },
@@ -88,15 +68,14 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
     })
 
     const result = isHousingContractsOfApplicantInSameAreaAsListing(
-      listing,
+      'ABC',
       detailedApplicant
     )
 
     expect(result).toBe(true)
   })
 
-  it('shouldReturnTrueIfUpcomingHousingContractInSameAreaAsListing', () => {
-    const listing = ListingFactory.build({ districtCode: 'ABC' })
+  it('should return true if upcomming housing contract in same area as listing', () => {
     const detailedApplicant = DetailedApplicantFactory.build({
       currentHousingContract: undefined,
       upcomingHousingContract: LeaseFactory.build({
@@ -105,7 +84,7 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
     })
 
     const result = isHousingContractsOfApplicantInSameAreaAsListing(
-      listing,
+      'ABC',
       detailedApplicant
     )
 
@@ -114,22 +93,20 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
 })
 
 describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
-  it('shouldReturnFalseIfApplicantDoesNotHaveAnyParkingSpaceContracts', () => {
+  it('should return false if applicant does not have any parking space contracts', () => {
     const detailedApplicant = DetailedApplicantFactory.build({
       parkingSpaceContracts: undefined,
     })
 
     const result = doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
-      ListingFactory.build(),
+      'MAL',
       detailedApplicant
     )
 
     expect(result).toBe(false)
   })
 
-  it('shouldReturnFalseIfApplicantDoesNotHaveParkingSpaceInSameAreaAsListing', () => {
-    const listing = ListingFactory.build({ districtCode: 'ABC' })
-
+  it('should return false if applicant does not have parking space in same area as listing', () => {
     const detailedApplicant = DetailedApplicantFactory.build({
       parkingSpaceContracts: [
         LeaseFactory.build({ residentialArea: { code: 'XYZ' } }),
@@ -137,16 +114,14 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
     })
 
     const result = doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
-      listing,
+      'ABC',
       detailedApplicant
     )
 
     expect(result).toBe(false)
   })
 
-  it('shouldReturnTrueIfApplicantHaveParkingSpaceInSameAreaAsListing', () => {
-    const listing = ListingFactory.build({ districtCode: 'ABC' })
-
+  it('should return true if applicant have parking space in same area as listing', () => {
     const detailedApplicant = DetailedApplicantFactory.build({
       parkingSpaceContracts: [
         LeaseFactory.build({ residentialArea: { code: 'XYZ' } }),
@@ -155,7 +130,7 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
     })
 
     const result = doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
-      listing,
+      'ABC',
       detailedApplicant
     )
 

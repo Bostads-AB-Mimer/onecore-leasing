@@ -14,14 +14,14 @@ const residentialAreasWithSpecificRentalRules: ResidentialArea[] = [
   },
 ]
 
-const isListingInAreaWithSpecificRentalRules = (listing: Listing) => {
+const isListingInAreaWithSpecificRentalRules = (districtCode: string) => {
   return residentialAreasWithSpecificRentalRules.some(
-    (area) => area.code === listing.districtCode
+    (area) => area.code === districtCode
   )
 }
 
 const isHousingContractsOfApplicantInSameAreaAsListing = (
-  listing: Listing,
+  districtCode: string,
   applicant: Pick<
     DetailedApplicant,
     'currentHousingContract' | 'upcomingHousingContract'
@@ -43,7 +43,7 @@ const isHousingContractsOfApplicantInSameAreaAsListing = (
   //applicants current housing contract area does not match listings area
   if (
     currentHousingContractDistrictCode &&
-    currentHousingContractDistrictCode != listing.districtCode
+    currentHousingContractDistrictCode !== districtCode
   ) {
     return false
   }
@@ -54,7 +54,7 @@ const isHousingContractsOfApplicantInSameAreaAsListing = (
     upcomingHousingContractDistrictCode
   ) {
     //applicants upcoming housing contract area does not match listings area
-    if (currentHousingContractDistrictCode != listing.districtCode) {
+    if (currentHousingContractDistrictCode !== districtCode) {
       return false
     }
   }
@@ -63,7 +63,7 @@ const isHousingContractsOfApplicantInSameAreaAsListing = (
 }
 
 const doesApplicantHaveParkingSpaceContractsInSameAreaAsListing = (
-  listing: Listing,
+  districtCode: string,
   applicant: Pick<DetailedApplicant, 'parkingSpaceContracts'>
 ) => {
   if (!applicant.parkingSpaceContracts) {
@@ -72,7 +72,7 @@ const doesApplicantHaveParkingSpaceContractsInSameAreaAsListing = (
 
   return applicant.parkingSpaceContracts.some(
     (parkingSpaceContract) =>
-      parkingSpaceContract.residentialArea?.code === listing.districtCode
+      parkingSpaceContract.residentialArea?.code === districtCode
   )
 }
 

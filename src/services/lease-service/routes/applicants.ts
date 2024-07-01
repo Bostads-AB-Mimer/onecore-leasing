@@ -256,22 +256,12 @@ export const routes = (router: KoaRouter) => {
   )
 
   router.get(
-    '(.*)/applicants/validateResidentialAreaRentalRules/:contactCode/:listingId',
+    '(.*)/applicants/validateResidentialAreaRentalRules/:contactCode/:districtCode',
     async (ctx) => {
       try {
-        const { contactCode, listingId } = ctx.params // Extracting from URL parameters
-        const listing = await getListingById(listingId)
+        const { contactCode, districtCode } = ctx.params
 
-        if (listing == undefined) {
-          ctx.status = 404
-          ctx.body = {
-            reason: 'Listing was not found',
-          }
-          return
-        }
-
-        if (!isListingInAreaWithSpecificRentalRules(listing)) {
-          //special residential area rental rules does not apply to this listing
+        if (!isListingInAreaWithSpecificRentalRules(districtCode)) {
           ctx.status = 200
           ctx.body = {
             reason: 'No residential area rental rules applies to this listing',
@@ -286,10 +276,9 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        //validate listing area specific rental rules
         if (
           !isHousingContractsOfApplicantInSameAreaAsListing(
-            listing,
+            districtCode,
             contact.data
           )
         ) {
@@ -303,7 +292,7 @@ export const routes = (router: KoaRouter) => {
 
         const doesUserHaveExistingParkingSpaceInSameAreaAsListing =
           doesApplicantHaveParkingSpaceContractsInSameAreaAsListing(
-            listing,
+            districtCode,
             contact.data
           )
 
@@ -324,16 +313,13 @@ export const routes = (router: KoaRouter) => {
             'Subject already have an active parking space contract in the listings residential area',
         }
         ctx.status = 409
-      } catch (error: unknown) {
-        ctx.status = 500
+      } catch (err: unknown) {
+        logger.error(err, 'Error when validating residential rental rules')
 
-        if (error instanceof Error) {
-          logger.error(
-            { err: error },
-            'error when validating residential rules'
-          )
+        ctx.status = 500
+        if (err instanceof Error) {
           ctx.body = {
-            error: error.message,
+            error: err.message,
           }
         }
       }
