@@ -101,11 +101,10 @@ export async function getTenant(params: {
     }
   }
 
-  const activeAndUpcomingLeases: AdapterResult<
-    Array<Lease>,
-    unknown
-  > = await Promise.all(
-    leases.data.filter(isLeaseActiveOrUpcoming).map(async (lease) => {
+  const activeAndUpcomingLeases = leases.data.filter(isLeaseActiveOrUpcoming)
+
+  const leasesWithResidentialArea = await Promise.all(
+    activeAndUpcomingLeases.map(async (lease) => {
       const residentialArea = await getResidentialAreaByRentalPropertyId(
         lease.rentalPropertyId
       )
@@ -123,12 +122,12 @@ export async function getTenant(params: {
     .then((data) => ({ ok: true, data }) as const)
     .catch((err) => ({ ok: false, err }) as const)
 
-  if (!activeAndUpcomingLeases.ok) {
+  if (!leasesWithResidentialArea.ok) {
     return { ok: false, err: 'get-residential-area' }
   }
 
   const housingContracts = parseLeasesForHousingContracts(
-    activeAndUpcomingLeases.data
+    leasesWithResidentialArea.data
   )
 
   if (!housingContracts) {
@@ -141,8 +140,8 @@ export async function getTenant(params: {
     return { ok: false, err: 'housing-contracts-not-found' }
   }
 
-  const leasesWithPropertyInfoType = await Promise.all(
-    activeAndUpcomingLeases.data.map(async (l) => {
+  const leasesWithPropertyType = await Promise.all(
+    leasesWithResidentialArea.data.map(async (l) => {
       const type = await getEstateCodeFromXpandByRentalObjectCode(
         l.rentalPropertyId
       ).then((v) => v?.type)
@@ -153,12 +152,12 @@ export async function getTenant(params: {
     .then((data) => ({ ok: true, data }) as const)
     .catch((err) => ({ ok: false, err }) as const)
 
-  if (!leasesWithPropertyInfoType.ok) {
+  if (!leasesWithPropertyType.ok) {
     return { ok: false, err: 'get-lease-property-info' }
   }
 
   const parkingSpaceContracts = parseLeasesForParkingSpaces(
-    leasesWithPropertyInfoType.data
+    leasesWithPropertyType.data
   )
 
   return {
@@ -237,26 +236,33 @@ const getDetailedApplicantInformation = async (
     }
   }
 
-  const activeAndUpcomingLeases: AdapterResult<
-    Array<any>,
-    unknown
-  > = await Promise.all(
-    leases.data.filter(isLeaseActiveOrUpcoming).map(async (lease) => ({
-      ...lease,
-      residentialArea: await getResidentialAreaByRentalPropertyId(
+  const activeAndUpcomingLeases = leases.data.filter(isLeaseActiveOrUpcoming)
+
+  const leasesWithResidentialArea = await Promise.all(
+    activeAndUpcomingLeases.map(async (lease) => {
+      const residentialArea = await getResidentialAreaByRentalPropertyId(
         lease.rentalPropertyId
-      ),
-    }))
+      )
+
+      if (!residentialArea.ok) {
+        throw new Error('Err getting residential area')
+      }
+
+      return {
+        ...lease,
+        residentialArea: residentialArea.data,
+      }
+    })
   )
     .then((data) => ({ ok: true, data }) as const)
     .catch((err) => ({ ok: false, err }) as const)
 
-  if (!activeAndUpcomingLeases.ok) {
+  if (!leasesWithResidentialArea.ok) {
     return { ok: false, err: 'get-residential-area' }
   }
 
   const housingContracts = parseLeasesForHousingContracts(
-    activeAndUpcomingLeases.data
+    leasesWithResidentialArea.data
   )
 
   if (!housingContracts) {
@@ -270,7 +276,7 @@ const getDetailedApplicantInformation = async (
   }
 
   const parkingSpaceContracts = parseLeasesForParkingSpaces(
-    activeAndUpcomingLeases.data
+    leasesWithResidentialArea.data
   )
 
   return {
