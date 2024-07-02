@@ -89,10 +89,17 @@ describe('GET /applicants/:contactCode/:listingId', () => {
   })
 })
 
-describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', () => {
+describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectCode', () => {
   it('responds with 200 if rental rules does not apply to property', async () => {
+    jest
+      .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
+      .mockResolvedValueOnce({
+        type: 'foo',
+        estateCode: 'foo',
+      })
+
     const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/123/${'ESTATE_CODE_WITHOUT_RENTAL_RULES'}`
+      `/applicants/validatePropertyRentalRules/123/foo`
     )
 
     expect(res.status).toBe(200)
@@ -101,7 +108,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
     )
   })
 
-  it('responds with 403 if applicant does not have a current or upcoming housing contract in same area as listing', async () => {
+  it('responds with 403 if user does not have a current or upcoming housing contract in same area as listing', async () => {
     const listing = ListingFactory.build()
     const applicant = ApplicantFactory.params({
       listingId: listing.id,
@@ -130,7 +137,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
       })
 
     const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${'24104'}`
+      `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${listing.rentalObjectCode}`
     )
 
     expect(res.status).toBe(403)
@@ -158,13 +165,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
 
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
-      .mockImplementation(async (rentalObjectCode: string) => {
-        const mockData: { [key: string]: string | undefined } = {
-          [currentHousingContractRentalObjectCode]: '24104',
-        }
-
-        return { estateCode: mockData[rentalObjectCode] as string, type: 'foo' }
-      })
+      .mockResolvedValue({ estateCode: '24104', type: 'bar' })
 
     const getTenantSpy = jest
       .spyOn(getTenantService, 'getTenant')
@@ -174,7 +175,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
       })
 
     const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${'24104'}`
+      `/applicants/validatePropertyRentalRules/${applicant.contactCode}/foo`
     )
 
     expect(res.status).toBe(403)
@@ -226,7 +227,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
       })
 
     const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${'24104'}`
+      `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${parkingSpaceRentalObjectCode}`
     )
 
     expect(res.status).toBe(409)
@@ -253,7 +254,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
       parkingSpaceContracts: [
         LeaseFactory.build({
           type: leaseTypes.parkingspaceContract,
-          rentalPropertyId: parkingSpaceRentalObjectCode,
+          rentalPropertyId: 'foo',
         }),
       ],
     })
@@ -263,7 +264,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
       .mockImplementation(async (rentalObjectCode: string) => {
         const mockData: { [key: string]: string | undefined } = {
           [currentHousingContractRentalObjectCode]: '24104',
-          [parkingSpaceRentalObjectCode]: 'ESTATE_CODE_FOR_ANOTHER_PROPERTY',
+          [parkingSpaceRentalObjectCode]: '24104',
         }
 
         return { estateCode: mockData[rentalObjectCode] as string, type: 'foo' }
@@ -277,14 +278,15 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
       })
 
     const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${'24104'}`
+      `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${parkingSpaceRentalObjectCode}`
     )
 
-    expect(getTenantSpy).toHaveBeenCalled()
     expect(res.status).toBe(403)
     expect(res.body.reason).toBe(
       'User does not have any active parking space contracts in the listings residential area'
     )
+
+    expect(getTenantSpy).toHaveBeenCalled()
   })
 })
 

@@ -118,14 +118,29 @@ export const routes = (router: KoaRouter) => {
   )
 
   router.get(
-    '(.*)/applicants/validatePropertyRentalRules/:contactCode/:estateCode',
+    '(.*)/applicants/validatePropertyRentalRules/:contactCode/:rentalObjectCode',
     async (ctx) => {
       try {
-        const { contactCode, estateCode } = ctx.params
+        const { contactCode, rentalObjectCode } = ctx.params
+
+        const propertyInfo =
+          await getEstateCodeFromXpandByRentalObjectCode(rentalObjectCode)
+
+        if (!propertyInfo) {
+          ctx.status = 404
+          return
+        }
+
+        if (propertyInfo.type !== 'babps') {
+          ctx.status = 400
+          ctx.body = {
+            reason: 'Rental object code entity is not a parking space',
+          }
+        }
 
         if (
           !doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules(
-            estateCode
+            propertyInfo.estateCode
           )
         ) {
           ctx.status = 200
@@ -146,7 +161,7 @@ export const routes = (router: KoaRouter) => {
         const subjectHasHousingContractInSamePropertyAsListing =
           await doesTenantHaveHousingContractInSamePropertyAsListing(
             contact.data,
-            estateCode
+            propertyInfo.estateCode
           )
 
         if (!subjectHasHousingContractInSamePropertyAsListing) {
@@ -179,7 +194,7 @@ export const routes = (router: KoaRouter) => {
         ).then((res) => res.filter(Boolean).map((r) => r?.estateCode))
 
         const subjectNeedsToReplaceParkingSpace = parkingSpaceEstateCodes.some(
-          (v) => v === estateCode
+          (v) => v === propertyInfo.estateCode
         )
 
         if (subjectNeedsToReplaceParkingSpace) {
