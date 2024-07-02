@@ -37,6 +37,7 @@ type GetTenantError =
   | 'contact-leases-not-found'
   | 'get-residential-area'
   | 'housing-contracts-not-found'
+  | 'get-lease-property-info'
 
 export type Tenant = Omit<Contact, 'leases'> & {
   isTenant: true
@@ -82,8 +83,8 @@ export async function getTenant(params: {
 
   const leases = await getLeasesForContactCode(
     contact.data.contactCode,
-    'true', //this filter does not consider upcoming leases
-    undefined //do not include contacts
+    'true',
+    undefined
   )
 
   if (!leases.ok) {
@@ -140,7 +141,6 @@ export async function getTenant(params: {
     return { ok: false, err: 'housing-contracts-not-found' }
   }
 
-  // TODO: this can throw
   const leasesWithPropertyInfoType = await Promise.all(
     activeAndUpcomingLeases.data.map(async (l) => {
       const type = await getEstateCodeFromXpandByRentalObjectCode(
@@ -150,9 +150,15 @@ export async function getTenant(params: {
       return { ...l, propertyType: type }
     })
   )
+    .then((data) => ({ ok: true, data }) as const)
+    .catch((err) => ({ ok: false, err }) as const)
+
+  if (!leasesWithPropertyInfoType.ok) {
+    return { ok: false, err: 'get-lease-property-info' }
+  }
 
   const parkingSpaceContracts = parseLeasesForParkingSpaces(
-    leasesWithPropertyInfoType
+    leasesWithPropertyInfoType.data
   )
 
   return {
