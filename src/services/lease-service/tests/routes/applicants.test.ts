@@ -104,7 +104,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
 
     expect(res.status).toBe(200)
     expect(res.body.reason).toBe(
-      'No property rental rules applies to this listing'
+      'No property rental rules applies to this parking space'
     )
   })
 
@@ -142,7 +142,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
 
     expect(res.status).toBe(403)
     expect(res.body.reason).toBe(
-      'Applicant is not a current or coming tenant in the property'
+      'User is not a current or coming tenant in the property'
     )
     expect(getTenantSpy).toHaveBeenCalled()
   })
@@ -302,7 +302,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:distri
 
     expect(res.status).toBe(200)
     expect(res.body.reason).toBe(
-      'No residential area rental rules applies to this listing'
+      'No residential area rental rules applies to this parking space'
     )
   })
 

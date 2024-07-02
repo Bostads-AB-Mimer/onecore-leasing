@@ -145,7 +145,7 @@ export const routes = (router: KoaRouter) => {
         ) {
           ctx.status = 200
           ctx.body = {
-            reason: 'No property rental rules applies to this listing',
+            reason: 'No property rental rules applies to this parking space',
           }
           return
         }
@@ -167,8 +167,7 @@ export const routes = (router: KoaRouter) => {
         if (!subjectHasHousingContractInSamePropertyAsListing) {
           ctx.status = 403
           ctx.body = {
-            reason:
-              'Applicant is not a current or coming tenant in the property',
+            reason: 'User is not a current or coming tenant in the property',
           }
           return
         }
@@ -218,7 +217,7 @@ export const routes = (router: KoaRouter) => {
         if (error instanceof Error) {
           logger.error(
             { err: error },
-            'error when validating residential rules'
+            'Error when validating residential rules'
           )
           ctx.body = {
             error: error.message,
@@ -237,7 +236,8 @@ export const routes = (router: KoaRouter) => {
         if (!isListingInAreaWithSpecificRentalRules(districtCode)) {
           ctx.status = 200
           ctx.body = {
-            reason: 'No residential area rental rules applies to this listing',
+            reason:
+              'No residential area rental rules applies to this parking space',
           }
           return
         }
