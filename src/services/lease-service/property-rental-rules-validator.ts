@@ -1,5 +1,5 @@
 import { getEstateCodeFromXpandByRentalObjectCode } from './adapters/xpand/estate-code-adapter'
-import { Tenant } from './priority-list-service'
+import { Tenant } from './get-tenant'
 
 const propertiesWithSpecificRentalRules = [
   {

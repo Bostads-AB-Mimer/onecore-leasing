@@ -14,7 +14,7 @@ import {
   doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
   doesTenantHaveHousingContractInSamePropertyAsListing,
 } from '../property-rental-rules-validator'
-import { getTenant } from '../priority-list-service'
+import { getTenant } from '../get-tenant'
 import {
   doesApplicantHaveParkingSpaceContractsInSameAreaAsListing,
   isHousingContractsOfApplicantInSameAreaAsListing,

@@ -8,11 +8,11 @@ import { ApplicantFactory, LeaseFactory, ListingFactory } from '../factory'
 
 import * as listingAdapter from '../../adapters/listing-adapter'
 import * as estateCodeAdapter from '../../adapters/xpand/estate-code-adapter'
-import * as priorityListService from '../../priority-list-service'
+import * as getTenantService from '../../get-tenant'
 import { leaseTypes } from '../../../../constants/leaseTypes'
 import { routes } from '../../routes/applicants'
 
-const TenantFactory = Factory.define<priorityListService.Tenant>(() => ({
+const TenantFactory = Factory.define<getTenantService.Tenant>(() => ({
   address: undefined,
   birthDate: new Date(),
   contactCode: '123',
@@ -123,7 +123,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
     })
 
     const getTenantSpy = jest
-      .spyOn(priorityListService, 'getTenant')
+      .spyOn(getTenantService, 'getTenant')
       .mockResolvedValueOnce({
         ok: true,
         data: tenant,
@@ -167,7 +167,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
       })
 
     const getTenantSpy = jest
-      .spyOn(priorityListService, 'getTenant')
+      .spyOn(getTenantService, 'getTenant')
       .mockResolvedValueOnce({
         ok: true,
         data: tenant,
@@ -219,7 +219,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
       })
 
     const getTenantSpy = jest
-      .spyOn(priorityListService, 'getTenant')
+      .spyOn(getTenantService, 'getTenant')
       .mockResolvedValueOnce({
         ok: true,
         data: tenant,
@@ -270,7 +270,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:estateCode', 
       })
 
     const getTenantSpy = jest
-      .spyOn(priorityListService, 'getTenant')
+      .spyOn(getTenantService, 'getTenant')
       .mockResolvedValueOnce({
         ok: true,
         data: tenant,
@@ -318,7 +318,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:distri
     })
 
     const getTenantSpy = jest
-      .spyOn(priorityListService, 'getTenant')
+      .spyOn(getTenantService, 'getTenant')
       .mockResolvedValueOnce({ ok: true, data: tenant })
 
     const res = await request(app.callback()).get(
@@ -348,7 +348,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:distri
     })
 
     const getTenantSpy = jest
-      .spyOn(priorityListService, 'getTenant')
+      .spyOn(getTenantService, 'getTenant')
       .mockResolvedValueOnce({ ok: true, data: tenant })
 
     const res = await request(app.callback()).get(
@@ -384,7 +384,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:distri
     })
 
     const getTenantSpy = jest
-      .spyOn(priorityListService, 'getTenant')
+      .spyOn(getTenantService, 'getTenant')
       .mockResolvedValueOnce({ ok: true, data: tenant })
 
     const res = await request(app.callback()).get(
