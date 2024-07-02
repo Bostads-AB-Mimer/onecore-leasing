@@ -330,7 +330,7 @@ describe('parseLeasesForHousingContract', () => {
 })
 
 describe('parseLeasesForParkingSpaces', () => {
-  it('should return all parking spaces from leases', async () => {
+  it('should return all parking spaces from leases with propertyType set', async () => {
     const housingContract = LeaseFactory.params({
       type: leaseTypes.housingContract,
       status: LeaseStatus.Active,
@@ -346,7 +346,11 @@ describe('parseLeasesForParkingSpaces', () => {
       status: LeaseStatus.Active,
     }).build()
 
-    const leases = [housingContract, parkingSpacContract1, parkingSpacContract2]
+    const leases = [
+      { ...housingContract, propertyType: 'foo' },
+      { ...parkingSpacContract1, propertyType: 'babps' },
+      { ...parkingSpacContract2, propertyType: 'babps' },
+    ]
 
     const result = parseLeasesForParkingSpaces(leases)
 
