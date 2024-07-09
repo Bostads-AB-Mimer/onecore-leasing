@@ -5,7 +5,6 @@ import { z } from 'zod'
 
 import * as offerAdapter from './../adapters/offer-adapter'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
-import swaggerJsdoc from 'swagger-jsdoc'
 
 export const routes = (router: KoaRouter) => {
   const createOfferRequestParams = z.object({
@@ -16,14 +15,59 @@ export const routes = (router: KoaRouter) => {
     applicantId: z.number(),
   })
 
+  //todo: tags def not needed to be able to group
+  /**
+   * @swagger
+   * tags:
+   *   - name: Offer
+   *     description: Endpoints related to offer operations
+   */
+
   /**
    * @swagger
    * /offer:
-   *   get:
-   *     description: Welcome to swagger-jsdoc!
+   *   post:
+   *     description: Create a new offer
+   *     tags: [Offer]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               expiresAt:
+   *                 type: string
+   *                 format: date-time
+   *                 description: The expiration date of the offer
+   *               status:
+   *                 type: string
+   *                 enum: OfferStatus
+   *                 description: The status of the offer
+   *               selectedApplicants:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *                 description: The selected applicants
+   *               listingId:
+   *                 type: number
+   *                 description: The ID of the listing
+   *               applicantId:
+   *                 type: number
+   *                 description: The ID of the applicant
    *     responses:
-   *       200:
-   *         description: Returns a mysterious string.
+   *       201:
+   *         description: Offer created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   description: The created offer
+   *       500:
+   *         description: Internal server error
    */
   router.post(
     '(.*)/offer',
@@ -40,27 +84,4 @@ export const routes = (router: KoaRouter) => {
       }
     }
   )
-
-  const options = {
-    definition: {
-      openapi: '3.0.0',
-      info: {
-        title: 'Hello World',
-        version: '1.0.0',
-      },
-    },
-    apis: ['./src/services/lease-service/routes/*.ts'],
-    servers: [
-      {
-        url: 'http://localhost:3000',
-      },
-    ],
-  }
-
-  const swaggerSpec = swaggerJsdoc(options)
-
-  router.get('/swagger.json', async function (ctx) {
-    ctx.set('Content-Type', 'application/json')
-    ctx.body = swaggerSpec
-  })
 }
