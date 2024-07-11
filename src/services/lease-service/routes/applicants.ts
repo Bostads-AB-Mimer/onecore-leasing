@@ -174,11 +174,12 @@ export const routes = (router: KoaRouter) => {
 
         //if subject has no parking space contracts but is a tenant in the property
         if (!contact.data.parkingSpaceContracts?.length) {
-          //subject is eligible for parking space, applicationType for application should be 'additonal'
-          ctx.status = 403
+          //subject is eligible for parking space, applicationType for application should be 'additional'
+          //todo: clients needs an easy way to act upon success. Pass the needed applicationType in response?
+          ctx.status = 200 // accepted
           ctx.body = {
             reason:
-              'User does not have any active parking space contracts in the listings residential area',
+              'User is a tenant in the property and does not have any active parking space contracts in the listings residential area. User is eligible to apply with applicationType additional.',
           }
           return
         }
@@ -197,14 +198,16 @@ export const routes = (router: KoaRouter) => {
         )
 
         if (subjectNeedsToReplaceParkingSpace) {
+          //todo: clients needs an easy way to act upon success. Pass the needed applicationType in response?
           ctx.body = {
             reason:
-              'User already have an active parking space contract in the listings residential area',
+              'User already have an active parking space contract in the listings residential area.  User is eligible to apply with applicationType Replace.',
           }
           ctx.status = 409
           return
         }
 
+        //todo: this should also be a success response, right? ApplicationType should be additional?
         //user has parking space contracts but none in the same property as the listing
         ctx.status = 403
         ctx.body = {
@@ -246,6 +249,7 @@ export const routes = (router: KoaRouter) => {
 
         if (!contact.ok) {
           ctx.status = 500
+          //todo: return body to client?
           return
         }
 
@@ -270,20 +274,22 @@ export const routes = (router: KoaRouter) => {
           )
 
         if (!doesUserHaveExistingParkingSpaceInSameAreaAsListing) {
-          //applicant is eligible for parking space, applicationType for application should be 'additonal'
+          //applicant is eligible for parking space, applicationType for application should be 'additional'
+          //todo: clients needs an easy way to act upon success. Pass the needed applicationType in response?
           ctx.status = 200
           ctx.body = {
             reason:
-              'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space.',
+              'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space with applicationType additional.',
           }
           return
         }
 
         //applicant have an active parking space contract in the same area as the listing
         //only option is to replace that parking space contract
+        //todo: clients needs an easy way to act upon success. Pass the needed applicationType in response?
         ctx.body = {
           reason:
-            'Subject already have an active parking space contract in the listings residential area',
+            'Subject already have an active parking space contract in the listings residential area. Subject is eligible to apply to parking space with applicationType replace.',
         }
         ctx.status = 409
       } catch (err: unknown) {

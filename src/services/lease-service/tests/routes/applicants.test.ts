@@ -147,7 +147,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
     expect(getTenantSpy).toHaveBeenCalled()
   })
 
-  it('responds with 403 if user has no current parking space in the same property as listing', async () => {
+  it('responds with 200 if user has no current parking space in the same property as listing', async () => {
     const listing = ListingFactory.build()
     const applicant = ApplicantFactory.params({
       listingId: listing.id,
@@ -178,9 +178,9 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/foo`
     )
 
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(200)
     expect(res.body.reason).toBe(
-      'User does not have any active parking space contracts in the listings residential area'
+      'User is a tenant in the property and does not have any active parking space contracts in the listings residential area. User is eligible to apply with applicationType additional.'
     )
     expect(getTenantSpy).toHaveBeenCalled()
   })
@@ -232,7 +232,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
 
     expect(res.status).toBe(409)
     expect(res.body.reason).toBe(
-      'User already have an active parking space contract in the listings residential area'
+      'User already have an active parking space contract in the listings residential area.  User is eligible to apply with applicationType Replace.'
     )
     expect(getTenantSpy).toHaveBeenCalled()
   })
@@ -359,7 +359,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:distri
 
     expect(res.status).toBe(200)
     expect(res.body.reason).toBe(
-      'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space.'
+      'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space with applicationType additional.'
     )
 
     expect(getTenantSpy).toHaveBeenCalled()
@@ -395,7 +395,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:distri
 
     expect(res.status).toBe(409)
     expect(res.body.reason).toBe(
-      'Subject already have an active parking space contract in the listings residential area'
+      'Subject already have an active parking space contract in the listings residential area. Subject is eligible to apply to parking space with applicationType replace.'
     )
     expect(getTenantSpy).toHaveBeenCalled()
   })
