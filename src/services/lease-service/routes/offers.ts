@@ -6,6 +6,12 @@ import { z } from 'zod'
 import * as offerAdapter from './../adapters/offer-adapter'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Offer
+ *     description: Endpoints related to offer operations
+ */
 export const routes = (router: KoaRouter) => {
   const createOfferRequestParams = z.object({
     expiresAt: z.coerce.date(),
@@ -14,14 +20,6 @@ export const routes = (router: KoaRouter) => {
     listingId: z.coerce.number(),
     applicantId: z.number(),
   })
-
-  //todo: tags def not needed to be able to group
-  /**
-   * @swagger
-   * tags:
-   *   - name: Offer
-   *     description: Endpoints related to offer operations
-   */
 
   /**
    * @swagger
