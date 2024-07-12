@@ -77,7 +77,7 @@ const createListing = async (listingData: Listing) => {
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
 const getListingByRentalObjectCode = async (
-  rentalObjectCode: string
+  rentalObjectCode: string,
 ): Promise<Listing | undefined> => {
   const listing = await db('Listing')
     .where({
@@ -98,7 +98,7 @@ const getListingByRentalObjectCode = async (
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
 const getListingById = async (
-  listingId: string
+  listingId: string,
 ): Promise<Listing | undefined> => {
   logger.info({ listingId }, 'Getting listing from leasing DB')
   const result = await db
@@ -112,7 +112,7 @@ const getListingById = async (
         WHERE a.ListingId = l.Id
         FOR JSON PATH
       ) as applicants
-    `)
+    `),
     )
     .where('l.Id', listingId)
     .first()
@@ -130,7 +130,7 @@ const getListingById = async (
   if (!result) {
     logger.info(
       { listingId },
-      'Getting listing from leasing DB complete - listing not found'
+      'Getting listing from leasing DB complete - listing not found',
     )
     return undefined
   }
@@ -147,7 +147,7 @@ const getListingById = async (
  * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
 const getApplicantById = async (
-  applicantId: number
+  applicantId: number,
 ): Promise<Applicant | undefined> => {
   logger.info({ applicantId }, 'Getting applicant from leasing DB')
   const applicant = await db('Applicant')
@@ -159,7 +159,7 @@ const getApplicantById = async (
   if (applicant == undefined) {
     logger.info(
       { applicantId },
-      'Getting applicant from leasing DB complete - applicant not found'
+      'Getting applicant from leasing DB complete - applicant not found',
     )
     return undefined
   }
@@ -172,7 +172,7 @@ const getApplicantById = async (
 const createApplication = async (applicationData: Omit<Applicant, 'id'>) => {
   logger.info(
     { contactCode: applicationData.contactCode },
-    'Creating application in listing DB'
+    'Creating application in listing DB',
   )
 
   await db('applicant').insert({
@@ -187,7 +187,7 @@ const createApplication = async (applicationData: Omit<Applicant, 'id'>) => {
 
   logger.info(
     { contactCode: applicationData.contactCode },
-    'Creating application in listing DB complete'
+    'Creating application in listing DB complete',
   )
 }
 
@@ -200,7 +200,7 @@ const createApplication = async (applicationData: Omit<Applicant, 'id'>) => {
  */
 const updateApplicantStatus = async (
   applicantId: number,
-  status: ApplicantStatus
+  status: ApplicantStatus,
 ) => {
   try {
     const updateCount = await db('applicant').where('Id', applicantId).update({
@@ -278,7 +278,7 @@ const getApplicantsByContactCode = async (contactCode: string) => {
  */
 const getApplicantByContactCodeAndListingId = async (
   contactCode: string,
-  listingId: number
+  listingId: number,
 ) => {
   const result = await db('Applicant')
     .where({
@@ -319,7 +319,7 @@ const getExpiredListings = async () => {
 
 const updateListingStatuses = async (
   listingIds: number[],
-  status: ListingStatus
+  status: ListingStatus,
 ) => {
   const updateCount = await db('listing')
     .whereIn('Id', listingIds)
