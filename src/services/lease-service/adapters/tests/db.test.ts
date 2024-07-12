@@ -1,14 +1,14 @@
 import { db, setup, teardown } from '../db'
 
 beforeAll(async () => {
- await setup()
-});
+  await setup()
+})
 
 afterAll(async () => {
   await teardown()
-});
+})
 
-test("select leases", async () => {
-  let leases = await db.from("lease").select("*")
+test('select leases', async () => {
+  const leases = await db.from('lease').select('*')
   expect(leases.length).toEqual(1)
 })
