@@ -3,9 +3,9 @@
  * @returns { Promise<void> }
  */
 exports.up = function (knex) {
-  return knex.raw(
+/*  return knex.raw(
     'ALTER TABLE offer ALTER COLUMN SelectionSnapshot nvarchar(max) NOT NULL;'
-  )
+  )*/
 }
 
 /**
@@ -13,7 +13,7 @@ exports.up = function (knex) {
  * @returns { Promise<void> }
  */
 exports.down = function (knex) {
-  return knex.raw(
-    'ALTER TABLE offer ALTER COLUMN SelectionSnapshot nvarchar(255) NOT NULL;'
-  )
+  // return knex.raw(
+  //   'ALTER TABLE offer ALTER COLUMN SelectionSnapshot nvarchar(255) NOT NULL;'
+  // )
 }
