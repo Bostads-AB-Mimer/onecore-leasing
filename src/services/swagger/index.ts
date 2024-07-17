@@ -10,7 +10,11 @@ export const routes = (router: KoaRouter) => {
         version: '1.0.0',
       },
     },
-    apis: ['./src/services/lease-service/routes/*.ts'],
+    apis: [
+      './src/services/health-service/*.ts',
+      './src/services/creditsafe/*.ts',
+      './src/services/lease-service/routes/*.ts',
+    ],
   }
 
   const swaggerSpec = swaggerJsdoc(options)
