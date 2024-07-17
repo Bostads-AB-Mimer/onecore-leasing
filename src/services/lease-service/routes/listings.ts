@@ -34,23 +34,25 @@ import {
 export const routes = (router: KoaRouter) => {
   /**
    * @swagger
-   * /(.*)/listings:
+   * /listings:
    *   post:
    *     description: Create a new listing.
    *     tags: [Listings]
    *     requestBody:
    *       required: true
    *       content:
-   *         application/json:
-   *           schema:
-   *             $ref: '#/components/schemas/Listing'
+   *          application/json:
+   *             schema:
+   *               type: object
    *     responses:
    *       201:
    *         description: Listing created successfully.
    *         content:
-   *           application/json:
+   *          application/json:
    *             schema:
-   *               $ref: '#/components/schemas/Listing'
+   *               type: array
+   *               items:
+   *                 type: object
    *       409:
    *         description: Conflict. Listing with the same rentalObjectCode already exists.
    *       500:
@@ -145,14 +147,8 @@ export const routes = (router: KoaRouter) => {
    *       properties:
    *         error:
    *           type: string
-   *     ApplicationIdResponse:
-   *       type: object
-   *       properties:
-   *         applicationId:
-   *           type: string
-   *           description: The ID of the created application.
    *
-   * /(.*)/listings/apply:
+   * /listings/apply:
    *   post:
    *     description: Apply for a listing.
    *     tags: [Listings]
@@ -164,11 +160,12 @@ export const routes = (router: KoaRouter) => {
    *             $ref: '#/components/schemas/CreateApplicantRequestParams'
    *     responses:
    *       201:
-   *         description: Application created successfully.
-   *         content:
-   *           application/json:
+   *        content:
+   *          application/json:
    *             schema:
-   *               $ref: '#/components/schemas/ApplicationIdResponse'
+   *               type: array
+   *               items:
+   *                 type: object
    *       409:
    *         description: Conflict. Applicant has already applied for this listing.
    *         content:
@@ -206,6 +203,7 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
+        //todo: createApplication does not actually return any data
         const applicationId = await createApplication(applicantData)
         ctx.status = 201 // HTTP status code for Created
         ctx.body = { applicationId }
@@ -425,12 +423,6 @@ export const routes = (router: KoaRouter) => {
    *     tags:
    *       - Listings
    *     parameters:
-   *       - in: path
-   *         name: basePath
-   *         required: true
-   *         schema:
-   *           type: string
-   *         description: Base path of the API endpoint (e.g., /api/v1).
    *       - in: path
    *         name: listingId
    *         required: true

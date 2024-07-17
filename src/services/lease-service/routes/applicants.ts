@@ -48,19 +48,7 @@ export const routes = (router: KoaRouter) => {
    *         content:
    *           application/json:
    *             schema:
-   *               type: array
-   *               items:
-   *                 type: object
-   *                 properties:
-   *                   id:
-   *                     type: string
-   *                     description: The unique ID of the applicant.
-   *                   name:
-   *                     type: string
-   *                     description: The name of the applicant.
-   *                   email:
-   *                     type: string
-   *                     description: The email address of the applicant.
+   *               type: object
    *       404:
    *         description: No applicant found for the provided contact code.
    *         content:
