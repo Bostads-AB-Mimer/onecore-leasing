@@ -25,7 +25,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /offer:
    *   post:
-   *    summary: Create new offer for listing
+   *     summary: Create new offer for listing
    *     description: Create a new offer
    *     tags: [Offer]
    *     requestBody:
