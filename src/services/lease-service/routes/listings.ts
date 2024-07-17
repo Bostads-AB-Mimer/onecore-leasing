@@ -36,6 +36,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /listings:
    *   post:
+   *     summary: Create new listing
    *     description: Create a new listing.
    *     tags: [Listings]
    *     requestBody:
@@ -150,6 +151,7 @@ export const routes = (router: KoaRouter) => {
    *
    * /listings/apply:
    *   post:
+   *     summary: Create new application for contact on listing
    *     description: Apply for a listing.
    *     tags: [Listings]
    *     requestBody:
@@ -418,7 +420,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /listing/{listingId}/applicants/details:
    *   get:
-   *     summary: Get detailed applicants information for a listing
+   *     summary: Get detailed applicant information for a listing
    *     description: Fetches detailed information about applicants for a specific listing.
    *     tags:
    *       - Listings

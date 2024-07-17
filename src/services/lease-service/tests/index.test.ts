@@ -17,7 +17,7 @@ import KoaRouter from '@koa/router'
 import bodyParser from 'koa-bodyparser'
 import { Lease, Listing } from 'onecore-types'
 
-import { routes } from '../updated_index'
+import { routes } from '../index'
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
 import * as listingAdapter from '../adapters/listing-adapter'

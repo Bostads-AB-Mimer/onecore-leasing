@@ -42,6 +42,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /contacts/search:
    *   get:
+   *     summary: Search contact based by query
    *     description: Search contacts based on a query string.
    *     tags: [Contacts]
    *     parameters:
@@ -94,6 +95,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /contact/nationalRegistrationNumber/{pnr}:
    *   get:
+   *     summary: Get contact by PNR
    *     description: Retrieve contact information by national registration number (pnr).
    *     tags: [Contacts]
    *     parameters:
@@ -137,6 +139,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /contact/contactCode/{contactCode}:
    *   get:
+   *     summary: Get contact by contact code
    *     description: Retrieve contact information by contact code.
    *     tags: [Contacts]
    *     parameters:
@@ -180,6 +183,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /contact/phoneNumber/{phoneNumber}:
    *   get:
+   *     summary: Get contact by phone number
    *     description: Retrieve contact information by phone number.
    *     tags: [Contacts]
    *     parameters:
@@ -218,6 +222,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /contact/waitingList/{nationalRegistrationNumber}:
    *   get:
+   *     summary: Get waiting list from xpand for contact
    *     description: Retrieve waiting list information for a contact by national registration number.
    *     tags: [Contacts]
    *     parameters:
@@ -277,6 +282,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /contact/waitingList/{nationalRegistrationNumber}:
    *   post:
+   *     summary: Add contact to waiting list in xpand
    *     description: Add a contact to a waiting list by national registration number.
    *     tags: [Contacts]
    *     parameters:

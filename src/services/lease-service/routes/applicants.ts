@@ -33,6 +33,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /applicants/{contactCode}/:
    *   get:
+   *     summary: Get applicant based on contact code
    *     description: Fetches a list of applicants associated with a given contact code.
    *     tags: [Applicants]
    *     parameters:
@@ -97,6 +98,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /applicants/{contactCode}/{listingId}:
    *   get:
+   *     summary: Get applicant by contact code and listing id
    *     description: Fetch an applicant by contact code and listing ID.
    *     tags: [Applicants]
    *     parameters:
@@ -192,6 +194,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /applicants/{id}/status:
    *   patch:
+   *     summary: Update applicant status
    *     description: Update the status of an applicant.
    *     tags: [Applicants]
    *     requestBody:
@@ -291,6 +294,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /applicants/validatePropertyRentalRules/{contactCode}/{listingId}:
    *   get:
+   *     summary: Validate property rental rules for applicant
    *     description: Validate property rental rules for an applicant based on contact code and listing ID.
    *     tags: [Applicants]
    *     parameters:
@@ -520,6 +524,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /applicants/validateResidentialAreaRentalRules/{contactCode}/{listingId}:
    *   get:
+   *     summary: Validate residential area rental rules for applicant
    *     description: Validate residential area rental rules for an applicant based on contact code and listing ID.
    *     tags: [Applicants]
    *     parameters:

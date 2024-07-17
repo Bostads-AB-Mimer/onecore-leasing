@@ -21,6 +21,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /leases/for/nationalRegistrationNumber/{pnr}:
    *   get:
+   *     summary: Get leases by national registration number
    *     description: Retrieve leases associated with a national registration number (pnr).
    *     tags: [Leases]
    *     parameters:
@@ -72,6 +73,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /leases/for/contactCode/{contactCode}:
    *   get:
+   *     summary: Get leases by contact code
    *     description: Retrieve leases associated with a contact by contact code.
    *     tags: [Leases]
    *     parameters:
@@ -122,6 +124,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /leases/for/propertyId/{propertyId}:
    *   get:
+   *     summary: Get leases by property ID
    *     description: Retrieve leases associated with a property by property ID.
    *     tags: [Leases]
    *     parameters:
@@ -173,6 +176,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /leases/{id}:
    *   get:
+   *     summary: Get detailed lease by lease ID
    *     description: Retrieve lease details by lease ID.
    *     tags: [Leases]
    *     parameters:
@@ -225,6 +229,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /leases:
    *   post:
+   *     summary: Create new lease in xpand for parking space
    *     description: Create a new lease for a parking space.
    *     tags: [Leases]
    *     requestBody:

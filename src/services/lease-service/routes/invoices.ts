@@ -15,6 +15,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /contact/invoices/contactCode/{contactCode}:
    *   get:
+   *     summary: Get invoices for contact
    *     description: Retrieve invoices associated with a contact by contact code.
    *     tags: [Invoices]
    *     parameters:
@@ -54,6 +55,7 @@ export const routes = (router: KoaRouter) => {
    * @swagger
    * /contact/unpaidInvoices/contactCode/{contactCode}:
    *   get:
+   *     summary: Get unpaid invoices for contact
    *     description: Retrieve unpaid invoices associated with a contact by contact code.
    *     tags: [Invoices]
    *     parameters:
