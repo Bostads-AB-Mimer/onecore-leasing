@@ -61,4 +61,26 @@ describe('offer-adapter', () => {
       expect(row.ApplicantId).toEqual(applicant.id)
     })
   })
+
+  it('throws error if applicant not found', async () => {
+    const listing = await listingAdapter.createListing(
+      factory.listing.build({ rentalObjectCode: '1' })
+    )
+
+    await expect(
+      offerAdapter.create({
+        expiresAt: new Date(),
+        status: OfferStatus.Active,
+        selectedApplicants: [
+          factory.detailedApplicant.build({
+            id: -1,
+            contactCode: 'NON_EXISTING_APPLICANT',
+            nationalRegistrationNumber: 'I_DO_NOT_EXIST',
+          }),
+        ],
+        listingId: listing.id,
+        applicantId: -1,
+      })
+    ).rejects.toThrow('Applicant not found when creating offer')
+  })
 })

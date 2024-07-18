@@ -330,7 +330,7 @@ const getExpiredListings = async () => {
   const currentDate = new Date()
   const listings = await db('listing')
     .where('PublishedTo', '<', currentDate)
-    .andWhere('Status', '==', ListingStatus.Active)
+    .andWhere('Status', '=', ListingStatus.Active)
   return listings
 }
 
@@ -342,6 +342,7 @@ const updateListingStatuses = async (
     .whereIn('Id', listingIds)
     .update({ Status: status })
 
+  //todo: return updated listings instead?
   return updateCount
 }
 
