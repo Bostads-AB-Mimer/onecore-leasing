@@ -9,7 +9,7 @@ exports.up = function (knex) {
     table.dateTime('SentAt')
     table.dateTime('ExpiresAt').notNullable()
     table.dateTime('AnsweredAt')
-    table.text('SelectionSnapshot').notNullable() // JSON
+    table.string('SelectionSnapshot').notNullable() // JSON
     table.string('Status').notNullable()
     table.integer('ListingId').notNullable().unsigned()
     table.integer('ApplicantId').notNullable().unsigned()

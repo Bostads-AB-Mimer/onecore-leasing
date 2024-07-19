@@ -261,15 +261,8 @@ const getAllListingsWithApplicants = async () => {
 
 //todo: why is this plural?
 const getApplicantsByContactCode = async (contactCode: string) => {
-  const result = await db('Applicant')
-    .where({ ContactCode: contactCode })
-    .select('*')
+  const result = await db('Applicant').where({ ContactCode: contactCode })
 
-  if (result == undefined) {
-    return undefined
-  }
-
-  // Map result array to Applicant objects
   return result.map(transformDbApplicant)
 }
 

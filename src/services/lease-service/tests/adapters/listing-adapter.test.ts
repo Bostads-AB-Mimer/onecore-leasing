@@ -1,7 +1,7 @@
 import { db, migrate, teardown } from '../../adapters/db'
 import * as listingAdapter from '../../adapters/listing-adapter'
 import * as factory from './../factories'
-import { ListingStatus } from 'onecore-types'
+import { ApplicantStatus, ListingStatus } from 'onecore-types'
 
 jest.mock('onecore-utilities', () => {
   return {
@@ -21,7 +21,6 @@ beforeAll(async () => {
 })
 
 afterEach(async () => {
-  //todo: create generic teardown?
   await db('applicant').del()
   await db('listing').del()
 })
@@ -60,14 +59,14 @@ describe('listing-adapter', () => {
         factory.listing.build({ rentalObjectCode: '1' })
       )
       expect(insertedListing).toBeDefined()
-      const row = await db('listing').first()
-      expect(row).toBeDefined()
-      expect(row.Id).toEqual(insertedListing.id)
+      const listingFromDatabase = await db('listing').first()
+      expect(listingFromDatabase).toBeDefined()
+      expect(listingFromDatabase.Id).toEqual(insertedListing.id)
     })
   })
 
   describe(listingAdapter.getListingByRentalObjectCode, () => {
-    it('returns a listing', async () => {
+    it('returns a listing by rental object code', async () => {
       const insertedListing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )
@@ -84,7 +83,7 @@ describe('listing-adapter', () => {
   })
 
   describe(listingAdapter.getListingById, () => {
-    it('returns a listing', async () => {
+    it('returns a listing by id', async () => {
       const insertedListing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )
@@ -98,19 +97,19 @@ describe('listing-adapter', () => {
   })
 
   describe(listingAdapter.getApplicantById, () => {
-    it('returns an applicant', async () => {
+    it('returns an applicant by id', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )
 
-      const insertedApplication = await listingAdapter.createApplication(
+      const insertedApplicant = await listingAdapter.createApplication(
         factory.applicant.build({ listingId: listing.id })
       )
-      const applicationFromDatabase = await listingAdapter.getApplicantById(
-        insertedApplication.id
+      const applicantFromDatabase = await listingAdapter.getApplicantById(
+        insertedApplicant.id
       )
-      expect(applicationFromDatabase).toBeDefined()
-      expect(applicationFromDatabase?.id).toEqual(insertedApplication.id)
+      expect(applicantFromDatabase).toBeDefined()
+      expect(applicantFromDatabase?.id).toEqual(insertedApplicant.id)
     })
   })
 
@@ -119,19 +118,37 @@ describe('listing-adapter', () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )
-      const insertedApplication = await listingAdapter.createApplication(
+      const insertedApplicant = await listingAdapter.createApplication(
         factory.applicant.build({ listingId: listing.id })
       )
-      expect(insertedApplication).toBeDefined()
-      const row = await db('applicant').first()
-      expect(row).toBeDefined()
-      expect(row.Id).toEqual(insertedApplication.id)
+      expect(insertedApplicant).toBeDefined()
+      const applicantFromDatabase = await db('applicant').first()
+      expect(applicantFromDatabase).toBeDefined()
+      expect(applicantFromDatabase.Id).toEqual(insertedApplicant.id)
     })
   })
 
   describe(listingAdapter.updateApplicantStatus, () => {
     it('updates an applicants status', async () => {
-      console.log('implement')
+      const listing = await listingAdapter.createListing(
+        factory.listing.build({ rentalObjectCode: '1' })
+      )
+      const insertedApplicant = await listingAdapter.createApplication(
+        factory.applicant.build({
+          listingId: listing.id,
+          status: ApplicantStatus.Active,
+        })
+      )
+
+      const result = await listingAdapter.updateApplicantStatus(
+        insertedApplicant.id,
+        ApplicantStatus.OfferAccepted
+      )
+      expect(result).toBe(true)
+      const updatedApplicant = await listingAdapter.getApplicantById(
+        insertedApplicant.id
+      )
+      expect(updatedApplicant?.status).toEqual(ApplicantStatus.OfferAccepted)
     })
   })
 
@@ -141,39 +158,62 @@ describe('listing-adapter', () => {
         factory.listing.build({ rentalObjectCode: '1' })
       )
 
-      const insertedApplication = await listingAdapter.createApplication(
+      const insertedApplicant = await listingAdapter.createApplication(
         factory.applicant.build({ listingId: listing.id })
       )
       const applicantFromDatabase =
         await listingAdapter.getApplicantsByContactCode(
-          insertedApplication.contactCode
+          insertedApplicant.contactCode
         )
 
       expect(applicantFromDatabase).toBeDefined()
       expect(applicantFromDatabase).toHaveLength(1)
       if (applicantFromDatabase != undefined) {
         expect(applicantFromDatabase[0]).toBeDefined()
-        expect(applicantFromDatabase[0].id).toEqual(insertedApplication.id)
+        expect(applicantFromDatabase[0].id).toEqual(insertedApplicant.id)
       }
     })
 
-    it('returns undefined for non existing applicant', async () => {
+    it('returns empty list for non existing applicant', async () => {
       const applicantFromDatabase =
         await listingAdapter.getApplicantsByContactCode(
           'NON_EXISTING_CONTACT_CODE'
         )
-      //todo: returns an empty list and not undefined
-      expect(applicantFromDatabase).toBeUndefined()
+
+      expect(applicantFromDatabase).toEqual([])
     })
   })
 
   describe(listingAdapter.getApplicantByContactCodeAndListingId, () => {
     it('returns an applicant by contact code and listing id', async () => {
-      console.log('implement')
+      const listing = await listingAdapter.createListing(
+        factory.listing.build({ rentalObjectCode: '1' })
+      )
+
+      const insertedApplicant = await listingAdapter.createApplication(
+        factory.applicant.build({ listingId: listing.id })
+      )
+
+      const applicantFromDatabase =
+        await listingAdapter.getApplicantByContactCodeAndListingId(
+          insertedApplicant.contactCode,
+          listing.id
+        )
+      expect(applicantFromDatabase).toBeDefined()
+      expect(applicantFromDatabase?.id).toEqual(insertedApplicant.id)
+      expect(applicantFromDatabase?.listingId).toEqual(
+        insertedApplicant.listingId
+      )
     })
 
     it('returns undefined for non existing applicant', async () => {
-      console.log('implement')
+      const applicantFromDatabase =
+        await listingAdapter.getApplicantByContactCodeAndListingId(
+          'NON_EXISTING_CONTACT_CODE',
+          -1
+        )
+
+      expect(applicantFromDatabase).toBeUndefined()
     })
   })
 
@@ -182,36 +222,36 @@ describe('listing-adapter', () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )
-      const insertedApplication = await listingAdapter.createApplication(
+      const insertedApplicant = await listingAdapter.createApplication(
         factory.applicant.build({ listingId: listing.id })
       )
-      expect(insertedApplication).toBeDefined()
+      expect(insertedApplicant).toBeDefined()
 
-      const result = await listingAdapter.applicationExists(
-        insertedApplication.contactCode,
+      const applicantExists = await listingAdapter.applicationExists(
+        insertedApplicant.contactCode,
         listing.id
       )
 
-      expect(result).toBe(true)
+      expect(applicantExists).toBe(true)
     })
 
     it('returns false if application does not exist', async () => {
-      const result = await listingAdapter.applicationExists(
+      const applicantExists = await listingAdapter.applicationExists(
         'nonExistingContactCode',
         123456
       )
 
-      expect(result).toBe(false)
+      expect(applicantExists).toBe(false)
     })
   })
 
   describe(listingAdapter.getExpiredListings, () => {
     it('returns expired listings', async () => {
-      //active listing
       const today = new Date()
       const oneWeekInTheFuture = new Date(
         today.getTime() + 7 * 24 * 60 * 60 * 1000
       )
+      //active listing
       await listingAdapter.createListing(
         factory.listing.build({
           rentalObjectCode: '1',
@@ -241,11 +281,11 @@ describe('listing-adapter', () => {
   describe(listingAdapter.updateListingStatuses, () => {
     it('updates the status of listings from an array of listing ids', async () => {
       const listing1 = await listingAdapter.createListing(
-        factory.listing.build({})
+        factory.listing.build()
       )
 
       const listing2 = await listingAdapter.createListing(
-        factory.listing.build({})
+        factory.listing.build()
       )
 
       await listingAdapter.createListing(factory.listing.build({}))
@@ -255,6 +295,14 @@ describe('listing-adapter', () => {
         ListingStatus.Expired
       )
       expect(updateCount).toEqual(2)
+      const listing1FromDatabase = await listingAdapter.getListingById(
+        listing1.id.toString()
+      )
+      const listing2FromDatabase = await listingAdapter.getListingById(
+        listing2.id.toString()
+      )
+      expect(listing1FromDatabase?.status).toEqual(ListingStatus.Expired)
+      expect(listing2FromDatabase?.status).toEqual(ListingStatus.Expired)
     })
   })
 })
