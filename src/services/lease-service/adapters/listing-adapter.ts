@@ -175,20 +175,23 @@ const createApplication = async (applicationData: Omit<Applicant, 'id'>) => {
     'Creating application in listing DB'
   )
 
-  await db('applicant').insert({
-    Name: applicationData.name,
-    NationalRegistrationNumber: applicationData.nationalRegistrationNumber,
-    ContactCode: applicationData.contactCode,
-    ApplicationDate: applicationData.applicationDate,
-    ApplicationType: applicationData.applicationType,
-    Status: applicationData.status,
-    ListingId: applicationData.listingId,
-  })
+  const insertedRow = await db('applicant')
+    .insert({
+      Name: applicationData.name,
+      NationalRegistrationNumber: applicationData.nationalRegistrationNumber,
+      ContactCode: applicationData.contactCode,
+      ApplicationDate: applicationData.applicationDate,
+      ApplicationType: applicationData.applicationType,
+      Status: applicationData.status,
+      ListingId: applicationData.listingId,
+    })
+    .returning('*')
 
   logger.info(
     { contactCode: applicationData.contactCode },
     'Creating application in listing DB complete'
   )
+  return transformDbApplicant(insertedRow[0])
 }
 
 /**
@@ -257,15 +260,8 @@ const getAllListingsWithApplicants = async () => {
  */
 
 const getApplicantsByContactCode = async (contactCode: string) => {
-  const result = await db('Applicant')
-    .where({ ContactCode: contactCode })
-    .select('*')
+  const result = await db('Applicant').where({ ContactCode: contactCode })
 
-  if (result == undefined) {
-    return undefined
-  }
-
-  // Map result array to Applicant objects
   return result.map(transformDbApplicant)
 }
 
@@ -306,14 +302,26 @@ const applicationExists = async (contactCode: string, listingId: number) => {
       ListingId: listingId,
     })
     .first()
-  return !!result // Convert result to boolean: true if exists, false if not
+
+  // Check if result is null or undefined
+  if (!result) {
+    return false
+  }
+
+  // Check if result is an empty object
+  if (Object.keys(result).length === 0 && result.constructor === Object) {
+    return false
+  }
+
+  // If result is not null/undefined and not an empty object, return true
+  return true
 }
 
 const getExpiredListings = async () => {
   const currentDate = new Date()
   const listings = await db('listing')
     .where('PublishedTo', '<', currentDate)
-    .andWhere('Status', '==', ListingStatus.Active)
+    .andWhere('Status', '=', ListingStatus.Active)
   return listings
 }
 
