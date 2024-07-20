@@ -259,7 +259,6 @@ const getAllListingsWithApplicants = async () => {
  * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
 
-//todo: why is this plural?
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant').where({ ContactCode: contactCode })
 
@@ -333,7 +332,7 @@ const updateListingStatuses = async (
   const updateCount = await db('listing')
     .whereIn('Id', listingIds)
     .update({ Status: status })
-  
+
   return updateCount
 }
 
