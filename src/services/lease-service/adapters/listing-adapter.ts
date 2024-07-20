@@ -303,8 +303,7 @@ const applicationExists = async (contactCode: string, listingId: number) => {
       ListingId: listingId,
     })
     .first()
-  console.log(result)
-  //return !!result // Convert result to boolean: true if exists, false if not
+
   // Check if result is null or undefined
   if (!result) {
     return false
@@ -334,8 +333,7 @@ const updateListingStatuses = async (
   const updateCount = await db('listing')
     .whereIn('Id', listingIds)
     .update({ Status: status })
-
-  //todo: return updated listings instead?
+  
   return updateCount
 }
 

@@ -3,34 +3,39 @@ import Config from '../../../common/config'
 import * as path from 'path'
 import { logger } from 'onecore-utilities'
 
-const stdConfig = {
+const getStandardConfig = () => ({
   client: 'mssql',
   connection: Config.leasingDatabase,
+})
+
+const getTestConfig = () => {
+  let port = process.env.LEASING_DATABASE__PORT
+  if (port == undefined) {
+    port = '-1' //use invalid port if port is missing from .env.test.config
+  }
+  return {
+    client: 'mssql',
+    connection: {
+      host: process.env.LEASING_DATABASE__HOST,
+      database: process.env.LEASING_DATABASE__DATABASE,
+      user: process.env.LEASING_DATABASE__USER,
+      password: process.env.LEASING_DATABASE__PASSWORD,
+      port: parseInt(port),
+    },
+    useNullAsDefault: true,
+    migrations: {
+      tableName: 'migrations',
+      directory: path.join(__dirname, '../../../../migrations'),
+    },
+  }
 }
 
-const testConfig = {
-  client: 'mssql',
-  connection: {
-    host: process.env.LEASING_DATABASE__HOST,
-    database: process.env.LEASING_DATABASE__DATABASE,
-    user: process.env.LEASING_DATABASE__USER,
-    password: process.env.LEASING_DATABASE__PASSWORD,
-    port: 1433, //parseInt(process.env.LEASING_DATABASE__PORT),
-  },
-  useNullAsDefault: true,
-  migrations: {
-    tableName: 'migrations',
-    directory: path.join(__dirname, '../../../../migrations'),
-  },
-  seeds: {
-    directory: path.join(__dirname, '../../../../seeds/dev'),
-  },
+const getConfigBasedOnEnvironment = () => {
+  const environment = process.env.NODE_ENV || 'dev'
+  return environment === 'test' ? getTestConfig() : getStandardConfig()
 }
 
-const environment = process.env.NODE_ENV || 'dev'
-const environmentConfig = environment == 'test' ? testConfig : stdConfig
-
-export const db = knex(environmentConfig)
+export const db = knex(getConfigBasedOnEnvironment())
 
 const migrate = async () => {
   await db.migrate
