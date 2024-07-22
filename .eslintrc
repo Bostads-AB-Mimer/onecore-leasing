@@ -11,7 +11,7 @@
   ],
   "parserOptions": {
     "ecmaVersion": 2020,
-    "project": "tsconfig.json"
+    "project": "**/tsconfig.json"
   },
   "env": {
     "node": true
@@ -25,7 +25,18 @@
     "node/no-unsupported-features/es-syntax": [
       "error",
       { "ignores": ["modules"] }
-    ]
+    ],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "node/no-unpublished-import": ["error", {
+      "allowModules": ["onecore-types"]
+    }]
   },
   "overrides": [
     {

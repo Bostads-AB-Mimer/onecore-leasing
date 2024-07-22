@@ -1,16 +1,24 @@
+jest.mock('onecore-utilities', () => {
+  return {
+    logger: {
+      info: () => {
+        return
+      },
+      error: () => {
+        return
+      },
+    },
+  }
+})
+
 import request from 'supertest'
 import Koa from 'koa'
 import KoaRouter from '@koa/router'
 import bodyParser from 'koa-bodyparser'
 
 import { routes } from '../index'
-import * as xpandSoapAdapter from '../adapters/xpand-soap-adapter'
-import {
-  addApplicantToToWaitingList,
-  getWaitingList,
-} from '../adapters/xpand-soap-adapter'
+import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
 import { WaitingList } from 'onecore-types'
-import * as http from 'http'
 import { HttpStatusCode } from 'axios'
 
 const app = new Koa()

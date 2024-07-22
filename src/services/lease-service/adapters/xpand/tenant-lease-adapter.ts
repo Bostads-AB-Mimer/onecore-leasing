@@ -1,25 +1,38 @@
-import { Lease, Contact, Listing, Applicant } from 'onecore-types'
+import { Lease, Contact } from 'onecore-types'
 
 import knex from 'knex'
-import Config from '../../../common/config'
+import Config from '../../../../common/config'
+import { logger } from 'onecore-utilities'
+import { AdapterResult } from '../types'
 
 const db = knex({
   client: 'mssql',
-  connection: Config.database,
+  connection: Config.xpandDatabase,
 })
 
 type PartialLease = {
   leaseId: Lease['leaseId']
   leaseStartDate: Lease['leaseStartDate']
   lastDebitDate: Lease['lastDebitDate']
+  terminationDate: Lease['terminationDate']
 }
 
-//todo: move all transformation code to separate file
+function trimRow(obj: any): any {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => [
+      key,
+      typeof value === 'string' ? value.trimEnd() : value,
+    ])
+  )
+}
+
 const transformFromDbContact = (
   row: any,
   phoneNumbers: any,
   leases: any
 ): Contact => {
+  row = trimRow(row)
+
   const contact = {
     contactCode: row.contactCode,
     contactKey: row.contactKey,
@@ -37,7 +50,7 @@ const transformFromDbContact = (
     },
     phoneNumbers: phoneNumbers,
     emailAddress:
-      process.env.NODE_ENV === 'prodution' ? row.emailAddress : 'redacted',
+      process.env.NODE_ENV === 'production' ? row.emailAddress : 'redacted',
     isTenant: leases.length > 0,
   }
 
@@ -79,56 +92,34 @@ const transformFromDbLease = (
   return lease
 }
 
-//todo: include contact/tentant info
-const getLease = async (leaseId: string): Promise<Lease | undefined> => {
+const getLease = async (
+  leaseId: string,
+  includeContacts: string | string[] | undefined
+): Promise<Lease | undefined> => {
+  logger.info({ leaseId }, 'Getting lease Xpand DB')
   const rows = await getLeaseById(leaseId)
   if (rows.length > 0) {
-    return transformFromDbLease(rows[0], [], [])
+    logger.info({ leaseId }, 'Getting lease Xpand DB complete')
+    if (includeContacts) {
+      const tenants = await getContactsByLeaseId(leaseId)
+      return transformFromDbLease(rows[0], [], tenants)
+    } else {
+      return transformFromDbLease(rows[0], [], [])
+    }
   }
+
+  logger.info({ leaseId }, 'Getting lease Xpand DB complete - no lease found')
   return undefined
 }
 
-const getLeases = async (leaseIds: string[] | undefined): Promise<Lease[]> => {
-  const leases: Lease[] = []
-
-  const rows = await db('Lease')
-    .select(
-      'hyobj.hyobjben as leaseId',
-      'hyhav.hyhavben as leaseType',
-      'hyobj.uppsagtav as noticeGivenBy',
-      'hyobj.avtalsdat as contractDate',
-      'hyobj.sistadeb as lastDebitDate',
-      'hyobj.godkdatum as approvalDate',
-      'hyobj.uppsdatum as noticeDate',
-      'hyobj.fdate as fromDate',
-      'hyobj.tdate as toDate',
-      'hyobj.uppstidg as noticeTimeTenant',
-      'hyobj.onskflytt AS preferredMoveOutDate',
-      'hyobj.makuldatum AS terminationDate'
-    )
-    .innerJoin('hyobj', 'hyobj.keyhyobj', 'hyavk.keyhyobj')
-    .innerJoin('hyhav', 'hyhav.keyhyhav', 'hyobj.keyhyhav')
-    .modify((queryBuilder) => {
-      if (leaseIds) {
-        queryBuilder.whereIn('hyobjben', leaseIds)
-      }
-    })
-    .limit(100)
-
-  for (const row of rows) {
-    const lease = await transformFromDbLease(row, [], [])
-    leases.push(lease)
-  }
-
-  return leases
-}
-
-//todo: include contact/tentant info
 const getLeasesForNationalRegistrationNumber = async (
   nationalRegistrationNumber: string,
-  includeTerminatedLeases: string | string[] | undefined
+  includeTerminatedLeases: string | string[] | undefined,
+  includeContacts: string | string[] | undefined
 ) => {
-  const contact = await db('cmctc')
+  logger.info('Getting leases for national registration number from Xpand DB')
+  const contact = await db
+    .from('cmctc')
     .select('cmctc.keycmctc as contactKey')
     .limit(1)
     .where({
@@ -139,21 +130,38 @@ const getLeasesForNationalRegistrationNumber = async (
   if (contact != undefined) {
     const leases = await getLeasesByContactKey(contact[0].contactKey)
 
+    logger.info(
+      'Getting leases for national registration number from Xpand DB complete'
+    )
+
     if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
       return leases
+    }
+
+    if (includeContacts) {
+      for (const lease of leases) {
+        const tenants = await getContactsByLeaseId(lease.leaseId)
+        lease.tenants = tenants
+      }
     }
 
     return leases.filter(isLeaseActive)
   }
 
+  logger.info(
+    'Getting leases for national registration number from Xpand DB complete - no leases found'
+  )
   return undefined
 }
 
 const getLeasesForContactCode = async (
   contactCode: string,
-  includeTerminatedLeases: string | string[] | undefined
+  includeTerminatedLeases: string | string[] | undefined,
+  includeContacts: string | string[] | undefined
 ) => {
-  const contact = await db('cmctc')
+  logger.info({ contactCode }, 'Getting leases for contact code from Xpand DB')
+  const contact = await db
+    .from('cmctc')
     .select('cmctc.keycmctc as contactKey')
     .limit(1)
     .where({
@@ -161,23 +169,42 @@ const getLeasesForContactCode = async (
     })
     .limit(1)
 
+  //todo: assert actual string value, now undefined equals false and every other value true
   if (contact != undefined) {
-    const leases = await getLeasesByContactKey(contact[0].contactKey)
+    logger.info(
+      { contactCode },
+      'Getting leases for contact code from Xpand DB complete'
+    )
 
+    const leases = await getLeasesByContactKey(contact[0].contactKey)
     if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
       return leases
     }
 
+    if (includeContacts) {
+      for (const lease of leases) {
+        const tenants = await getContactsByLeaseId(lease.leaseId)
+        lease.tenants = tenants
+      }
+    }
+
     return leases.filter(isLeaseActive)
   }
+
+  logger.info(
+    { contactCode },
+    'Getting leases for contact code from Xpand DB complete - no leases found'
+  )
 }
 
 const getLeasesForPropertyId = async (
   propertyId: string,
-  includeTerminatedLeases: string | string[] | undefined
+  includeTerminatedLeases: string | string[] | undefined,
+  includeContacts: string | string[] | undefined
 ) => {
   const leases: Lease[] = []
-  const rows = await db('hyavk')
+  const rows = await db
+    .from('hyavk')
     .select(
       'hyobj.hyobjben as leaseId',
       'hyhav.hyhavben as leaseType',
@@ -197,14 +224,68 @@ const getLeasesForPropertyId = async (
     .where('hyobj.hyobjben', 'like', `%${propertyId}%`)
 
   for (const row of rows) {
-    const lease = await transformFromDbLease(row, [], [])
-    leases.push(lease)
+    if (includeContacts) {
+      const tenants = await getContactsByLeaseId(row.leaseId)
+      leases.push(transformFromDbLease(row, [], tenants))
+    } else {
+      leases.push(transformFromDbLease(row, [], []))
+    }
   }
   if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
     return leases
   }
 
   return leases.filter(isLeaseActive)
+}
+
+const getResidentialAreaByRentalPropertyId = async (
+  rentalPropertyId: string
+) => {
+  const rows = await db
+    .from('babya')
+    .select('babya.code', 'babya.caption')
+    .innerJoin('bafst', 'bafst.keybabya', 'babya.keybabya')
+    .innerJoin('babuf', 'bafst.keycmobj', 'babuf.keyobjfst')
+    .where('babuf.hyresid', rentalPropertyId)
+    .limit(1)
+
+  if (!rows?.length) {
+    return undefined
+  }
+  //remove whitespaces from xpand and return
+  return {
+    code: rows[0].code.replace(/\s/g, ''),
+    caption: rows[0].caption.replace(/\s/g, ''),
+  }
+}
+
+const getContactsDataBySearchQuery = async (
+  q: string
+): Promise<
+  AdapterResult<
+    Array<{ contactCode: string; fullName: string }>,
+    'internal-error'
+  >
+> => {
+  try {
+    const rows = await db
+      .from('cmctc')
+      .select('cmctc.cmctckod as contactCode', 'cmctc.cmctcben as fullName')
+      .where('cmctc.cmctckod', 'like', `%${q}%`)
+      .orWhere('cmctc.persorgnr', 'like', `%${q}%`)
+      .limit(5)
+
+    return {
+      ok: true,
+      data: rows,
+    }
+  } catch (err) {
+    logger.error({ err }, 'tenant-lease-adapter.getContactsDataBySearchQuery')
+    return {
+      ok: false,
+      err: 'internal-error',
+    }
+  }
 }
 
 const getContactByNationalRegistrationNumber = async (
@@ -263,8 +344,31 @@ const getContactByPhoneNumber = async (
   }
 }
 
+const getContactsByLeaseId = async (leaseId: string) => {
+  const contacts: Contact[] = []
+  const rows = await db
+    .from('hyavk')
+    .select('hyavk.keycmctc as contactKey')
+    .innerJoin('hyobj', 'hyobj.keyhyobj', 'hyavk.keyhyobj')
+    .where({ hyobjben: leaseId })
+
+  for (let row of rows) {
+    row = await getContactQuery()
+      .where({ 'cmctc.keycmctc': row.contactKey })
+      .limit(1)
+
+    if (row && row.length > 0) {
+      const phoneNumbers = await getPhoneNumbersForContact(row[0].keycmobj)
+      contacts.push(transformFromDbContact(row[0], phoneNumbers, []))
+    }
+  }
+
+  return contacts
+}
+
 const getContactQuery = () => {
-  return db('cmctc')
+  return db
+    .from('cmctc')
     .select(
       'cmctc.cmctckod as contactCode',
       'cmctc.fnamn as firstName',
@@ -280,23 +384,30 @@ const getContactQuery = () => {
       'cmctc.keycmctc as contactKey'
     )
     .innerJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
-    .innerJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
+    .leftJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
     .innerJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
 }
 
 const getPhoneNumbersForContact = async (keycmobj: string) => {
-  const rows = await db('cmtel')
+  let rows = await db
+    .from('cmtel')
     .select(
       'cmtelben as phoneNumber',
       'keycmtet as type',
       'main as isMainNumber'
     )
     .where({ keycmobj: keycmobj })
+
+  rows = rows.map((row) => {
+    return trimRow(row)
+  })
+
   return rows
 }
 
 const getContactForPhoneNumber = async (phoneNumber: string) => {
-  const rows = await db('cmtel')
+  const rows = await db
+    .from('cmtel')
     .select('keycmobj as keycmobj')
     .where({ cmtelben: phoneNumber })
   return rows
@@ -311,7 +422,8 @@ const getLeaseIds = async (
   includeTerminatedLeases = Array.isArray(includeTerminatedLeases)
     ? includeTerminatedLeases[0]
     : includeTerminatedLeases
-  const rows = await db('hyavk')
+  const rows = await db
+    .from('hyavk')
     .select(
       'hyobj.hyobjben as leaseId',
       'hyobj.fdate as leaseStartDate',
@@ -327,7 +439,8 @@ const getLeaseIds = async (
 }
 
 const getLeasesByContactKey = async (keycmctc: string) => {
-  const rows = await db('hyavk')
+  const rows = await db
+    .from('hyavk')
     .select(
       'hyobj.hyobjben as leaseId',
       'hyhav.hyhavben as leaseType',
@@ -356,7 +469,8 @@ const getLeasesByContactKey = async (keycmctc: string) => {
 }
 
 const getLeaseById = async (hyobjben: string) => {
-  const rows = await db('hyavk')
+  const rows = await db
+    .from('hyavk')
     .select(
       'hyobj.hyobjben as leaseId',
       'hyhav.hyhavben as leaseType',
@@ -400,98 +514,15 @@ const isLeaseActive = (lease: Lease | PartialLease): boolean => {
   )
 }
 
-const createListing = async (listingData: Listing) => {
-  await db('Listing').insert({
-    RentalObjectCode: listingData.rentalObjectCode,
-    Address: listingData.address,
-    DistrictCaption: listingData.districtCaption,
-    DistrictCode: listingData.districtCode,
-    BlockCaption: listingData.blockCaption,
-    BlockCode: listingData.blockCode,
-    MonthlyRent: listingData.monthlyRent,
-    ObjectTypeCaption: listingData.objectTypeCaption,
-    ObjectTypeCode: listingData.objectTypeCode,
-    RentalObjectTypeCaption: listingData.rentalObjectTypeCaption,
-    RentalObjectTypeCode: listingData.rentalObjectTypeCode,
-    PublishedFrom: listingData.publishedFrom,
-    PublishedTo: listingData.publishedTo,
-    VacantFrom: listingData.vacantFrom,
-    Status: listingData.status,
-    WaitingListType: listingData.waitingListType,
-  });
-}
-
-/**
- * Checks if a listing already exists based on unique criteria.
- * 
- * @param {string} rentalObjectCode - The rental object code of the listing (originally from xpand)
- * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
- */
-const getListingByRentalObjectCode = async (rentalObjectCode: string): Promise<Listing> => {
-  const existingListing = await db('Listing')
-    .where({
-      RentalObjectCode: rentalObjectCode
-    })
-    .first();
-
-  return existingListing;
-};
-
-const createApplication = async (applicationData: Applicant) => {
-  console.log(applicationData);
-  await db('applicant').insert({
-    Name: applicationData.name,
-    ContactCode: applicationData.contactCode,
-    ApplicationDate: applicationData.applicationDate,
-    ApplicationType: applicationData.applicationType,
-    Status: applicationData.status,
-    ListingId: applicationData.listingId,
-  });
-}
-
-const getAllListingsWithApplicants = async () => {
-  const listings = await db('Listing').select('*');
-
-  for (let listing of listings) {
-    const applicants = await db('Applicant')
-      .where('listingId', listing.Id)
-      .select('*');
-
-    listing.applicants = applicants;
-  }
-
-  return listings;
-};
-
-const getApplicantsByContactCode = async (contactCode: string) => {
-  return db('Applicant')
-    .where({ ContactCode: contactCode });
-}
-
-const getApplicantsByContactCodeAndRentalObjectCode = async (contactCode: string, rentalObjectCode: string) => {
-  return db('Applicant')
-    .where({
-      ContactCode: contactCode,
-      RentalObjectCode: rentalObjectCode
-    })
-    .first();
-}
-
-
 export {
   getLease,
-  getLeases,
   getLeasesForContactCode,
   getLeasesForNationalRegistrationNumber,
   getLeasesForPropertyId,
   getContactByNationalRegistrationNumber,
   getContactByContactCode,
-  getContactByPhoneNumber,
+  getContactForPhoneNumber,
   isLeaseActive,
-  createListing,
-  createApplication,
-  getListingByRentalObjectCode,
-  getAllListingsWithApplicants,
-  getApplicantsByContactCode,
-  getApplicantsByContactCodeAndRentalObjectCode
+  getResidentialAreaByRentalPropertyId,
+  getContactsDataBySearchQuery,
 }

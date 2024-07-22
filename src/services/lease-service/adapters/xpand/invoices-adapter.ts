@@ -1,17 +1,17 @@
 import {
   Invoice,
   InvoiceTransactionType,
-  Invoices,
   PaymentStatus,
   invoiceTransactionTypeTranslation,
   paymentStatusTranslation,
 } from 'onecore-types'
 import knex from 'knex'
-import Config from '../../../common/config'
+import Config from '../../../../common/config'
+import { logger } from 'onecore-utilities'
 
 const db = knex({
   client: 'mssql',
-  connection: Config.database,
+  connection: Config.xpandDatabase,
 })
 
 const getTransactionType = (transactionTypeString: any) => {
@@ -30,7 +30,7 @@ const getTransactionType = (transactionTypeString: any) => {
 }
 
 const getPaymentStatus = (paymentStatusNumber: number) => {
-  let paymentStatus = paymentStatusTranslation[paymentStatusNumber]
+  const paymentStatus = paymentStatusTranslation[paymentStatusNumber]
 
   return paymentStatus
 }
@@ -54,6 +54,10 @@ function transformFromDbInvoice(row: any): Invoice {
 const getInvoicesByContactCode = async (
   contactKey: string
 ): Promise<Invoice[] | undefined> => {
+  logger.info(
+    { contactCode: contactKey },
+    'Getting invoices by contact code from Xpand DB'
+  )
   const rows = await db
     .select(
       'krfkh.invoice as invoiceId',
@@ -77,9 +81,17 @@ const getInvoicesByContactCode = async (
     const invoices: Invoice[] = rows
       .filter((row) => row.invoiceId)
       .map(transformFromDbInvoice)
+    logger.info(
+      { contactCode: contactKey },
+      'Getting invoices by contact code from Xpand DB completed'
+    )
     return invoices
   }
 
+  logger.info(
+    { contactCode: contactKey },
+    'Getting invoices by contact code from Xpand DB completed - no invoices found'
+  )
   return undefined
 }
 

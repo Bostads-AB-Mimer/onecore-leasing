@@ -2,8 +2,9 @@ import soapRequest from 'easy-soap-request'
 import { XMLParser } from 'fast-xml-parser'
 import createHttpError from 'http-errors'
 
-import Config from '../../../common/config'
+import Config from '../../../../common/config'
 import { WaitingList } from 'onecore-types'
+import { logger } from 'onecore-utilities'
 
 const createLease = async (
   fromDate: Date,
@@ -14,7 +15,7 @@ const createLease = async (
   const headers = getHeaders()
 
   const xml = `<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ser="http://incit.xpand.eu/service/" xmlns:inc="http://incit.xpand.eu/" xmlns:data="http://incit.xpand.eu/data/">
-  <soap:Header xmlns:wsa="http://www.w3.org/2005/08/addressing"><wsa:Action>http://incit.xpand.eu/service/CreateRentContract/CreateRentContract</wsa:Action><wsa:To>https://pdatest.mimer.nu:9055/Incit/Service/External/ServiceCatalogue/</wsa:To></soap:Header>
+  <soap:Header xmlns:wsa="http://www.w3.org/2005/08/addressing"><wsa:Action>http://incit.xpand.eu/service/CreateRentContract/CreateRentContract</wsa:Action><wsa:To>${Config.xpandSoap.url}</wsa:To></soap:Header>
   <soap:Body>
      <ser:CreateRentContractRequest>
         <!--Optional:-->
@@ -69,12 +70,16 @@ const createLease = async (
     if (parsedResponse.Success === true) {
       return parsedResponse.ObjectDescription
     } else if (parsedResponse.Message == 'Hyresobjekt saknas.') {
-      throw createHttpError(404, 'Parking space not found')
+      throw createHttpError(
+        404,
+        'Parking space not found when creating lease',
+        rentalPropertyId
+      )
     }
     throw createHttpError(500, parsedResponse.Message)
     //TODO: handle more errors...
   } catch (error: unknown) {
-    console.error(error)
+    logger.error(error, 'Error creating lease Xpand SOAP API')
     throw error
   }
 }
@@ -82,9 +87,9 @@ const createLease = async (
 const getWaitingList = async (nationalRegistrationNumber: string) => {
   const headers = getHeaders()
 
-  var xml = `
+  const xml = `
    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ser="http://incit.xpand.eu/service/" xmlns:inc="http://incit.xpand.eu/">
-   <soap:Header xmlns:wsa='http://www.w3.org/2005/08/addressing'><wsa:Action>http://incit.xpand.eu/service/GetWaitingListTimes/GetWaitingListTimes</wsa:Action><wsa:To>https://pdatest.mimer.nu:9055/Incit/Service/External/ServiceCatalogue/</wsa:To></soap:Header>
+   <soap:Header xmlns:wsa='http://www.w3.org/2005/08/addressing'><wsa:Action>http://incit.xpand.eu/service/GetWaitingListTimes/GetWaitingListTimes</wsa:Action><wsa:To>${Config.xpandSoap.url}</wsa:To></soap:Header>
    <soap:Body>
       <ser:GetDataByContactRequest>
          <inc:CivicNumber>${nationalRegistrationNumber}</inc:CivicNumber><!--add as param:-->
@@ -135,6 +140,7 @@ const getWaitingList = async (nationalRegistrationNumber: string) => {
       }
       return waitingList
     } catch (e) {
+      logger.error(e, 'Error getting waiting list using Xpand SOAP API')
       throw createHttpError(500, 'Unknown error when parsing body')
     }
   }
@@ -147,9 +153,9 @@ const addApplicantToToWaitingList = async (
 ) => {
   const headers = getHeaders()
 
-  var xml = `
+  const xml = `
    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ser="http://incit.xpand.eu/service/" xmlns:inc="http://incit.xpand.eu/">
-   <soap:Header xmlns:wsa='http://www.w3.org/2005/08/addressing'><wsa:Action>http://incit.xpand.eu/service/AddApplicantWaitingListTime/AddApplicantWaitingListTime</wsa:Action><wsa:To>https://pdatest.mimer.nu:9055/Incit/Service/External/ServiceCatalogue/</wsa:To></soap:Header>
+   <soap:Header xmlns:wsa='http://www.w3.org/2005/08/addressing'><wsa:Action>http://incit.xpand.eu/service/AddApplicantWaitingListTime/AddApplicantWaitingListTime</wsa:Action><wsa:To>${Config.xpandSoap.url}</wsa:To></soap:Header>
      <soap:Body>
         <ser:AddApplicantWaitingListTimeRequest>
         <inc:CivicNumber>${nationalRegistrationNumber}</inc:CivicNumber>
@@ -189,7 +195,10 @@ const addApplicantToToWaitingList = async (
       )
     }
   } catch (error) {
-    console.error(error)
+    logger.error(
+      error,
+      'Error adding applicant to waitinglist using Xpand SOAP API'
+    )
     throw error
   }
 }
