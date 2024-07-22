@@ -2,6 +2,7 @@
   "extends": "@tsconfig/node16/tsconfig.json",
   "exclude": ["xpand-sync"],
   "module": "ESNext",
+  "moduleResolution": "Node",
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./build",
