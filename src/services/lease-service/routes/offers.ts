@@ -1,9 +1,10 @@
 import KoaRouter from '@koa/router'
 import { OfferStatus } from 'onecore-types'
+import { logger } from 'onecore-utilities'
 import { z } from 'zod'
 
-import * as offerAdapter from './adapters/offer-adapter'
-import { parseRequestBody } from '../../middlewares/parse-request-body'
+import * as offerAdapter from './../adapters/offer-adapter'
+import { parseRequestBody } from '../../../middlewares/parse-request-body'
 
 export const routes = (router: KoaRouter) => {
   const createOfferRequestParams = z.object({
@@ -24,7 +25,7 @@ export const routes = (router: KoaRouter) => {
         ctx.status = 201
         ctx.body = { data: offer }
       } catch (err) {
-        console.log('Error creating offer: ', err)
+        logger.error(err, 'Error creating offer: ')
         ctx.status = 500
       }
     }

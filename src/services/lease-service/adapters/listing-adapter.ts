@@ -1,5 +1,11 @@
-import { Applicant, Listing, ApplicantStatus, ListingStatus } from 'onecore-types'
+import {
+  Applicant,
+  Listing,
+  ApplicantStatus,
+  ListingStatus,
+} from 'onecore-types'
 import { db } from './db'
+import { logger } from 'onecore-utilities'
 
 function transformFromDbListing(row: any): Listing {
   // TODO: Listing has some properties T | undefined.
@@ -94,6 +100,7 @@ const getListingByRentalObjectCode = async (
 const getListingById = async (
   listingId: string
 ): Promise<Listing | undefined> => {
+  logger.info({ listingId }, 'Getting listing from leasing DB')
   const result = await db
     .from('listing AS l')
     .select(
@@ -120,7 +127,15 @@ const getListingById = async (
     applicants: row.applicants.map(transformDbApplicant),
   })
 
-  if (!result) return undefined
+  if (!result) {
+    logger.info(
+      { listingId },
+      'Getting listing from leasing DB complete - listing not found'
+    )
+    return undefined
+  }
+
+  logger.info({ listingId }, 'Getting listing from leasing DB complete')
 
   return transformListing(parseApplicantsJson(result))
 }
@@ -134,6 +149,7 @@ const getListingById = async (
 const getApplicantById = async (
   applicantId: number
 ): Promise<Applicant | undefined> => {
+  logger.info({ applicantId }, 'Getting applicant from leasing DB')
   const applicant = await db('Applicant')
     .where({
       Id: applicantId,
@@ -141,12 +157,24 @@ const getApplicantById = async (
     .first()
 
   if (applicant == undefined) {
+    logger.info(
+      { applicantId },
+      'Getting applicant from leasing DB complete - applicant not found'
+    )
     return undefined
   }
+
+  logger.info({ applicantId }, 'Getting applicant from leasing DB complete')
+
   return transformDbApplicant(applicant)
 }
 
-const createApplication = async (applicationData: Applicant) => {
+const createApplication = async (applicationData: Omit<Applicant, 'id'>) => {
+  logger.info(
+    { contactCode: applicationData.contactCode },
+    'Creating application in listing DB'
+  )
+
   await db('applicant').insert({
     Name: applicationData.name,
     NationalRegistrationNumber: applicationData.nationalRegistrationNumber,
@@ -156,6 +184,11 @@ const createApplication = async (applicationData: Applicant) => {
     Status: applicationData.status,
     ListingId: applicationData.listingId,
   })
+
+  logger.info(
+    { contactCode: applicationData.contactCode },
+    'Creating application in listing DB complete'
+  )
 }
 
 /**
@@ -176,7 +209,7 @@ const updateApplicantStatus = async (
 
     return updateCount > 0
   } catch (error) {
-    console.error('Error updating applicant status:', error)
+    logger.error(error, 'Error updating applicant status')
     throw error
   }
 }
@@ -222,6 +255,7 @@ const getAllListingsWithApplicants = async () => {
  * @param {string} contactCode - The applicants contact code
  * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
+
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant')
     .where({ ContactCode: contactCode })
@@ -239,17 +273,17 @@ const getApplicantsByContactCode = async (contactCode: string) => {
  * Gets an applicant by contact code and rental object code
  *
  * @param {string} contactCode - The applicants contact code.
- * @param {string} rentalObjectCode - The rental object code of the listing that the applicant belongs to.
+ * @param {string} listingId - The id of the listing that the applicant belongs to.
  * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
-const getApplicantsByContactCodeAndRentalObjectCode = async (
+const getApplicantByContactCodeAndListingId = async (
   contactCode: string,
-  rentalObjectCode: string
+  listingId: number
 ) => {
   const result = await db('Applicant')
     .where({
       ContactCode: contactCode,
-      RentalObjectCode: rentalObjectCode,
+      ListingId: listingId,
     })
     .first()
 
@@ -283,7 +317,10 @@ const getExpiredListings = async () => {
   return listings
 }
 
-const updateListingStatuses = async (listingIds: number[], status: ListingStatus) => {
+const updateListingStatuses = async (
+  listingIds: number[],
+  status: ListingStatus
+) => {
   const updateCount = await db('listing')
     .whereIn('Id', listingIds)
     .update({ Status: status })
@@ -299,9 +336,9 @@ export {
   getAllListingsWithApplicants,
   getApplicantById,
   getApplicantsByContactCode,
-  getApplicantsByContactCodeAndRentalObjectCode,
+  getApplicantByContactCodeAndListingId,
   applicationExists,
   updateApplicantStatus,
   getExpiredListings,
-  updateListingStatuses
+  updateListingStatuses,
 }

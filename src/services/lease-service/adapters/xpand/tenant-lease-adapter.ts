@@ -1,7 +1,9 @@
-import { Lease, Contact, Listing, Applicant } from 'onecore-types'
+import { Lease, Contact } from 'onecore-types'
 
 import knex from 'knex'
 import Config from '../../../../common/config'
+import { logger } from 'onecore-utilities'
+import { AdapterResult } from '../types'
 
 const db = knex({
   client: 'mssql',
@@ -94,8 +96,10 @@ const getLease = async (
   leaseId: string,
   includeContacts: string | string[] | undefined
 ): Promise<Lease | undefined> => {
+  logger.info({ leaseId }, 'Getting lease Xpand DB')
   const rows = await getLeaseById(leaseId)
   if (rows.length > 0) {
+    logger.info({ leaseId }, 'Getting lease Xpand DB complete')
     if (includeContacts) {
       const tenants = await getContactsByLeaseId(leaseId)
       return transformFromDbLease(rows[0], [], tenants)
@@ -103,6 +107,8 @@ const getLease = async (
       return transformFromDbLease(rows[0], [], [])
     }
   }
+
+  logger.info({ leaseId }, 'Getting lease Xpand DB complete - no lease found')
   return undefined
 }
 
@@ -111,6 +117,7 @@ const getLeasesForNationalRegistrationNumber = async (
   includeTerminatedLeases: string | string[] | undefined,
   includeContacts: string | string[] | undefined
 ) => {
+  logger.info('Getting leases for national registration number from Xpand DB')
   const contact = await db
     .from('cmctc')
     .select('cmctc.keycmctc as contactKey')
@@ -123,6 +130,10 @@ const getLeasesForNationalRegistrationNumber = async (
   if (contact != undefined) {
     const leases = await getLeasesByContactKey(contact[0].contactKey)
 
+    logger.info(
+      'Getting leases for national registration number from Xpand DB complete'
+    )
+
     if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
       return leases
     }
@@ -137,6 +148,9 @@ const getLeasesForNationalRegistrationNumber = async (
     return leases.filter(isLeaseActive)
   }
 
+  logger.info(
+    'Getting leases for national registration number from Xpand DB complete - no leases found'
+  )
   return undefined
 }
 
@@ -145,6 +159,7 @@ const getLeasesForContactCode = async (
   includeTerminatedLeases: string | string[] | undefined,
   includeContacts: string | string[] | undefined
 ) => {
+  logger.info({ contactCode }, 'Getting leases for contact code from Xpand DB')
   const contact = await db
     .from('cmctc')
     .select('cmctc.keycmctc as contactKey')
@@ -156,6 +171,11 @@ const getLeasesForContactCode = async (
 
   //todo: assert actual string value, now undefined equals false and every other value true
   if (contact != undefined) {
+    logger.info(
+      { contactCode },
+      'Getting leases for contact code from Xpand DB complete'
+    )
+
     const leases = await getLeasesByContactKey(contact[0].contactKey)
     if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
       return leases
@@ -170,6 +190,11 @@ const getLeasesForContactCode = async (
 
     return leases.filter(isLeaseActive)
   }
+
+  logger.info(
+    { contactCode },
+    'Getting leases for contact code from Xpand DB complete - no leases found'
+  )
 }
 
 const getLeasesForPropertyId = async (
@@ -231,6 +256,35 @@ const getResidentialAreaByRentalPropertyId = async (
   return {
     code: rows[0].code.replace(/\s/g, ''),
     caption: rows[0].caption.replace(/\s/g, ''),
+  }
+}
+
+const getContactsDataBySearchQuery = async (
+  q: string
+): Promise<
+  AdapterResult<
+    Array<{ contactCode: string; fullName: string }>,
+    'internal-error'
+  >
+> => {
+  try {
+    const rows = await db
+      .from('cmctc')
+      .select('cmctc.cmctckod as contactCode', 'cmctc.cmctcben as fullName')
+      .where('cmctc.cmctckod', 'like', `%${q}%`)
+      .orWhere('cmctc.persorgnr', 'like', `%${q}%`)
+      .limit(5)
+
+    return {
+      ok: true,
+      data: rows,
+    }
+  } catch (err) {
+    logger.error({ err }, 'tenant-lease-adapter.getContactsDataBySearchQuery')
+    return {
+      ok: false,
+      err: 'internal-error',
+    }
   }
 }
 
@@ -330,7 +384,7 @@ const getContactQuery = () => {
       'cmctc.keycmctc as contactKey'
     )
     .innerJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
-    .innerJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
+    .leftJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
     .innerJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
 }
 
@@ -470,4 +524,5 @@ export {
   getContactForPhoneNumber,
   isLeaseActive,
   getResidentialAreaByRentalPropertyId,
+  getContactsDataBySearchQuery,
 }

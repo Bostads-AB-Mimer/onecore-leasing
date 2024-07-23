@@ -1,10 +1,24 @@
-import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
+jest.mock('onecore-utilities', () => {
+  return {
+    logger: {
+      info: () => {
+        return
+      },
+      error: () => {
+        return
+      },
+    },
+  }
+})
+
+import * as tenantLeaseAdapter from '../../../adapters/xpand/tenant-lease-adapter'
 
 jest.mock('knex', () => () => ({
   raw: jest.fn().mockReturnThis(),
   select: jest.fn().mockReturnThis(),
   from: jest.fn().mockReturnThis(),
   innerJoin: jest.fn().mockReturnThis(),
+  leftJoin: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
   then: jest
