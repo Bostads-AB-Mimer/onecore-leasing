@@ -169,9 +169,9 @@ const getApplicantById = async (
   return transformDbApplicant(applicant)
 }
 
-const createApplication = async (applicationData: Applicant) => {
+const createApplication = async (applicationData: Omit<Applicant, 'id'>) => {
   logger.info(
-    { applicationId: applicationData.id },
+    { contactCode: applicationData.contactCode },
     'Creating application in listing DB'
   )
 
@@ -186,7 +186,7 @@ const createApplication = async (applicationData: Applicant) => {
   })
 
   logger.info(
-    { applicationId: applicationData.id },
+    { contactCode: applicationData.contactCode },
     'Creating application in listing DB complete'
   )
 }
@@ -255,6 +255,7 @@ const getAllListingsWithApplicants = async () => {
  * @param {string} contactCode - The applicants contact code
  * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
+
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant')
     .where({ ContactCode: contactCode })

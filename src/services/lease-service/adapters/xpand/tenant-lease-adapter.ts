@@ -3,6 +3,7 @@ import { Lease, Contact } from 'onecore-types'
 import knex from 'knex'
 import Config from '../../../../common/config'
 import { logger } from 'onecore-utilities'
+import { AdapterResult } from '../types'
 
 const db = knex({
   client: 'mssql',
@@ -258,6 +259,35 @@ const getResidentialAreaByRentalPropertyId = async (
   }
 }
 
+const getContactsDataBySearchQuery = async (
+  q: string
+): Promise<
+  AdapterResult<
+    Array<{ contactCode: string; fullName: string }>,
+    'internal-error'
+  >
+> => {
+  try {
+    const rows = await db
+      .from('cmctc')
+      .select('cmctc.cmctckod as contactCode', 'cmctc.cmctcben as fullName')
+      .where('cmctc.cmctckod', 'like', `%${q}%`)
+      .orWhere('cmctc.persorgnr', 'like', `%${q}%`)
+      .limit(5)
+
+    return {
+      ok: true,
+      data: rows,
+    }
+  } catch (err) {
+    logger.error({ err }, 'tenant-lease-adapter.getContactsDataBySearchQuery')
+    return {
+      ok: false,
+      err: 'internal-error',
+    }
+  }
+}
+
 const getContactByNationalRegistrationNumber = async (
   nationalRegistrationNumber: string,
   includeTerminatedLeases: string | string[] | undefined
@@ -354,7 +384,7 @@ const getContactQuery = () => {
       'cmctc.keycmctc as contactKey'
     )
     .innerJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
-    .innerJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
+    .leftJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
     .innerJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
 }
 
@@ -494,4 +524,5 @@ export {
   getContactForPhoneNumber,
   isLeaseActive,
   getResidentialAreaByRentalPropertyId,
+  getContactsDataBySearchQuery,
 }
