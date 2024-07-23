@@ -83,7 +83,7 @@ describe('offers', () => {
     })
   })
   describe('GET /contacts/:contactCode/offers', () => {
-    it('responds with 404 if contact not found', async () => {
+    it('responds with 404 if offers not found for contact code', async () => {
       jest.spyOn(offerAdapter, 'getOffersForContact').mockResolvedValueOnce([])
       const res = await request(app.callback()).get(
         '/contacts/NON_EXISTING_CONTACT_CODE/offers'
@@ -92,7 +92,7 @@ describe('offers', () => {
       expect(res.body.data).toBeUndefined()
     })
 
-    it('responds with 200 if contact not found', async () => {
+    it('responds with 200 on success', async () => {
       const applicant = factory.detailedApplicant.build()
       const offer = factory.offerWithRentalObjectCode.build({
         offeredApplicant: applicant,
@@ -106,6 +106,7 @@ describe('offers', () => {
       )
       expect(res.status).toBe(200)
       expect(res.body.data.length).toBe(1)
+      expect(res.body.data[0].id).toEqual(offer.id)
       expect(res.body.data[0].listingId).toEqual(offer.listingId)
       expect(res.body.data[0].offeredApplicant.contactCode).toEqual(
         offer.offeredApplicant.contactCode
