@@ -82,7 +82,7 @@ describe('offers', () => {
       expect(res.body.data.expiresAt).toEqual(expected.expiresAt)
     })
   })
-  describe('GET /offer', () => {
+  describe('GET /contacts/:contactCode/offers', () => {
     it('responds with 404 if contact not found', async () => {
       jest.spyOn(offerAdapter, 'getOffersForContact').mockResolvedValueOnce([])
       const res = await request(app.callback()).get(
