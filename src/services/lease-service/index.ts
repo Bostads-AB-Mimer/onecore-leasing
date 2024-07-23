@@ -30,7 +30,6 @@ import {
   sortApplicantsBasedOnRentalRules,
 } from './priority-list-service'
 
-import { getOffersForContact } from './adapters/offer-adapter'
 import { logger } from 'onecore-utilities'
 import { z } from 'zod'
 
@@ -39,10 +38,6 @@ import { routes as contactRoutes } from './routes/contacts'
 import { routes as invoiceRoutes } from './routes/invoices'
 
 import { parseRequestBody } from '../../middlewares/parse-request-body'
-import {
-  getInvoicesByContactCode,
-  getUnpaidInvoicesByContactCode,
-} from './adapters/xpand/invoices-adapter'
 
 interface CreateLeaseRequest {
   parkingSpaceId: string
