@@ -303,7 +303,7 @@ describe('lease-service', () => {
         applicants: [applicant1, applicant2],
       })
 
-      const detailedApplicantMock = factory.detailedApplicant.build({
+      const detailedApplicant = factory.detailedApplicant.build({
         id: applicant1.id,
         listingId: listingId,
         contactCode: applicant1.contactCode,
@@ -314,8 +314,6 @@ describe('lease-service', () => {
           rentalPropertyId: '306-001-01-0101',
           type: leaseTypes.housingContract,
           leaseStartDate: new Date(),
-          tenantContactIds: [],
-          tenants: [],
           contractDate: new Date(),
           approvalDate: new Date(),
           residentialArea: {
@@ -331,7 +329,7 @@ describe('lease-service', () => {
 
       const priorityListServiceSpy = jest
         .spyOn(priorityListService, 'getDetailedApplicantInformation')
-        .mockResolvedValue(detailedApplicantMock as any)
+        .mockResolvedValue(detailedApplicant as any)
 
       const res = await request(app.callback()).get(
         '/listing/1337/applicants/details'
