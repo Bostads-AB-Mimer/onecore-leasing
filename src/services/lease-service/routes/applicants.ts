@@ -20,51 +20,54 @@ import {
 } from '../residential-area-rental-rules-validator'
 import { z } from 'zod'
 import { ApplicantStatus } from 'onecore-types'
+import { generateRouteMetadata } from 'onecore-utilities'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
 
 export const routes = (router: KoaRouter) => {
   router.get('/applicants/:contactCode/', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     const { contactCode } = ctx.params // Extracting from URL parameters
     try {
       const applicants = await getApplicantsByContactCode(contactCode)
-      ctx.body = applicants
-      ctx.status = 200
-
       if (!applicants) {
         ctx.status = 404 // Not Found
         ctx.body = {
-          error: 'Applicant not found for the provided contactCode.',
+          reason: 'Applicant not found for the provided contactCode.',
+          ...metadata,
         }
       } else {
         ctx.status = 200 // OK
-        ctx.body = applicants
+        ctx.body = { content: applicants, ...metadata }
       }
     } catch (error) {
       logger.error(error, 'Error fetching applicant by contactCode:')
       ctx.status = 500 // Internal Server Error
-      ctx.body = { error: 'An error occurred while fetching the applicant.' }
+      ctx.body = {
+        error: 'An error occurred while fetching the applicant.',
+        ...metadata,
+      }
     }
   })
 
   router.get('/applicants/:contactCode/:listingId', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     const { contactCode, listingId } = ctx.params // Extracting from URL parameters
     try {
       const applicant = await getApplicantByContactCodeAndListingId(
         contactCode,
         parseInt(listingId)
       )
-      ctx.body = applicant
-      ctx.status = 200
 
       if (!applicant) {
         ctx.status = 404 // Not Found
         ctx.body = {
-          error:
+          reason:
             'Applicant not found for the provided contactCode and listingId.',
+          ...metadata,
         }
       } else {
         ctx.status = 200 // OK
-        ctx.body = applicant
+        ctx.body = { content: applicant, ...metadata }
       }
     } catch (error) {
       logger.error(
@@ -72,7 +75,10 @@ export const routes = (router: KoaRouter) => {
         'Error fetching applicant by contactCode and rentalObjectCode:'
       )
       ctx.status = 500 // Internal Server Error
-      ctx.body = { error: 'An error occurred while fetching the applicant.' }
+      ctx.body = {
+        error: 'An error occurred while fetching the applicant.',
+        ...metadata,
+      }
     }
   })
 
@@ -85,6 +91,7 @@ export const routes = (router: KoaRouter) => {
     '/applicants/:id/status',
     parseRequestBody(updateApplicantStatusParams),
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       const { id } = ctx.params
       const { status, contactCode } = ctx.request.body
 
@@ -94,7 +101,10 @@ export const routes = (router: KoaRouter) => {
           const applicant = await getApplicantById(Number(id))
           if (applicant?.contactCode !== contactCode) {
             ctx.status = 404
-            ctx.body = { error: 'Applicant not found for this contactCode' }
+            ctx.body = {
+              reason: 'Applicant not found for this contactCode',
+              ...metadata,
+            }
             return
           }
         }
@@ -102,16 +112,20 @@ export const routes = (router: KoaRouter) => {
         const applicantUpdated = await updateApplicantStatus(Number(id), status)
         if (applicantUpdated) {
           ctx.status = 200
-          ctx.body = { message: 'Applicant status updated successfully' }
+          ctx.body = {
+            message: 'Applicant status updated successfully',
+            ...metadata,
+          }
         } else {
           ctx.status = 404
-          ctx.body = { error: 'Applicant not found' }
+          ctx.body = { reason: 'Applicant not found', ...metadata }
         }
       } catch (error) {
         logger.error(error, 'Error updating applicant status')
         ctx.status = 500 // Internal Server Error
         ctx.body = {
           error: 'An error occurred while updating the applicant status.',
+          ...metadata,
         }
       }
     }
@@ -120,6 +134,7 @@ export const routes = (router: KoaRouter) => {
   router.get(
     '(.*)/applicants/validatePropertyRentalRules/:contactCode/:listingId',
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       try {
         const { contactCode, listingId } = ctx.params // Extracting from URL parameters
         const listing = await getListingById(listingId)
@@ -127,6 +142,7 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 404
           ctx.body = {
             reason: 'Listing was not found',
+            ...metadata,
           }
           return
         }
@@ -140,6 +156,7 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 404
           ctx.body = {
             reason: 'Property info for listing was not found',
+            ...metadata,
           }
           return
         }
@@ -151,7 +168,8 @@ export const routes = (router: KoaRouter) => {
         ) {
           //special property rental rules does not apply to this listing
           ctx.body = {
-            reason: 'No property rental rules applies to this listing',
+            message: 'No property rental rules applies to this listing',
+            ...metadata,
           }
           ctx.status = 200
           return
@@ -166,6 +184,7 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 404
           ctx.body = {
             reason: 'Applicant was not found',
+            ...metadata,
           }
           return
         }
@@ -188,6 +207,7 @@ export const routes = (router: KoaRouter) => {
           ctx.body = {
             reason:
               'Applicant is not a current or coming tenant in the property',
+            ...metadata,
           }
           ctx.status = 403
           return
@@ -202,6 +222,7 @@ export const routes = (router: KoaRouter) => {
           ctx.body = {
             reason:
               'User does not have any active parking space contracts in the listings residential area',
+            ...metadata,
           }
           ctx.status = 403
           return
@@ -236,6 +257,7 @@ export const routes = (router: KoaRouter) => {
           ctx.body = {
             reason:
               'User already have an active parking space contract in the listings residential area',
+            ...metadata,
           }
           ctx.status = 409
           return
@@ -245,6 +267,7 @@ export const routes = (router: KoaRouter) => {
         ctx.body = {
           reason:
             'User does not have any active parking space contracts in the listings residential area',
+          ...metadata,
         }
         ctx.status = 403
       } catch (error: unknown) {
@@ -257,6 +280,7 @@ export const routes = (router: KoaRouter) => {
           )
           ctx.body = {
             error: error.message,
+            ...metadata,
           }
         }
       }
@@ -266,6 +290,7 @@ export const routes = (router: KoaRouter) => {
   router.get(
     '(.*)/applicants/validateResidentialAreaRentalRules/:contactCode/:listingId',
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       try {
         const { contactCode, listingId } = ctx.params // Extracting from URL parameters
         const listing = await getListingById(listingId)
@@ -274,6 +299,7 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 404
           ctx.body = {
             reason: 'Listing was not found',
+            ...metadata,
           }
           return
         }
@@ -282,7 +308,8 @@ export const routes = (router: KoaRouter) => {
           //special residential area rental rules does not apply to this listing
           ctx.status = 200
           ctx.body = {
-            reason: 'No residential area rental rules applies to this listing',
+            message: 'No residential area rental rules applies to this listing',
+            ...metadata,
           }
           return
         }
@@ -296,6 +323,7 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 404
           ctx.body = {
             reason: 'Applicant was not found',
+            ...metadata,
           }
           return
         }
@@ -313,6 +341,7 @@ export const routes = (router: KoaRouter) => {
           ctx.body = {
             reason:
               'Applicant does not have any current or upcoming housing contracts in the residential area',
+            ...metadata,
           }
           ctx.status = 403
           return
@@ -327,8 +356,9 @@ export const routes = (router: KoaRouter) => {
         if (!doesUserHaveExistingParkingSpaceInSameAreaAsListing) {
           //applicant is eligible for parking space, applicationType for application should be 'additonal'
           ctx.body = {
-            reason:
+            message:
               'Applicant does not have any active parking space contracts in the listings residential area. Applicant is eligible to apply to parking space.',
+            ...metadata,
           }
           ctx.status = 200
           return
@@ -339,6 +369,7 @@ export const routes = (router: KoaRouter) => {
         ctx.body = {
           reason:
             'Applicant already have an active parking space contract in the listings residential area',
+          ...metadata,
         }
         ctx.status = 409
       } catch (error: unknown) {
@@ -351,6 +382,7 @@ export const routes = (router: KoaRouter) => {
           )
           ctx.body = {
             error: error.message,
+            ...metadata,
           }
         }
       }

@@ -30,7 +30,7 @@ import {
   sortApplicantsBasedOnRentalRules,
 } from './priority-list-service'
 
-import { logger } from 'onecore-utilities'
+import { logger, generateRouteMetadata } from 'onecore-utilities'
 import { z } from 'zod'
 
 import { routes as offerRoutes } from './routes/offers'
@@ -59,6 +59,10 @@ export const routes = (router: KoaRouter) => {
    * Returns leases for a national registration number with populated sub objects
    */
   router.get('(.*)/leases/for/nationalRegistrationNumber/:pnr', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx, [
+      'includeTerminatedLeases',
+      'includeContacts',
+    ])
     const responseData = await getLeasesForNationalRegistrationNumber(
       ctx.params.pnr,
       ctx.query.includeTerminatedLeases,
@@ -66,7 +70,8 @@ export const routes = (router: KoaRouter) => {
     )
 
     ctx.body = {
-      data: responseData,
+      content: responseData,
+      ...metadata,
     }
   })
 
@@ -74,13 +79,18 @@ export const routes = (router: KoaRouter) => {
    * Returns leases for a contact code with populated sub objects
    */
   router.get('(.*)/leases/for/contactCode/:pnr', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx, [
+      'includeTerminatedLeases',
+      'includeContacts',
+    ])
     const responseData = await getLeasesForContactCode(
       ctx.params.pnr,
       ctx.query.includeTerminatedLeases,
       ctx.query.includeContacts
     )
     ctx.body = {
-      data: responseData,
+      content: responseData,
+      ...metadata,
     }
   })
 
@@ -88,6 +98,10 @@ export const routes = (router: KoaRouter) => {
    * Returns leases for a property id with populated sub objects
    */
   router.get('(.*)/leases/for/propertyId/:propertyId', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx, [
+      'includeTerminatedLeases',
+      'includeContacts',
+    ])
     const responseData = await getLeasesForPropertyId(
       ctx.params.propertyId,
       ctx.query.includeTerminatedLeases,
@@ -95,7 +109,8 @@ export const routes = (router: KoaRouter) => {
     )
 
     ctx.body = {
-      data: responseData,
+      content: responseData,
+      ...metadata,
     }
   })
 
@@ -103,13 +118,15 @@ export const routes = (router: KoaRouter) => {
    * Returns a lease with populated sub objects
    */
   router.get('(.*)/leases/:id', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx, ['includeContacts'])
     const responseData = await getLease(
       ctx.params.id,
       ctx.query.includeContacts
     )
 
     ctx.body = {
-      data: responseData,
+      content: responseData,
+      ...metadata,
     }
   })
 
@@ -132,13 +149,15 @@ export const routes = (router: KoaRouter) => {
    * Gets a person by national registration number.
    */
   router.get('(.*)/contact/nationalRegistrationNumber/:pnr', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx, ['includeTerminatedLeases'])
     const responseData = await getContactByNationalRegistrationNumber(
       ctx.params.pnr,
       ctx.query.includeTerminatedLeases
     )
 
     ctx.body = {
-      data: responseData,
+      content: responseData,
+      ...metadata,
     }
   })
 
@@ -146,13 +165,15 @@ export const routes = (router: KoaRouter) => {
    * Gets a person by contact code.
    */
   router.get('(.*)/contact/contactCode/:contactCode', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx, ['includeTerminatedLeases'])
     const responseData = await getContactByContactCode(
       ctx.params.contactCode,
       ctx.query.includeTerminatedLeases
     )
 
     ctx.body = {
-      data: responseData,
+      content: responseData,
+      ...metadata,
     }
   })
 
@@ -160,13 +181,15 @@ export const routes = (router: KoaRouter) => {
    * Gets a person by phone number.
    */
   router.get('(.*)/contact/phoneNumber/:phoneNumber', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     const responseData = await getContactForPhoneNumber(
       ctx.params.phoneNumber
       //ctx.query.includeTerminatedLeases /TODO: Implement this?
     )
 
     ctx.body = {
-      data: responseData,
+      content: responseData,
+      ...metadata,
     }
   })
 
@@ -174,6 +197,7 @@ export const routes = (router: KoaRouter) => {
    * Creates or updates a lease.
    */
   router.post('(.*)/leases', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const request = <CreateLeaseRequest>ctx.request.body
 
@@ -184,7 +208,8 @@ export const routes = (router: KoaRouter) => {
         request.companyCode
       )
       ctx.body = {
-        LeaseId: newLeaseId,
+        content: { LeaseId: newLeaseId },
+        ...metadata,
       }
     } catch (error: unknown) {
       ctx.status = 500
@@ -192,6 +217,7 @@ export const routes = (router: KoaRouter) => {
       if (error instanceof Error) {
         ctx.body = {
           error: error.message,
+          ...metadata,
         }
       }
     }
@@ -204,6 +230,7 @@ export const routes = (router: KoaRouter) => {
   //can add listing
   //cannot add duplicate listing
   router.post('(.*)/listings', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const listingData = <Listing>ctx.request.body
       const existingListing = await getListingByRentalObjectCode(
@@ -214,20 +241,21 @@ export const routes = (router: KoaRouter) => {
         existingListing.rentalObjectCode === listingData.rentalObjectCode
       ) {
         ctx.status = 409
+        ctx.body = { reason: 'Listing already exists.', ...metadata }
         return
       }
 
       const listing = await createListing(listingData)
 
       ctx.status = 201 // HTTP status code for Created
-      ctx.body = listing
+      ctx.body = { content: listing, ...metadata }
     } catch (error) {
       ctx.status = 500 // Internal Server Error
 
       if (error instanceof Error) {
-        ctx.body = { error: error.message }
+        ctx.body = { error: error.message, ...metadata }
       } else {
-        ctx.body = { error: 'An unexpected error occurred.' }
+        ctx.body = { error: 'An unexpected error occurred.', ...metadata }
       }
     }
   })
@@ -254,6 +282,7 @@ export const routes = (router: KoaRouter) => {
     '(.*)/listings/apply',
     parseRequestBody(CreateApplicantRequestParamsSchema),
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       try {
         const applicantData = ctx.request.body
 
@@ -266,34 +295,37 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 409 // Conflict
           ctx.body = {
             error: 'Applicant has already applied for this listing.',
+            ...metadata,
           }
           return
         }
 
         const applicationId = await createApplication(applicantData)
         ctx.status = 201 // HTTP status code for Created
-        ctx.body = { applicationId }
+        ctx.body = { content: applicationId, ...metadata }
       } catch (error) {
         ctx.status = 500 // Internal Server Error
         if (error instanceof Error) {
-          ctx.body = { error: error.message }
+          ctx.body = { error: error.message, ...metadata }
         } else {
-          ctx.body = { error: 'An unexpected error occurred.' }
+          ctx.body = { error: 'An unexpected error occurred.', ...metadata }
         }
       }
     }
   )
 
   router.get('/listings/by-id/:listingId', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const listingId = ctx.params.listingId
       const listing = await getListingById(listingId)
       if (listing == undefined) {
         ctx.status = 404
+        ctx.body = { reason: 'Listing not found', ...metadata }
         return
       }
 
-      ctx.body = listing
+      ctx.body = { conrent: listing, ...metadata }
       ctx.status = 200
     } catch (error) {
       logger.error(error, 'Error fetching listing: ' + ctx.params.listingId)
@@ -302,11 +334,13 @@ export const routes = (router: KoaRouter) => {
         error:
           'An error occurred while fetching listing with the provided listingId: ' +
           ctx.params.listingId,
+        ...metadata,
       }
     }
   })
 
   router.get('/listings/by-code/:rentalObjectCode', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const rentaLObjectCode = ctx.params.rentalObjectCode
       const listing = await getListingByRentalObjectCode(rentaLObjectCode)
@@ -315,7 +349,7 @@ export const routes = (router: KoaRouter) => {
         return
       }
 
-      ctx.body = listing
+      ctx.body = { content: listing, ...metadata }
       ctx.status = 200
     } catch (error) {
       logger.error(
@@ -327,20 +361,23 @@ export const routes = (router: KoaRouter) => {
         error:
           'An error occurred while fetching listing with the provided rentalObjectCode: ' +
           ctx.params.rentalObjectCode,
+        ...metadata,
       }
     }
   })
 
   router.get('/listings-with-applicants', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const listingsWithApplicants = await getAllListingsWithApplicants()
-      ctx.body = listingsWithApplicants
+      ctx.body = { content: listingsWithApplicants, ...metadata }
       ctx.status = 200
     } catch (error) {
       logger.error(error, 'Error fetching listings with applicants:')
       ctx.status = 500 // Internal Server Error
       ctx.body = {
         error: 'An error occurred while fetching listings with applicants.',
+        ...metadata,
       }
     }
   })
@@ -351,13 +388,15 @@ export const routes = (router: KoaRouter) => {
   router.get(
     '(.*)/contact/waitingList/:nationalRegistrationNumber',
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       try {
         const responseData = await getWaitingList(
           ctx.params.nationalRegistrationNumber
         )
-
+        ctx.status = 201
         ctx.body = {
-          data: responseData,
+          content: responseData,
+          ...metadata,
         }
       } catch (error: unknown) {
         logger.error(
@@ -369,6 +408,7 @@ export const routes = (router: KoaRouter) => {
         if (error instanceof Error) {
           ctx.body = {
             error: error.message,
+            ...metadata,
           }
         }
       }
@@ -381,6 +421,7 @@ export const routes = (router: KoaRouter) => {
   router.post(
     '(.*)/contact/waitingList/:nationalRegistrationNumber',
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       const request = <CreateWaitingListRequest>ctx.request.body
       try {
         await addApplicantToToWaitingList(
@@ -390,6 +431,10 @@ export const routes = (router: KoaRouter) => {
         )
 
         ctx.status = 201
+        ctx.body = {
+          message: 'Contact added to waiting list',
+          ...metadata,
+        }
       } catch (error: unknown) {
         logger.error(error, 'Error adding contact to waitingList')
         ctx.status = 500
@@ -397,6 +442,7 @@ export const routes = (router: KoaRouter) => {
         if (error instanceof Error) {
           ctx.body = {
             error: error.message,
+            ...metadata,
           }
         }
       }
@@ -409,12 +455,17 @@ export const routes = (router: KoaRouter) => {
    * Uses ListingId instead of rentalObjectCode since multiple listings can share the same rentalObjectCode for historical reasons
    */
   router.get('(.*)/listing/:listingId/applicants/details', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const listingId = ctx.params.listingId
       const listing = await getListingById(listingId)
 
       if (!listing) {
         ctx.status = 404
+        ctx.body = {
+          error: 'Listing not found',
+          ...metadata,
+        }
         return
       }
 
@@ -433,7 +484,10 @@ export const routes = (router: KoaRouter) => {
         applicants
       )
 
-      ctx.body = sortApplicantsBasedOnRentalRules(applicantsWithPriority)
+      ctx.body = {
+        content: sortApplicantsBasedOnRentalRules(applicantsWithPriority),
+        ...metadata,
+      }
     } catch (error: unknown) {
       logger.error(error, 'Error getting applicants for waiting list')
       ctx.status = 500
@@ -441,6 +495,7 @@ export const routes = (router: KoaRouter) => {
       if (error instanceof Error) {
         ctx.body = {
           error: error.message,
+          ...metadata,
         }
       }
     }

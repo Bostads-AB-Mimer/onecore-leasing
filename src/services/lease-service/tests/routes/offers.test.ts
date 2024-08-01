@@ -10,6 +10,7 @@ jest.mock('onecore-utilities', () => {
         return
       },
     },
+    generateRouteMetadata: jest.fn(() => ({})),
   }
 })
 
@@ -22,7 +23,6 @@ import { OfferStatus } from 'onecore-types'
 import { routes } from '../../routes/offers'
 import * as offerAdapter from '../../adapters/offer-adapter'
 import * as factory from '../factories'
-import { detailedApplicant, offerWithRentalObjectCode } from '../factories'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -47,7 +47,6 @@ describe('offers', () => {
       }
 
       const res = await request(app.callback()).post('/offer').send(payload)
-
       expect(res.status).toBe(400)
       expect(res.body.data).toEqual([
         {
@@ -77,9 +76,9 @@ describe('offers', () => {
       }
 
       expect(res.status).toBe(201)
-      expect(res.body.data.createdAt).toBeDefined()
-      expect(res.body.data.listingId).toEqual(expected.listingId)
-      expect(res.body.data.expiresAt).toEqual(expected.expiresAt)
+      expect(res.body.content.createdAt).toBeDefined()
+      expect(res.body.content.listingId).toEqual(expected.listingId)
+      expect(res.body.content.expiresAt).toEqual(expected.expiresAt)
     })
   })
   describe('GET /contacts/:contactCode/offers', () => {
@@ -89,7 +88,7 @@ describe('offers', () => {
         '/contacts/NON_EXISTING_CONTACT_CODE/offers'
       )
       expect(res.status).toBe(404)
-      expect(res.body.data).toBeUndefined()
+      expect(res.body.content).toBeUndefined()
     })
 
     it('responds with 200 on success', async () => {
@@ -105,10 +104,10 @@ describe('offers', () => {
         `/contacts/${applicant.contactCode}/offers`
       )
       expect(res.status).toBe(200)
-      expect(res.body.data.length).toBe(1)
-      expect(res.body.data[0].id).toEqual(offer.id)
-      expect(res.body.data[0].listingId).toEqual(offer.listingId)
-      expect(res.body.data[0].offeredApplicant.contactCode).toEqual(
+      expect(res.body.content.length).toBe(1)
+      expect(res.body.content[0].id).toEqual(offer.id)
+      expect(res.body.content[0].listingId).toEqual(offer.listingId)
+      expect(res.body.content[0].offeredApplicant.contactCode).toEqual(
         offer.offeredApplicant.contactCode
       )
     })
