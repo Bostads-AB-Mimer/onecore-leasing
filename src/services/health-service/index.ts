@@ -1,6 +1,7 @@
 import KoaRouter from '@koa/router'
 import { SystemHealth, ListingStatus } from 'onecore-types'
 import config from '../../common/config'
+import { healthCheck } from '../lease-service/adapters/xpand/xpand-soap-adapter'
 import knex from 'knex'
 
 const subsystems = [
@@ -58,29 +59,49 @@ const subsystems = [
         })
         const expiredActiveListings = await db('listing')
           .where('PublishedTo', '<', new Date(Date.now() - 86400000))
-          .andWhere('Status', ListingStatus.Active);
-    
+          .andWhere('Status', ListingStatus.Active)
+
         if (expiredActiveListings.length > 0) {
           return {
             name: 'expire-listings script',
             status: 'impaired',
             statusMessage: `Found ${expiredActiveListings.length} listings that should be expired but are still active.`,
-          };
+          }
         }
         return {
           name: 'expire-listings script',
           status: 'active',
-          statusMessage: 'All expired listings are correctly marked as expired.',
-        };
+          statusMessage:
+            'All expired listings are correctly marked as expired.',
+        }
       } catch (error: any) {
         return {
           name: 'expire-listings script',
           status: 'failure',
-          statusMessage: error.message || 'Failed to query the database for expired listings.',
-        };
+          statusMessage:
+            error.message ||
+            'Failed to query the database for expired listings.',
+        }
       }
     },
-  }
+  },
+  {
+    probe: async (): Promise<SystemHealth> => {
+      try {
+        await healthCheck()
+        return {
+          name: 'xpand soap api',
+          status: 'active',
+        }
+      } catch (error: any) {
+        return {
+          name: 'xpand soap api',
+          status: 'failure',
+          statusMessage: error.message || 'Failed to access the xpand api.',
+        }
+      }
+    },
+  },
 ]
 
 export const routes = (router: KoaRouter) => {
