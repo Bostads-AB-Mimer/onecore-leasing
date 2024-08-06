@@ -1,10 +1,12 @@
 import KoaRouter from '@koa/router'
 import { OfferStatus } from 'onecore-types'
+import { logger } from 'onecore-utilities'
 import { z } from 'zod'
 
-import * as offerAdapter from './adapters/offer-adapter'
-import { parseRequestBody } from '../../middlewares/parse-request-body'
-import { logger } from 'onecore-utilities'
+import * as offerAdapter from './../adapters/offer-adapter'
+import { parseRequestBody } from '../../../middlewares/parse-request-body'
+import { getOffersForContact } from './../adapters/offer-adapter'
+import { HttpStatusCode } from 'axios'
 
 export const routes = (router: KoaRouter) => {
   const createOfferRequestParams = z.object({
@@ -30,4 +32,16 @@ export const routes = (router: KoaRouter) => {
       }
     }
   )
+
+  //todo: add swagger docs
+  router.get('/contacts/:contactCode/offers', async (ctx) => {
+    const responseData = await getOffersForContact(ctx.params.contactCode)
+    if (!responseData.length) {
+      ctx.status = HttpStatusCode.NotFound
+      return
+    }
+    ctx.body = {
+      data: responseData,
+    }
+  })
 }

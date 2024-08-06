@@ -1,11 +1,10 @@
-import { DetailedApplicantFactory, LeaseFactory } from './factory'
-
 import {
   doesPropertyBelongingToParkingSpaceHaveSpecificRentalRules,
   doesTenantHaveHousingContractInSamePropertyAsListing,
 } from '../property-rental-rules-validator'
 import * as estateCodeAdapter from '../adapters/xpand/estate-code-adapter'
 import { getEstateCodeFromXpandByRentalObjectCode } from '../adapters/xpand/estate-code-adapter'
+import * as factory from './factories'
 
 describe('doesPropertyHaveSpecificRentalRules', () => {
   it('shouldReturnFalseIfPropertyDoesNotHaveSpecificRentalRules', () => {
@@ -30,7 +29,7 @@ const listingEstateCode = '24104'
 
 describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
   it('should returns false if no housing contract', async () => {
-    const detailedApplicant = DetailedApplicantFactory.build({
+    const detailedApplicant = factory.detailedApplicant.build({
       currentHousingContract: undefined,
       upcomingHousingContract: undefined,
     })
@@ -52,9 +51,9 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
         type: 'foo',
       })
 
-    const detailedApplicant = DetailedApplicantFactory.build({
+    const detailedApplicant = factory.detailedApplicant.build({
       currentHousingContract: undefined,
-      upcomingHousingContract: LeaseFactory.build({
+      upcomingHousingContract: factory.lease.build({
         rentalPropertyId: housingContractRentalObjectCode,
       }),
     })
@@ -76,8 +75,8 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
         type: 'foo',
       })
 
-    const detailedApplicant = DetailedApplicantFactory.build({
-      currentHousingContract: LeaseFactory.build({
+    const detailedApplicant = factory.detailedApplicant.build({
+      currentHousingContract: factory.lease.build({
         rentalPropertyId: housingContractRentalObjectCode,
       }),
       upcomingHousingContract: undefined,
@@ -97,8 +96,8 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
       .mockResolvedValueOnce({ estateCode: '24104', type: 'foo' })
 
-    const detailedApplicant = DetailedApplicantFactory.build({
-      currentHousingContract: LeaseFactory.build({
+    const detailedApplicant = factory.detailedApplicant.build({
+      currentHousingContract: factory.lease.build({
         rentalPropertyId: housingContractRentalObjectCode,
       }),
       upcomingHousingContract: undefined,
@@ -118,9 +117,9 @@ describe('doesUserHaveHousingContractInSamePropertyAsListing', () => {
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
       .mockResolvedValueOnce({ estateCode: '24104', type: 'foo' })
 
-    const detailedApplicant = DetailedApplicantFactory.build({
+    const detailedApplicant = factory.detailedApplicant.build({
       currentHousingContract: undefined,
-      upcomingHousingContract: LeaseFactory.build({
+      upcomingHousingContract: factory.lease.build({
         rentalPropertyId: housingContractRentalObjectCode,
       }),
     })
