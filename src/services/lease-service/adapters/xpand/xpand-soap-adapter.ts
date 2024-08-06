@@ -5,7 +5,7 @@ import createHttpError from 'http-errors'
 import Config from '../../../../common/config'
 import { WaitingList } from 'onecore-types'
 import { logger } from 'onecore-utilities'
-import { AdapterResult } from './tenant-lease-adapter'
+import { AdapterResult } from '../types'
 
 const createLease = async (
   fromDate: Date,

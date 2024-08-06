@@ -322,8 +322,6 @@ const getContactByNationalRegistrationNumber = async (
   return null
 }
 
-export type AdapterResult<T, E> = { ok: true; data: T } | { ok: false; err: E }
-
 const getContactByContactCode = async (
   contactKey: string,
   includeTerminatedLeases: string | string[] | undefined

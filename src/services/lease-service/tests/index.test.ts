@@ -15,7 +15,7 @@ import request from 'supertest'
 import Koa from 'koa'
 import KoaRouter from '@koa/router'
 import bodyParser from 'koa-bodyparser'
-import { DetailedApplicant, Lease, Listing } from 'onecore-types'
+import { Lease, Listing } from 'onecore-types'
 
 import { routes } from '../index'
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
@@ -23,7 +23,7 @@ import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
 import * as listingAdapter from '../adapters/listing-adapter'
 import * as priorityListService from '../priority-list-service'
 import { leaseTypes } from '../../../constants/leaseTypes'
-import { DetailedApplicantFactory } from './factory'
+import { DetailedApplicantFactory } from './factories/detailed-applicant'
 
 const app = new Koa()
 const router = new KoaRouter()

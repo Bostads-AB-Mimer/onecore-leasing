@@ -1,4 +1,5 @@
 import { Contact, Lease } from 'onecore-types'
+import { AdapterResult } from './adapters/types'
 
 import * as estateCodeAdapter from './adapters/xpand/estate-code-adapter'
 import * as tenantLeaseAdapter from './adapters/xpand/tenant-lease-adapter'
@@ -27,7 +28,7 @@ export type Tenant = Omit<Contact, 'leases'> & {
 
 export async function getTenant(params: {
   contactCode: string
-}): Promise<tenantLeaseAdapter.AdapterResult<Tenant, GetTenantError>> {
+}): Promise<AdapterResult<Tenant, GetTenantError>> {
   const contact = await tenantLeaseAdapter.getContactByContactCode(
     params.contactCode,
     'false'
