@@ -18,8 +18,7 @@ type GetTenantError =
   | 'housing-contracts-not-found'
   | 'get-lease-property-info'
 
-export type Tenant = Omit<Contact, 'leases'> & {
-  isTenant: true
+export type Tenant = Omit<Contact, 'leases' | 'isTenant'> & {
   queuePoints: number
   currentHousingContract?: Lease
   upcomingHousingContract?: Lease
@@ -151,7 +150,6 @@ export async function getTenant(params: {
     ok: true,
     data: {
       ...contact.data,
-      isTenant: contact.data.isTenant,
       queuePoints: waitingListForInternalParkingSpace.queuePoints,
       address: contact.data.address,
       currentHousingContract,
