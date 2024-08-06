@@ -122,9 +122,16 @@ const getListingById = async (
     applicants: row.applicants ? JSON.parse(row.applicants) : [],
   })
 
+  const parseApplicantsApplicationDate = (applicant: Applicant): Applicant => ({
+    ...applicant,
+    applicationDate: new Date(applicant.applicationDate),
+  })
+
   const transformListing = (row: { applicants: Array<unknown> }): Listing => ({
     ...transformFromDbListing(row),
-    applicants: row.applicants.map(transformDbApplicant),
+    applicants: row.applicants
+      .map(transformDbApplicant)
+      .map(parseApplicantsApplicationDate),
   })
 
   if (!result) {

@@ -4,6 +4,7 @@
  * Sorting applicants based on rental rules
  */
 
+import { logger } from 'onecore-utilities'
 import {
   Applicant,
   DetailedApplicant,
@@ -20,7 +21,6 @@ import {
   getResidentialAreaByRentalPropertyId,
 } from './adapters/xpand/tenant-lease-adapter'
 import { leaseTypes } from '../../constants/leaseTypes'
-import { logger } from 'onecore-utilities'
 
 const getDetailedApplicantInformation = async (
   applicant: Applicant
