@@ -22,8 +22,7 @@ import {
   getLeasesForContactCode,
   getResidentialAreaByRentalPropertyId,
 } from './adapters/xpand/tenant-lease-adapter'
-
-export type AdapterResult<T, E> = { ok: true; data: T } | { ok: false; err: E }
+import { AdapterResult } from './adapters/types'
 
 type GetDetailedApplicantError =
   | 'get-contact'
