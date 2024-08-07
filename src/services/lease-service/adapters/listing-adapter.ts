@@ -154,7 +154,7 @@ const getApplicantById = async (
   applicantId: number
 ): Promise<Applicant | undefined> => {
   logger.info({ applicantId }, 'Getting applicant from leasing DB')
-  const applicant = await db('Applicant')
+  const applicant = await db<DbApplicant>('Applicant')
     .where({
       Id: applicantId,
     })
@@ -263,16 +263,16 @@ const getAllListingsWithApplicants = async (): Promise<Array<Listing>> => {
 }
 
 /**
- * Gets an applicant by contact code
+ * Gets all applicants by contact code
  *
  * @param {string} contactCode - The applicants contact code
- * @returns {Promise<Applicant | undefined>} - Returns the applicant.
+ * @returns {Promise<Applicant | undefined>} - Returns the applicants.
  */
 
 const getApplicantsByContactCode = async (contactCode: string) => {
   const result = await db('Applicant')
     .where({ ContactCode: contactCode })
-    .select('*')
+    .select<Array<DbApplicant>>('*')
 
   if (result == undefined) {
     return undefined
@@ -293,7 +293,7 @@ const getApplicantByContactCodeAndListingId = async (
   contactCode: string,
   listingId: number
 ) => {
-  const result = await db('Applicant')
+  const result = await db<DbApplicant>('Applicant')
     .where({
       ContactCode: contactCode,
       ListingId: listingId,
@@ -313,7 +313,7 @@ const getApplicantByContactCodeAndListingId = async (
  * @returns {Promise<boolean>} - Returns true if applicant belongs to listing, false if not.
  */
 const applicationExists = async (contactCode: string, listingId: number) => {
-  const result = await db('applicant')
+  const result = await db<DbApplicant>('applicant')
     .where({
       ContactCode: contactCode,
       ListingId: listingId,
