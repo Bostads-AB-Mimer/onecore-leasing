@@ -38,11 +38,25 @@ export async function create(params: CreateOfferParams) {
   return transformFromDbOffer(offer, applicant)
 }
 
+type GetOffersForContactQueryResult = Array<
+  DbOffer & {
+    RentalObjectCode: string
+    ApplicantApplicantId: number
+    ApplicantName: string
+    ApplicantNationalRegistrationNumber: string
+    ApplicantContactCode: string
+    ApplicantApplicationDate: Date
+    ApplicantApplicationType?: string
+    ApplicantStatus: Applicant['status']
+    ApplicantListingId: number
+  }
+>
+
 export async function getOffersForContact(
   contactCode: string
 ): Promise<Array<OfferWithRentalObjectCode>> {
   const rows = await db
-    .select(
+    .select<GetOffersForContactQueryResult>(
       'offer.*',
       'listing.RentalObjectCode',
       'applicant.Id as ApplicantApplicantId',
@@ -59,7 +73,34 @@ export async function getOffersForContact(
     .innerJoin('applicant', 'applicant.Id', 'offer.ApplicantId')
     .where('applicant.ContactCode', contactCode)
 
-  return rows.map((row) => transformToOfferWithRentalObjectCode(row))
+  return rows.map((row) => {
+    const {
+      ApplicantApplicantId,
+      ApplicantName,
+      ApplicantNationalRegistrationNumber,
+      ApplicantApplicationDate,
+      ApplicantApplicationType,
+      ApplicantContactCode,
+      ApplicantStatus,
+      ApplicantListingId,
+      RentalObjectCode,
+      ...offer
+    } = row
+
+    return {
+      ...transformFromDbOffer(offer, {
+        ApplicationDate: ApplicantApplicationDate,
+        ContactCode: ApplicantContactCode,
+        Id: ApplicantApplicantId,
+        ListingId: ApplicantListingId,
+        Name: ApplicantName,
+        NationalRegistrationNumber: ApplicantNationalRegistrationNumber,
+        Status: ApplicantStatus,
+        ApplicationType: ApplicantApplicationType,
+      }),
+      rentalObjectCode: RentalObjectCode,
+    }
+  })
 }
 
 const transformFromDbOffer = (o: DbOffer, a: DbApplicant): Offer => {
@@ -74,33 +115,4 @@ const transformFromDbOffer = (o: DbOffer, a: DbApplicant): Offer => {
     selectedApplicants: JSON.parse(selectedApplicants),
     offeredApplicant: dbUtils.pascalToCamel(a),
   }
-}
-
-const transformToOfferWithRentalObjectCode = (
-  result: any
-): OfferWithRentalObjectCode => {
-  const applicant: Applicant = {
-    id: result.ApplicantApplicantId,
-    name: result.ApplicantName,
-    nationalRegistrationNumber: result.ApplicantNationalRegistrationNumber,
-    contactCode: result.ApplicantContactCode,
-    applicationDate: result.ApplicantApplicationDate,
-    applicationType: result.ApplicantApplicationType,
-    status: result.ApplicantStatus,
-    listingId: result.ApplicantListingId,
-  }
-  const offerWithRentalObjectCode: OfferWithRentalObjectCode = {
-    id: result.Id,
-    sentAt: result.SentAt,
-    expiresAt: result.ExpiresAt,
-    answeredAt: result.AnsweredAt,
-    selectedApplicants: JSON.parse(result.SelectionSnapshot),
-    status: result.Status,
-    listingId: result.ListingId,
-    offeredApplicant: applicant,
-    createdAt: result.CreatedAt,
-    rentalObjectCode: result.RentalObjectCode,
-  }
-
-  return offerWithRentalObjectCode
 }
