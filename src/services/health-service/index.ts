@@ -125,22 +125,6 @@ const subsystems = [
         config.health.xpandSoapApi.minimumMinutesBetweenRequests,
         xpandSoapApiHealthCheck
       )
-
-      // try {
-      //   await healthCheck()
-      //   return {
-      //     name: config.health.xpandSoapApi.systemName,
-      //     status: 'active',
-      //     timeStamp: new Date(),
-      //   }
-      // } catch (error: any) {
-      //   return {
-      //     name: config.health.xpandSoapApi.systemName,
-      //     status: 'failure',
-      //     statusMessage: error.message || 'Failed to access the xpand api.',
-      //     timeStamp: new Date(),
-      //   }
-      // }
     },
   },
 ]
