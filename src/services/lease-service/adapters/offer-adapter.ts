@@ -46,7 +46,7 @@ type GetOffersForContactQueryResult = Array<
     ApplicantNationalRegistrationNumber: string
     ApplicantContactCode: string
     ApplicantApplicationDate: Date
-    ApplicantApplicationType?: string
+    ApplicantApplicationType: string | null
     ApplicantStatus: Applicant['status']
     ApplicantListingId: number
   }
@@ -113,6 +113,9 @@ const transformFromDbOffer = (o: DbOffer, a: DbApplicant): Offer => {
   return {
     ...offer,
     selectedApplicants: JSON.parse(selectedApplicants),
-    offeredApplicant: dbUtils.pascalToCamel(a),
+    offeredApplicant: {
+      ...dbUtils.pascalToCamel(a),
+      applicationType: a.ApplicationType || undefined,
+    },
   }
 }

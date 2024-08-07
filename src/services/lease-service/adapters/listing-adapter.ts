@@ -1,33 +1,13 @@
 import { logger } from 'onecore-utilities'
-
 import {
   Applicant,
   Listing,
   ApplicantStatus,
   ListingStatus,
 } from 'onecore-types'
-import { db } from './db'
-import { DbApplicant } from './types'
 
-type DbListing = {
-  Id: number
-  RentalObjectCode: string
-  Address: string
-  MonthlyRent: number
-  DistrictCaption: string | null
-  DistrictCode: string | null
-  BlockCaption: string | null
-  BlockCode: string | null
-  ObjectTypeCaption: string | null
-  ObjectTypeCode: string | null
-  RentalObjectTypeCaption: string | null
-  RentalObjectTypeCode: string | null
-  PublishedFrom: Date
-  PublishedTo: Date
-  VacantFrom: Date
-  Status: ListingStatus
-  WaitingListType: string | null
-}
+import { db } from './db'
+import { DbApplicant, DbListing } from './types'
 
 function transformFromDbListing(row: DbListing): Listing {
   return {
@@ -59,7 +39,7 @@ function transformDbApplicant(row: DbApplicant): Applicant {
     nationalRegistrationNumber: row.NationalRegistrationNumber,
     contactCode: row.ContactCode,
     applicationDate: row.ApplicationDate,
-    applicationType: row.ApplicationType,
+    applicationType: row.ApplicationType || undefined,
     status: row.Status,
     listingId: row.ListingId,
   }
@@ -239,17 +219,19 @@ const updateApplicantStatus = async (
 }
 
 const getAllListingsWithApplicants = async (): Promise<Array<Listing>> => {
-  const query = `
-    SELECT
-      l.*,
+  const query = db
+    .from('listing AS l')
+    .select<Array<DbListing & { applicants: string | null }>>(
+      'l.*',
+      db.raw(`
       (
         SELECT a.*
         FROM applicant a
         WHERE a.ListingId = l.Id
         FOR JSON PATH
       ) as applicants
-    FROM listing l
-  `
+    `)
+    )
 
   const parseApplicantsJson = (applicants: string | null) =>
     applicants ? JSON.parse(applicants) : []
@@ -268,16 +250,14 @@ const getAllListingsWithApplicants = async (): Promise<Array<Listing>> => {
       .map(parseApplicantsApplicationDate),
   })
 
-  const result = await db
-    .raw<Array<DbListing & { applicants: string | null }>>(query)
-    .then((rows) =>
-      rows.map((row) => {
-        return transformListing({
-          ...row,
-          applicants: parseApplicantsJson(row.applicants),
-        })
+  const result = await query.then((rows) =>
+    rows.map((row) => {
+      return transformListing({
+        ...row,
+        applicants: parseApplicantsJson(row.applicants),
       })
-    )
+    })
+  )
 
   return result
 }
