@@ -235,11 +235,8 @@ const healthCheck = async () => {
   const parsedResponse =
     parser.parse(body)['Envelope']['Body']['PublishedRentalObjectResult08352']
 
-  console.log('parsedResponse', parsedResponse)
   if (!parsedResponse['PublishedRentalObjects08352']) {
     throw createHttpError(404, 'Published Parking Spaces not found')
-  } else {
-    return true
   }
 }
 
