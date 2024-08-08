@@ -48,6 +48,10 @@ export interface Config {
       systemName: string
       minimumMinutesBetweenRequests: number
     }
+    creditsafe: {
+      systemName: string
+      minimumMinutesBetweenRequests: number
+    }
   }
 }
 
@@ -96,6 +100,10 @@ const config = configPackage({
       },
       xpandSoapApi: {
         systemName: 'xpand soap api',
+        minimumMinutesBetweenRequests: 2,
+      },
+      creditsafe: {
+        systemName: 'creditsafe base url',
         minimumMinutesBetweenRequests: 2,
       },
     },

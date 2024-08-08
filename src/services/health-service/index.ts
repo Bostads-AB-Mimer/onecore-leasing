@@ -2,6 +2,7 @@ import KoaRouter from '@koa/router'
 import { SystemHealth, ListingStatus } from 'onecore-types'
 import config from '../../common/config'
 import { healthCheck as xpandSoapApiHealthCheck } from '../lease-service/adapters/xpand/xpand-soap-adapter'
+import { healthCheck as creditSafeHealthCheck } from '../creditsafe/adapters/creditsafe-adapter'
 import knex from 'knex'
 
 const healthChecks: Map<string, SystemHealth> = new Map()
@@ -102,7 +103,7 @@ const subsystems = [
         async () => {
           const db = knex({
             client: 'mssql',
-            connection: config.xpandDatabase,
+            connection: config.leasingDatabase,
           })
           const expiredActiveListings = await db('listing')
             .where('PublishedTo', '<', new Date(Date.now() - 86400000))
@@ -124,6 +125,15 @@ const subsystems = [
         config.health.xpandSoapApi.systemName,
         config.health.xpandSoapApi.minimumMinutesBetweenRequests,
         xpandSoapApiHealthCheck
+      )
+    },
+  },
+  {
+    probe: async (): Promise<SystemHealth> => {
+      return await probe(
+        config.health.creditsafe.systemName,
+        config.health.creditsafe.minimumMinutesBetweenRequests,
+        creditSafeHealthCheck
       )
     },
   },
