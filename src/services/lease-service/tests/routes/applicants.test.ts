@@ -42,14 +42,15 @@ describe('GET /applicants/:contactCode/:listingId', () => {
     const res = await request(app.callback()).get(
       `/applicants/${applicant.contactCode}/${listing.id}`
     )
+
     expect(getListingSpy).toHaveBeenCalled()
     expect(res.status).toBe(200)
-    expect(res.body).toBeDefined()
-    expect(res.body.id).toEqual(applicant.id)
-    expect(res.body.listingId).toEqual(applicant.listingId)
-    expect(res.body.name).toEqual(applicant.name)
-    expect(res.body.contactCode).toEqual(applicant.contactCode)
-    expect(res.body.applicationType).toEqual(applicant.applicationType)
+    expect(res.body.content).toBeDefined()
+    expect(res.body.content.id).toEqual(applicant.id)
+    expect(res.body.content.listingId).toEqual(applicant.listingId)
+    expect(res.body.content.name).toEqual(applicant.name)
+    expect(res.body.content.contactCode).toEqual(applicant.contactCode)
+    expect(res.body.content.applicationType).toEqual(applicant.applicationType)
   })
 })
 describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', () => {
@@ -81,9 +82,8 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
       })
 
     const res = await request(app.callback()).get(
-      `/applicants/validatePropertyRentalRules/123/456}`
+      `/applicants/validatePropertyRentalRules/123/456`
     )
-
     expect(getListingSpy).toHaveBeenCalled()
     expect(res.status).toBe(404)
     expect(res.body.reason).toBe('Property info for listing was not found')
@@ -112,7 +112,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:listingId', (
 
     expect(getListingSpy).toHaveBeenCalled()
     expect(res.status).toBe(200)
-    expect(res.body.reason).toBe(
+    expect(res.body.message).toBe(
       'No property rental rules applies to this listing'
     )
   })
@@ -437,7 +437,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
 
     expect(getListingSpy).toHaveBeenCalled()
     expect(res.status).toBe(200)
-    expect(res.body.reason).toBe(
+    expect(res.body.message).toBe(
       'No residential area rental rules applies to this listing'
     )
   })
@@ -523,7 +523,7 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:listin
     expect(getApplicantByContactCodeAndListingIdSpy).toHaveBeenCalled()
     expect(getDetailedApplicantInformationSpy).toHaveBeenCalled()
     expect(res.status).toBe(200)
-    expect(res.body.reason).toBe(
+    expect(res.body.message).toBe(
       'Applicant does not have any active parking space contracts in the listings residential area. Applicant is eligible to apply to parking space.'
     )
   })
