@@ -27,7 +27,7 @@
   "devDependencies": {
     "@types/apidoc": "^0.50.3",
     "@types/easy-soap-request": "^4.1.4",
-    "@types/jest": "29.5.1",
+    "@types/jest": "29.5.12",
     "@types/koa": "2.13.6",
     "@types/koa__cors": "^5.0.0",
     "@types/koa__router": "12.0.4",
@@ -40,7 +40,7 @@
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
-    "jest": "29.5.0",
+    "jest": "29.7.0",
     "nodemon": "^3.1.4",
     "supertest": "6.3.3",
     "ts-jest": "29.1.0",
