@@ -3,7 +3,6 @@ import {
   doesTenantHaveHousingContractInSamePropertyAsListing,
 } from '../property-rental-rules-validator'
 import * as estateCodeAdapter from '../adapters/xpand/estate-code-adapter'
-import { getEstateCodeFromXpandByRentalObjectCode } from '../adapters/xpand/estate-code-adapter'
 import * as factory from './factories'
 
 describe('doesPropertyHaveSpecificRentalRules', () => {

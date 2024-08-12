@@ -30,7 +30,6 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
   })
 
   it('shouldReturnFalseIfCurrentHousingContractInOtherAreaThanListing', () => {
-    const listing = factory.listing.build({ districtCode: 'ABC' })
     const detailedApplicant = factory.detailedApplicant.build({
       currentHousingContract: factory.lease.build({
         residentialArea: { code: 'XYZ' },
@@ -46,7 +45,6 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
   })
 
   it('shouldReturnFalseIfUpcomingHousingContractInOtherAreaThanListing', () => {
-    const listing = factory.listing.build({ districtCode: 'ABC' })
     const detailedApplicant = factory.detailedApplicant.build({
       currentHousingContract: undefined,
       upcomingHousingContract: factory.lease.build({
@@ -63,7 +61,6 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
   })
 
   it('shouldReturnTrueIfCurrentHousingContractInSameAreaAsListing', () => {
-    const listing = factory.listing.build({ districtCode: 'ABC' })
     const detailedApplicant = factory.detailedApplicant.build({
       currentHousingContract: factory.lease.build({
         residentialArea: { code: 'ABC' },
@@ -79,7 +76,6 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
   })
 
   it('shouldReturnTrueIfUpcomingHousingContractInSameAreaAsListing', () => {
-    const listing = factory.listing.build({ districtCode: 'ABC' })
     const detailedApplicant = factory.detailedApplicant.build({
       currentHousingContract: undefined,
       upcomingHousingContract: factory.lease.build({
@@ -111,8 +107,6 @@ describe('doesApplicantHaveParkingSpaceContractsInSameAreaAsListing', () => {
   })
 
   it('shouldReturnFalseIfApplicantDoesNotHaveParkingSpaceInSameAreaAsListing', () => {
-    const listing = factory.listing.build({ districtCode: 'ABC' })
-
     const detailedApplicant = factory.detailedApplicant.build({
       parkingSpaceContracts: [
         factory.lease.build({ residentialArea: { code: 'XYZ' } }),
