@@ -117,14 +117,6 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
       })
       .build()
 
-    const getListingSpy = jest
-      .spyOn(listingAdapter, 'getListingById')
-      .mockResolvedValueOnce(listing)
-
-    const getApplicantByContactCodeAndListingIdSpy = jest
-      .spyOn(listingAdapter, 'getApplicantByContactCodeAndListingId')
-      .mockResolvedValueOnce(applicant)
-
     jest
       .spyOn(estateCodeAdapter, 'getEstateCodeFromXpandByRentalObjectCode')
       .mockImplementation(async (rentalObjectCode: string) => {
@@ -161,7 +153,7 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
     expect(getTenantSpy).toHaveBeenCalled()
   })
 
-  it('responds with 403 if user has no current parking space in the same property as listing', async () => {
+  it('responds with 200 if user has no current parking space in the same property as listing', async () => {
     const listing = factory.listing.build()
     const applicant = factory.applicant
       .params({
@@ -194,14 +186,16 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/foo`
     )
 
-    expect(res.status).toBe(403)
-    expect(res.body.reason).toBe(
-      'User does not have any active parking space contracts in the listings residential area'
-    )
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({
+      applicationType: 'Additional',
+      reason:
+        'User is a tenant in the property and does not have any active parking space contracts in the listings residential area. User is eligible to apply with applicationType additional.',
+    })
     expect(getTenantSpy).toHaveBeenCalled()
   })
 
-  it('responds with 409 if user already has parking space in the same property as listing', async () => {
+  it('responds with 200 and applicationType Replace if user already has parking space in the same property as listing', async () => {
     const listing = factory.listing.build()
     const applicant = factory.applicant
       .params({
@@ -251,14 +245,16 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${parkingSpaceRentalObjectCode}`
     )
 
-    expect(res.status).toBe(409)
-    expect(res.body.reason).toBe(
-      'User already have an active parking space contract in the listings residential area'
-    )
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({
+      applicationType: 'Replace',
+      reason:
+        'User already have an active parking space contract in the listings residential area. User is eligible to apply with applicationType Replace.',
+    })
     expect(getTenantSpy).toHaveBeenCalled()
   })
 
-  it('responds with 403 if user already has parking space but not in the same property as listing', async () => {
+  it('responds with 200 if user already has parking space but not in the same property as listing', async () => {
     const listing = factory.listing.build()
     const applicant = factory.applicant
       .params({
@@ -307,10 +303,12 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
       `/applicants/validatePropertyRentalRules/${applicant.contactCode}/${parkingSpaceRentalObjectCode}`
     )
 
-    expect(res.status).toBe(403)
-    expect(res.body.reason).toBe(
-      'User does not have any active parking space contracts in the listings residential area'
-    )
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({
+      applicationType: 'Additional',
+      reason:
+        'User is a tenant in the property and does not have any active parking space contracts in the listings residential area. User is eligible to apply with applicationType additional.',
+    })
 
     expect(getTenantSpy).toHaveBeenCalled()
   })
@@ -395,13 +393,13 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:distri
 
     expect(res.status).toBe(200)
     expect(res.body.reason).toBe(
-      'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space.'
+      'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space with applicationType additional.'
     )
 
     expect(getTenantSpy).toHaveBeenCalled()
   })
 
-  it('responds with 409 if applicant has a current parking space in the same area as listing', async () => {
+  it('responds with 200 and applicationType "Replace" if applicant has a current parking space in the same area as listing', async () => {
     const listing = factory.listing
       .params({
         districtCode: 'OXB',
@@ -433,10 +431,12 @@ describe('GET applicants/validateResidentialAreaRentalRules/:contactCode/:distri
       `/applicants/validateResidentialAreaRentalRules/${applicant.contactCode}/${listing.districtCode}`
     )
 
-    expect(res.status).toBe(409)
-    expect(res.body.reason).toBe(
-      'Subject already have an active parking space contract in the listings residential area'
-    )
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({
+      applicationType: 'Replace',
+      reason:
+        'Subject already have an active parking space contract in the listings residential area. Subject is eligible to apply to parking space with applicationType replace.',
+    })
     expect(getTenantSpy).toHaveBeenCalled()
   })
 })

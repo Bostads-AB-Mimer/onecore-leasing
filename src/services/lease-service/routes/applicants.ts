@@ -145,6 +145,7 @@ export const routes = (router: KoaRouter) => {
         ) {
           ctx.status = 200
           ctx.body = {
+            applicationType: 'Additional',
             reason: 'No property rental rules applies to this parking space',
           }
           return
@@ -175,10 +176,11 @@ export const routes = (router: KoaRouter) => {
         //if subject has no parking space contracts but is a tenant in the property
         if (!contact.data.parkingSpaceContracts?.length) {
           //subject is eligible for parking space, applicationType for application should be 'additonal'
-          ctx.status = 403
+          ctx.status = 200
           ctx.body = {
+            applicationType: 'Additional',
             reason:
-              'User does not have any active parking space contracts in the listings residential area',
+              'User is a tenant in the property and does not have any active parking space contracts in the listings residential area. User is eligible to apply with applicationType additional.',
           }
           return
         }
@@ -197,19 +199,21 @@ export const routes = (router: KoaRouter) => {
         )
 
         if (subjectNeedsToReplaceParkingSpace) {
+          ctx.status = 200
           ctx.body = {
+            applicationType: 'Replace',
             reason:
-              'User already have an active parking space contract in the listings residential area',
+              'User already have an active parking space contract in the listings residential area. User is eligible to apply with applicationType Replace.',
           }
-          ctx.status = 409
           return
         }
 
         //user has parking space contracts but none in the same property as the listing
-        ctx.status = 403
+        ctx.status = 200
         ctx.body = {
+          applicationType: 'Additional',
           reason:
-            'User does not have any active parking space contracts in the listings residential area',
+            'User is a tenant in the property and does not have any active parking space contracts in the listings residential area. User is eligible to apply with applicationType additional.',
         }
       } catch (error: unknown) {
         ctx.status = 500
@@ -236,6 +240,7 @@ export const routes = (router: KoaRouter) => {
         if (!isListingInAreaWithSpecificRentalRules(districtCode)) {
           ctx.status = 200
           ctx.body = {
+            applicationType: 'Additional',
             reason:
               'No residential area rental rules applies to this parking space',
           }
@@ -273,19 +278,21 @@ export const routes = (router: KoaRouter) => {
           //applicant is eligible for parking space, applicationType for application should be 'additonal'
           ctx.status = 200
           ctx.body = {
+            applicationType: 'Additional',
             reason:
-              'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space.',
+              'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space with applicationType additional.',
           }
           return
         }
 
         //applicant have an active parking space contract in the same area as the listing
         //only option is to replace that parking space contract
+        ctx.status = 200
         ctx.body = {
+          applicationType: 'Replace',
           reason:
-            'Subject already have an active parking space contract in the listings residential area',
+            'Subject already have an active parking space contract in the listings residential area. Subject is eligible to apply to parking space with applicationType replace.',
         }
-        ctx.status = 409
       } catch (err: unknown) {
         logger.error(err, 'Error when validating residential rental rules')
 
