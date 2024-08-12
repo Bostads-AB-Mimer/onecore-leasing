@@ -11,13 +11,7 @@ jest.mock('onecore-utilities', () => {
   }
 })
 
-import {
-  Applicant,
-  Contact,
-  Lease,
-  LeaseStatus,
-  WaitingList,
-} from 'onecore-types'
+import { Contact, Lease, LeaseStatus, WaitingList } from 'onecore-types'
 import {
   addPriorityToApplicantsBasedOnRentalRules,
   assignPriorityToApplicantBasedOnRentalRules,
@@ -32,16 +26,6 @@ import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
 import * as factory from './factories'
 import { leaseTypes } from '../../../constants/leaseTypes'
-
-const mockedApplicant: Applicant = {
-  id: 2004,
-  nationalRegistrationNumber: '197001011234',
-  name: 'Sökande Fiktiv',
-  contactCode: 'P145241',
-  applicationDate: new Date('2024-04-23T10:05:07.244Z'),
-  status: 1,
-  listingId: 2029,
-}
 
 const mockedWaitingListWithInteralParkingSpace: WaitingList[] = [
   {
@@ -83,8 +67,10 @@ const thirtyDaysInTheFutureDate = new Date()
 thirtyDaysInThePastDate.setDate(currentDate.getDate() + 30)
 thirtyDaysInTheFutureDate.setDate(currentDate.getDate() + 30)
 
+const contactCodeForApplicantInxpand = 'P145241'
+
 const mockedApplicantFromXpand: Contact = {
-  contactCode: 'P145241',
+  contactCode: contactCodeForApplicantInxpand,
   contactKey: '_5YI0VPRJ5GARYV',
   firstName: 'Fiktiv',
   lastName: 'Sökande',
@@ -126,7 +112,9 @@ describe('getDetailedApplicantInformation', () => {
       .spyOn(tenantLeaseAdapter, 'getContactByContactCode')
       .mockResolvedValueOnce({ ok: true, data: null })
 
-    const result = await getDetailedApplicantInformation(mockedApplicant)
+    const applicant = factory.applicant.build()
+
+    const result = await getDetailedApplicantInformation(applicant)
     expect(result).toEqual({ ok: false, err: 'contact-not-found' })
     expect(getContactByContactCodeSpy).toHaveBeenCalled()
   })
@@ -140,7 +128,9 @@ describe('getDetailedApplicantInformation', () => {
       .spyOn(xpandSoapAdapter, 'getWaitingList')
       .mockResolvedValueOnce({ ok: true, data: [] })
 
-    const result = await getDetailedApplicantInformation(mockedApplicant)
+    const applicant = factory.applicant.build()
+
+    const result = await getDetailedApplicantInformation(applicant)
     expect(result).toEqual({
       ok: false,
       err: 'waiting-list-internal-parking-space-not-found',
@@ -166,7 +156,10 @@ describe('getDetailedApplicantInformation', () => {
       .spyOn(tenantLeaseAdapter, 'getLeasesForContactCode')
       .mockResolvedValueOnce({ ok: true, data: [] })
 
-    const result = await getDetailedApplicantInformation(mockedApplicant)
+    const applicant = factory.applicant.build({
+      contactCode: contactCodeForApplicantInxpand,
+    })
+    const result = await getDetailedApplicantInformation(applicant)
     expect(result).toEqual({
       ok: false,
       err: 'contact-leases-not-found',
