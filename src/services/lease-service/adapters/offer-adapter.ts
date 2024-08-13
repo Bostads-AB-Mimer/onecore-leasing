@@ -1,4 +1,4 @@
-import { Offer } from 'onecore-types'
+import { OfferWithRentalObjectCode, Offer, Applicant } from 'onecore-types'
 
 import { db } from './db'
 import { DbApplicant, DbOffer } from './types'
@@ -38,6 +38,71 @@ export async function create(params: CreateOfferParams) {
   return transformFromDbOffer(offer, applicant)
 }
 
+type GetOffersForContactQueryResult = Array<
+  DbOffer & {
+    RentalObjectCode: string
+    ApplicantApplicantId: number
+    ApplicantName: string
+    ApplicantNationalRegistrationNumber: string
+    ApplicantContactCode: string
+    ApplicantApplicationDate: Date
+    ApplicantApplicationType: string | null
+    ApplicantStatus: Applicant['status']
+    ApplicantListingId: number
+  }
+>
+
+export async function getOffersForContact(
+  contactCode: string
+): Promise<Array<OfferWithRentalObjectCode>> {
+  const rows = await db
+    .select<GetOffersForContactQueryResult>(
+      'offer.*',
+      'listing.RentalObjectCode',
+      'applicant.Id as ApplicantApplicantId',
+      'applicant.Name as ApplicantName',
+      'applicant.NationalRegistrationNumber as ApplicantNationalRegistrationNumber',
+      'applicant.ContactCode as ApplicantContactCode',
+      'applicant.ApplicationDate as ApplicantApplicationDate',
+      'applicant.ApplicationType as ApplicantApplicationType',
+      'applicant.Status as ApplicantStatus',
+      'applicant.ListingId as ApplicantListingId'
+    )
+    .from('offer')
+    .innerJoin('listing', 'listing.Id', 'offer.ListingId')
+    .innerJoin('applicant', 'applicant.Id', 'offer.ApplicantId')
+    .where('applicant.ContactCode', contactCode)
+
+  return rows.map((row) => {
+    const {
+      ApplicantApplicantId,
+      ApplicantName,
+      ApplicantNationalRegistrationNumber,
+      ApplicantApplicationDate,
+      ApplicantApplicationType,
+      ApplicantContactCode,
+      ApplicantStatus,
+      ApplicantListingId,
+      RentalObjectCode,
+      ...offer
+    } = row
+
+    return {
+      ...transformFromDbOffer(offer, {
+        ApplicationDate: ApplicantApplicationDate,
+        ContactCode: ApplicantContactCode,
+        Id: ApplicantApplicantId,
+        ListingId: ApplicantListingId,
+        Name: ApplicantName,
+        NationalRegistrationNumber: ApplicantNationalRegistrationNumber,
+        Status: ApplicantStatus,
+        ApplicationType: ApplicantApplicationType,
+      }),
+      rentalObjectCode: RentalObjectCode,
+    }
+  })
+}
+
 const transformFromDbOffer = (o: DbOffer, a: DbApplicant): Offer => {
   const {
     selectionSnapshot: selectedApplicants,
@@ -48,6 +113,9 @@ const transformFromDbOffer = (o: DbOffer, a: DbApplicant): Offer => {
   return {
     ...offer,
     selectedApplicants: JSON.parse(selectedApplicants),
-    offeredApplicant: dbUtils.pascalToCamel(a),
+    offeredApplicant: {
+      ...dbUtils.pascalToCamel(a),
+      applicationType: a.ApplicationType || undefined,
+    },
   }
 }
