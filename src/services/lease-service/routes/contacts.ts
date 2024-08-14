@@ -12,6 +12,7 @@ import {
   addApplicantToToWaitingList,
   getWaitingList,
 } from '../adapters/xpand/xpand-soap-adapter'
+import { getTenant } from '../get-tenant'
 
 /**
  * @swagger
@@ -159,6 +160,25 @@ export const routes = (router: KoaRouter) => {
       ctx.params.contactCode,
       ctx.query.includeTerminatedLeases
     )
+
+    if (!result.ok) {
+      ctx.status = 500
+      return
+    }
+
+    if (!result.data) {
+      ctx.status = 404
+      return
+    }
+
+    ctx.status = 200
+    ctx.body = {
+      data: result.data,
+    }
+  })
+
+  router.get('(.*)/tenant/contactCode/:contactCode', async (ctx) => {
+    const result = await getTenant({ contactCode: ctx.params.contactCode })
 
     if (!result.ok) {
       ctx.status = 500
