@@ -18,11 +18,17 @@ type GetTenantError =
   | 'housing-contracts-not-found'
   | 'get-lease-property-info'
 
+// TODO: Tenant should somehow represent that is definately has at least one
+// active housing contract. Otherwise, it wouldn't be a tenant.
+
+type NonEmptyArray<T> = [T, ...T[]]
+
 export type Tenant = Omit<Contact, 'leases' | 'isTenant'> & {
   queuePoints: number
   currentHousingContract?: Lease
   upcomingHousingContract?: Lease
   parkingSpaceContracts?: Lease[]
+  housingContracts: NonEmptyArray<Lease>
 }
 
 export async function getTenant(params: {
@@ -155,6 +161,10 @@ export async function getTenant(params: {
       currentHousingContract,
       upcomingHousingContract,
       parkingSpaceContracts,
+      housingContracts: [
+        currentHousingContract,
+        upcomingHousingContract,
+      ].filter(Boolean) as NonEmptyArray<Lease>,
     },
   }
 }
