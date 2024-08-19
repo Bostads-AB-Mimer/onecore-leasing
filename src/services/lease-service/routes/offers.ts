@@ -162,7 +162,7 @@ export const routes = (router: KoaRouter) => {
   router.get('/contacts/:contactCode/offers/:offerId', async (ctx) => {
     const responseData = await getOfferByContactCodeAndOfferId(
       ctx.params.contactCode,
-      ctx.params.offerId
+      parseInt(ctx.params.offerId)
     )
     if (!responseData) {
       ctx.status = HttpStatusCode.NotFound

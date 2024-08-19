@@ -111,7 +111,7 @@ export async function getOffersForContact(
 
 export async function getOfferByContactCodeAndOfferId(
   contactCode: string,
-  offerId: string
+  offerId: number
 ): Promise<DetailedOffer | undefined> {
   const row = await db
     .select(
