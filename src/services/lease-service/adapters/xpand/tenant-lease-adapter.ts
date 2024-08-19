@@ -406,7 +406,7 @@ const getContactQuery = () => {
       'cmadr.adress1 as street',
       'cmadr.adress3 as postalCode',
       'cmadr.adress4 as city',
-      'cmeml.cmemlben as emailAddress',
+      db.raw('COALESCE(cmeml.cmemlben, "No Email") as emailAddress'), // Handle null emails
       'cmobj.keycmobj as keycmobj',
       'cmctc.keycmctc as contactKey'
     )
