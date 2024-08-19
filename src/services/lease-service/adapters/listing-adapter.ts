@@ -318,17 +318,10 @@ const applicationExists = async (contactCode: string, listingId: number) => {
     })
     .first()
 
-  // Check if result is null or undefined
   if (!result) {
     return false
   }
 
-  // Check if result is an empty object
-  if (Object.keys(result).length === 0 && result.constructor === Object) {
-    return false
-  }
-
-  // If result is not null/undefined and not an empty object, return true
   return true
 }
 

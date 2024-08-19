@@ -1,7 +1,6 @@
 import knex from 'knex'
 import Config from '../../../common/config'
 import * as path from 'path'
-import { logger } from 'onecore-utilities'
 
 const getStandardConfig = () => ({
   client: 'mssql',
@@ -9,19 +8,9 @@ const getStandardConfig = () => ({
 })
 
 const getTestConfig = () => {
-  let port = process.env.LEASING_DATABASE__PORT
-  if (port == undefined) {
-    port = '-1' //use invalid port if port is missing from .env.test.config
-  }
   return {
     client: 'mssql',
-    connection: {
-      host: process.env.LEASING_DATABASE__HOST,
-      database: process.env.LEASING_DATABASE__DATABASE,
-      user: process.env.LEASING_DATABASE__USER,
-      password: process.env.LEASING_DATABASE__PASSWORD,
-      port: parseInt(port),
-    },
+    connection: Config.leasingDatabase,
     useNullAsDefault: true,
     migrations: {
       tableName: 'migrations',
@@ -41,26 +30,25 @@ const migrate = async () => {
   await db.migrate
     .latest()
     .then(() => {
-      logger.info('Migrations applied')
+      console.log('Migrations applied')
     })
     .catch((error) => {
-      logger.info('Error applying migrations', error)
+      console.error('Error applying migrations', error)
     })
 }
 
 const teardown = async () => {
-  logger.info('Rolling back migrations')
+  console.log('Rolling back migrations')
   try {
     await db.migrate.rollback().then(() => {
-      logger.info('Migrations rolled back')
+      console.log('Migrations rolled back')
     })
-    logger.info('Migrations rolled back')
   } catch (error) {
-    logger.error('Error rolling back migrations:', error)
+    console.error('Error rolling back migrations:', error)
   }
 
   await db.destroy().then(() => {
-    logger.info('Database destroyed')
+    console.log('Database destroyed')
   })
 }
 
