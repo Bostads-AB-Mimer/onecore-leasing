@@ -2,8 +2,7 @@ import {
   OfferWithRentalObjectCode,
   Offer,
   Applicant,
-  Contact,
-  Lease,
+  OfferStatus,
 } from 'onecore-types'
 
 import { db } from './db'
@@ -178,10 +177,17 @@ export async function getOfferByContactCodeAndOfferId(
   }
 }
 
-export type DetailedOffer = Omit<
-  OfferWithRentalObjectCode,
-  'selectedApplicants'
-> & {
+//todo: move to types before merge
+export interface DetailedOffer {
+  id: number
+  sentAt: Date | null
+  expiresAt: Date
+  answeredAt: Date | null
+  status: OfferStatus
+  listingId: number
+  offeredApplicant: Applicant
+  createdAt: Date
+  rentalObjectCode: string
   vacantFrom: Date
 }
 
