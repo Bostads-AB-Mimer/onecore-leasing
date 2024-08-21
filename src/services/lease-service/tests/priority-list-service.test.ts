@@ -577,14 +577,10 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
       })
       .build()
 
-    console.log('listing', listing)
-    console.log('applicant', applicant)
-
     const result = assignPriorityToApplicantBasedOnRentalRules(
       listing,
       applicant
     )
-    console.log('result.priority', result.priority)
     expect(result.priority).toBe(undefined)
   })
 })
