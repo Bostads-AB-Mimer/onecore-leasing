@@ -1,8 +1,12 @@
 import { Factory } from 'fishery'
-import { Offer, OfferStatus, OfferWithRentalObjectCode } from 'onecore-types'
+import {
+  DetailedOffer,
+  Offer,
+  OfferStatus,
+  OfferWithRentalObjectCode,
+} from 'onecore-types'
 
 import { DetailedApplicantFactory } from './detailed-applicant'
-import { DetailedOffer } from '../../adapters/offer-adapter'
 
 export const OfferFactory = Factory.define<Offer>(({ sequence }) => ({
   answeredAt: null,

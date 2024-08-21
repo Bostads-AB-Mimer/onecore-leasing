@@ -128,24 +128,24 @@ export const routes = (router: KoaRouter) => {
 
   /**
    * @swagger
-   * /offers/{offerid}/applicants/{contactCode}:
+   * /offers/{offerId}/applicants/{contactCode}:
    *   get:
    *     summary: Get a specific offer for an applicant
    *     description: Retrieve details of a specific offer associated with an applicant using contact code and offer ID.
    *     tags: [Offer]
    *     parameters:
    *       - in: path
-   *         name: contactCode
-   *         required: true
-   *         schema:
-   *           type: string
-   *         description: The unique code identifying the applicant.
-   *       - in: path
    *         name: offerId
    *         required: true
    *         schema:
    *           type: string
    *         description: The unique ID of the offer.
+   *       - in: path
+   *         name: contactCode
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The unique code identifying the applicant.
    *     responses:
    *       200:
    *         description: Details of the specified offer.
@@ -156,11 +156,15 @@ export const routes = (router: KoaRouter) => {
    *       404:
    *         description: Offer not found for the specified contact code and offer ID.
    */
-  router.get('offers/:offerid/applicants/:contactCode', async (ctx) => {
+
+  router.get('/offers/:offerId/applicants/:contactCode', async (ctx) => {
+    console.log(ctx.params.contactCode)
+    console.log(ctx.params.offerId)
     const responseData = await getOfferByContactCodeAndOfferId(
       ctx.params.contactCode,
       parseInt(ctx.params.offerId)
     )
+
     if (!responseData) {
       ctx.status = HttpStatusCode.NotFound
       return

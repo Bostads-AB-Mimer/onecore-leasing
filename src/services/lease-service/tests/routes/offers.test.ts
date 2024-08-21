@@ -114,13 +114,13 @@ describe('offers', () => {
     })
   })
 
-  describe('GET /contacts/:contactCode/offers/:offerId', () => {
+  describe('GET /offers/:offerId/applicants/:contactCode', () => {
     it('responds with 404 if offer not found', async () => {
       jest
         .spyOn(offerAdapter, 'getOfferByContactCodeAndOfferId')
         .mockResolvedValueOnce(undefined)
       const res = await request(app.callback()).get(
-        '/contacts/NON_EXISTING_CONTACT_CODE/offers/NON_EXISTING_OFFER'
+        '/offers/NON_EXISTING_OFFER/applicants/NON_EXISTING_CONTACT_CODE'
       )
       expect(res.status).toBe(404)
       expect(res.body.data).toBeUndefined()
@@ -136,7 +136,7 @@ describe('offers', () => {
         .spyOn(offerAdapter, 'getOfferByContactCodeAndOfferId')
         .mockResolvedValueOnce(offer)
       const res = await request(app.callback()).get(
-        `/contacts/${applicant.contactCode}/offers/${offer.id}}`
+        `/offers/${offer.id}/applicants/${applicant.contactCode}/`
       )
       expect(res.status).toBe(200)
       expect(res.body.data).toBeDefined()
