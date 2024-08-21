@@ -3,6 +3,7 @@ import {
   Offer,
   Applicant,
   OfferStatus,
+  DetailedOffer,
 } from 'onecore-types'
 
 import { db } from './db'
@@ -175,20 +176,6 @@ export async function getOfferByContactCodeAndOfferId(
     rentalObjectCode: RentalObjectCode,
     vacantFrom: VacantFrom,
   }
-}
-
-//todo: move to types before merge
-export interface DetailedOffer {
-  id: number
-  sentAt: Date | null
-  expiresAt: Date
-  answeredAt: Date | null
-  status: OfferStatus
-  listingId: number
-  offeredApplicant: Applicant
-  createdAt: Date
-  rentalObjectCode: string
-  vacantFrom: Date
 }
 
 const transformToDetailedOfferFromDbOffer = (

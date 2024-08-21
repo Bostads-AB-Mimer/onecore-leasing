@@ -89,8 +89,7 @@ export const routes = (router: KoaRouter) => {
     }
   )
 
-  //todo: rewrite url?
-  //todo: applicants instead of contacts?
+  //todo: rewrite url to offers/applicant/:contactCode
   /**
    * @swagger
    * /contacts/{contactCode}/offers:
@@ -127,14 +126,12 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
-  //todo: rewrite url?
-  //todo: applicants instead of contacts?
   /**
    * @swagger
-   * /contacts/{contactCode}/offers/{offerId}:
+   * /offers/{offerid}/applicants/{contactCode}:
    *   get:
-   *     summary: Get a specific offer for a contact
-   *     description: Retrieve details of a specific offer associated with a contact using the contact's code and offer ID.
+   *     summary: Get a specific offer for an applicant
+   *     description: Retrieve details of a specific offer associated with an applicant using contact code and offer ID.
    *     tags: [Offer]
    *     parameters:
    *       - in: path
@@ -142,7 +139,7 @@ export const routes = (router: KoaRouter) => {
    *         required: true
    *         schema:
    *           type: string
-   *         description: The unique code identifying the contact.
+   *         description: The unique code identifying the applicant.
    *       - in: path
    *         name: offerId
    *         required: true
@@ -159,7 +156,7 @@ export const routes = (router: KoaRouter) => {
    *       404:
    *         description: Offer not found for the specified contact code and offer ID.
    */
-  router.get('/contacts/:contactCode/offers/:offerId', async (ctx) => {
+  router.get('offers/:offerid/applicants/:contactCode', async (ctx) => {
     const responseData = await getOfferByContactCodeAndOfferId(
       ctx.params.contactCode,
       parseInt(ctx.params.offerId)
