@@ -596,7 +596,6 @@ export const routes = (router: KoaRouter) => {
    *                   type: string
    *                   example: An error occurred while validating residential area rental rules.
    */
-  router
   router.get(
     '(.*)/applicants/validateResidentialAreaRentalRules/:contactCode/:districtCode',
     async (ctx) => {
