@@ -331,6 +331,11 @@ export const routes = (router: KoaRouter) => {
    *             schema:
    *               type: object
    *               properties:
+   *                 applicationType: string
+   *                 example: Additional - applicant is eligible for applying
+   *                 for an additional parking space. Replace - applicant is
+   *                 eligible for replacing their current parking space in the
+   *                 same residential area or property.
    *                 reason:
    *                   type: string
    *                   example: No property rental rules applies to this property.
@@ -366,16 +371,6 @@ export const routes = (router: KoaRouter) => {
    *                       value: Applicant was not found.
    *                     contactCodeMismatch:
    *                       value: Applicant not found for this contactCode.
-   *       409:
-   *         description: User already has an active parking space contract in the listing's residential area.
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 reason:
-   *                   type: string
-   *                   example: User already have an active parking space contract in the listings residential area.
    *       500:
    *         description: An error occurred while validating property rental rules.
    *         content:
@@ -538,12 +533,17 @@ export const routes = (router: KoaRouter) => {
    *         description: The xpand district code of the residential area to validate against.
    *     responses:
    *       200:
-   *         description: No residential area rental rules apply or applicant is eligible to apply for parking space.
+   *         description: Either no residential area rental rules apply or applicant is eligible to apply for parking space.
    *         content:
    *           application/json:
    *             schema:
    *               type: object
    *               properties:
+   *                 applicationType: string
+   *                 example: Additional - applicant is eligible for applying
+   *                 for an additional parking space. Replace - applicant is
+   *                 eligible for replacing their current parking space in the
+   *                 same residential area or property.
    *                 reason:
    *                   type: string
    *                   examples:
@@ -575,16 +575,6 @@ export const routes = (router: KoaRouter) => {
    *                       value: Listing was not found.
    *                     applicantNotFound:
    *                       value: Applicant was not found.
-   *       409:
-   *         description: User already has an active parking space contract in the listing's residential area.
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 reason:
-   *                   type: string
-   *                   example: Applicant already have an active parking space contract in the listings residential area.
    *       500:
    *         description: An error occurred while validating residential area rental rules.
    *         content:
