@@ -1,6 +1,6 @@
 import { Contact, Lease } from 'onecore-types'
-import { AdapterResult } from './adapters/types'
 
+import { AdapterResult } from './adapters/types'
 import * as estateCodeAdapter from './adapters/xpand/estate-code-adapter'
 import * as tenantLeaseAdapter from './adapters/xpand/tenant-lease-adapter'
 import * as xpandSoapAdapter from './adapters/xpand/xpand-soap-adapter'
@@ -18,8 +18,8 @@ type GetTenantError =
   | 'housing-contracts-not-found'
   | 'get-lease-property-info'
 
-// TODO: Tenant should somehow represent that is definately has at least one
-// active housing contract. Otherwise, it wouldn't be a tenant.
+// TODO: Tenant should somehow represent that is definitely has at least one
+// active housing contract. Otherwise, it wouldn't be a tenant, right?
 
 type NonEmptyArray<T> = [T, ...T[]]
 

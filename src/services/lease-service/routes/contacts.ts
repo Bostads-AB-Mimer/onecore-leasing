@@ -177,6 +177,36 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
+  /**
+   * @swagger
+   * /tenant/contactCode/{contactCode}:
+   *   get:
+   *     summary: Gets tenant by contact code
+   *     description: Retrieve tenant information by contact code.
+   *     tags: [Tenants]
+   *     parameters:
+   *       - in: path
+   *         name: contactCode
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The contact code of the tenant.
+   *     responses:
+   *       200:
+   *         description: Successfully retrieved tenant information.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   description: The tenant data.
+   *       404:
+   *         description: Not found.
+   *       500:
+   *         description: Internal server error. Failed to retrieve Tenant information.
+   */
   router.get('(.*)/tenant/contactCode/:contactCode', async (ctx) => {
     const result = await getTenant({ contactCode: ctx.params.contactCode })
 
