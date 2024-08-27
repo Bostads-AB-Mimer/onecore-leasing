@@ -339,6 +339,16 @@ export const routes = (router: KoaRouter) => {
    *                 reason:
    *                   type: string
    *                   example: No property rental rules applies to this property.
+   *       400:
+   *         description: Rental object code is not a parking space.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 reason:
+   *                   type: string
+   *                   example: Rental object code entity is not a parking space.
    *       403:
    *         description: Applicant is not eligible for the property based on property rental rules.
    *         content:
