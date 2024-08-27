@@ -332,10 +332,7 @@ export const routes = (router: KoaRouter) => {
    *               type: object
    *               properties:
    *                 applicationType: string
-   *                 example: Additional - applicant is eligible for applying
-   *                 for an additional parking space. Replace - applicant is
-   *                 eligible for replacing their current parking space in the
-   *                 same residential area or property.
+   *                 example: Additional - applicant is eligible for applying for an additional parking space. Replace - applicant is eligible for replacing their current parking space in the same residential area or property.
    *                 reason:
    *                   type: string
    *                   example: No property rental rules applies to this property.
@@ -550,10 +547,7 @@ export const routes = (router: KoaRouter) => {
    *               type: object
    *               properties:
    *                 applicationType: string
-   *                 example: Additional - applicant is eligible for applying
-   *                 for an additional parking space. Replace - applicant is
-   *                 eligible for replacing their current parking space in the
-   *                 same residential area or property.
+   *                 example: Additional - applicant is eligible for applying for an additional parking space. Replace - applicant is eligible for replacing their current parking space in the same residential area or property.
    *                 reason:
    *                   type: string
    *                   examples:
