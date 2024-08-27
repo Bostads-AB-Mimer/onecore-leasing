@@ -10,6 +10,7 @@ import * as estateCodeAdapter from '../../adapters/xpand/estate-code-adapter'
 import * as getTenantService from '../../get-tenant'
 import { leaseTypes } from '../../../../constants/leaseTypes'
 import { routes } from '../../routes/applicants'
+import { LeaseFactory } from '../factories/lease'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -48,6 +49,7 @@ const TenantFactory = Factory.define<getTenantService.Tenant>(() => ({
   currentHousingContract: undefined,
   parkingSpaceContracts: undefined,
   upcomingHousingContract: undefined,
+  housingContracts: [LeaseFactory.build()],
 }))
 
 beforeEach(jest.restoreAllMocks)
