@@ -92,3 +92,7 @@ describe(tenantLeaseAdapter.getContactByContactCode, () => {
     })
   })
 })
+
+describe(tenantLeaseAdapter.getLeasesForContactCode, () => {
+  // it('returns a lease ')
+})
