@@ -325,12 +325,20 @@ const applicationExists = async (contactCode: string, listingId: number) => {
   return true
 }
 
+//todo: this needs a better name
 const getExpiredListings = async () => {
   const currentDate = new Date()
   const listings = await db('listing')
     .where('PublishedTo', '<', currentDate)
     .andWhere('Status', '=', ListingStatus.Active)
   return listings
+}
+
+//todo: write test cases
+const getListingsByStatus = async (status: ListingStatus) => {
+  //todo: map to DbType
+  const listing = await db('listing').where('Status', '=', status)
+  return listing
 }
 
 const updateListingStatuses = async (
@@ -356,5 +364,6 @@ export {
   applicationExists,
   updateApplicantStatus,
   getExpiredListings,
+  getListingsByStatus,
   updateListingStatuses,
 }

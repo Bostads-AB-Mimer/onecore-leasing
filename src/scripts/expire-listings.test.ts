@@ -1,4 +1,7 @@
-import { updateExpiredListings } from './expire-listings'
+import {
+  checkAndUpdateOfferedListings,
+  updateExpiredListings,
+} from './expire-listings'
 import { db, migrate, teardown } from '../services/lease-service/adapters/db'
 import * as listingAdapter from '../services/lease-service/adapters/listing-adapter'
 import * as factory from '../services/lease-service/tests/factories'
@@ -40,7 +43,7 @@ describe('updateExpiredListings', () => {
     const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
     const listingThatShouldBeExpired = await listingAdapter.createListing(
       factory.listing.build({
-        id: 123,
+        id: 1,
         rentalObjectCode: '1',
         publishedTo: oneWeekAgo,
         status: ListingStatus.Active,
@@ -61,7 +64,25 @@ describe('updateExpiredListings', () => {
 
 describe('createOffersForExpiredListings', () => {
   it('should create offers for expired listings', async () => {
-    console.log('implement')
+    const today = new Date()
+    const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const listingThatShouldBeExpiredButIsNot =
+      await listingAdapter.createListing(
+        factory.listing.build({
+          id: 1,
+          publishedTo: oneWeekAgo,
+          status: ListingStatus.Expired,
+        })
+      )
+    const expiredListing = await listingAdapter.createListing(
+      factory.listing.build({
+        id: 2,
+        publishedTo: oneWeekAgo,
+        status: ListingStatus.Expired,
+      })
+    )
+
+    checkAndUpdateOfferedListings()
   })
   it('should update status on newly offered listings', async () => {
     console.log('implement')

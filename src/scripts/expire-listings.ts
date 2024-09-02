@@ -29,7 +29,7 @@ export async function updateExpiredListings(): Promise<number[]> {
 //This would however create a very inefficient loop for the scheduled job
 //With only Expired we need to fetch each offer every time for every Listing
 //and then check the status of the offer to determine what to do (or if the offer even exists)
-export async function createOffersForExpiredListings(listingId: number[]) {
+export async function createOffersForExpiredListings() {
   //get each expired listing E.G. as not yet been offered
   //create an offer for each expired listing
   //set listing status to Offered
@@ -52,8 +52,8 @@ export async function checkAndUpdateOfferedListings() {
 //todo: run the actual functions in a separate file
 //todo: process.exit messes up the tests
 export async function run() {
-  const expiredListingIds = await updateExpiredListings()
-  await createOffersForExpiredListings(expiredListingIds)
+  await updateExpiredListings()
+  await createOffersForExpiredListings()
   await checkAndUpdateOfferedListings()
   //process.exit(0)
 }
