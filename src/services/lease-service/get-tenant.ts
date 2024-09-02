@@ -23,6 +23,7 @@ type GetTenantError =
 
 type NonEmptyArray<T> = [T, ...T[]]
 
+// TODO: Use from onecore-types 1560 branch
 export type Tenant = Omit<Contact, 'leases' | 'isTenant'> & {
   queuePoints: number
   currentHousingContract?: Lease
