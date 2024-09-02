@@ -179,7 +179,7 @@ export const routes = (router: KoaRouter) => {
 
   /**
    * @swagger
-   * /tenant/contactCode/{contactCode}:
+   * /tenants/contactCode/{contactCode}:
    *   get:
    *     summary: Gets tenant by contact code
    *     description: Retrieve tenant information by contact code.
