@@ -1,4 +1,4 @@
-import { Contact, Lease } from 'onecore-types'
+import { Lease, Tenant } from 'onecore-types'
 
 import { AdapterResult } from './adapters/types'
 import * as estateCodeAdapter from './adapters/xpand/estate-code-adapter'
@@ -18,19 +18,7 @@ type GetTenantError =
   | 'housing-contracts-not-found'
   | 'get-lease-property-info'
 
-// TODO: Tenant should somehow represent that is definitely has at least one
-// active housing contract. Otherwise, it wouldn't be a tenant, right?
-
 type NonEmptyArray<T> = [T, ...T[]]
-
-// TODO: Use from onecore-types 1560 branch
-export type Tenant = Omit<Contact, 'leases' | 'isTenant'> & {
-  queuePoints: number
-  currentHousingContract?: Lease
-  upcomingHousingContract?: Lease
-  parkingSpaceContracts?: Lease[]
-  housingContracts: NonEmptyArray<Lease>
-}
 
 export async function getTenant(params: {
   contactCode: string

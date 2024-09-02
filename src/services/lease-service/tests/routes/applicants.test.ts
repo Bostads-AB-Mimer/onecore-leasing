@@ -3,6 +3,7 @@ import { Factory } from 'fishery'
 import Koa from 'koa'
 import KoaRouter from '@koa/router'
 import bodyParser from 'koa-bodyparser'
+import { Tenant } from 'onecore-types'
 
 import * as factory from '../factories'
 import * as listingAdapter from '../../adapters/listing-adapter'
@@ -32,7 +33,7 @@ jest.mock('onecore-utilities', () => {
   }
 })
 
-const TenantFactory = Factory.define<getTenantService.Tenant>(() => ({
+const TenantFactory = Factory.define<Tenant>(() => ({
   address: undefined,
   birthDate: new Date(),
   contactCode: '123',
