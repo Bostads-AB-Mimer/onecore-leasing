@@ -68,7 +68,7 @@ export const routes = (router: KoaRouter) => {
 
     if (!result.ok) {
       ctx.status = 500
-      ctx.body = { error: result.err || 'Internal server error', ...metadata }
+      ctx.body = { error: result.err, ...metadata }
       return
     }
 
@@ -207,22 +207,26 @@ export const routes = (router: KoaRouter) => {
    *       500:
    *         description: Internal server error. Failed to retrieve Tenant information.
    */
-  router.get('(.*)/tenant/contactCode/:contactCode', async (ctx) => {
+  router.get('(.*)/tenants/contactCode/:contactCode', async (ctx) => {
     const result = await getTenant({ contactCode: ctx.params.contactCode })
+    const metadata = generateRouteMetadata(ctx)
 
     if (!result.ok) {
-      ctx.status = 500
-      return
-    }
+      if (result.err === 'contact-not-found') {
+        ctx.status = 404
+        ctx.body = { error: 'Contact not found' }
+        return
+      }
 
-    if (!result.data) {
-      ctx.status = 404
+      ctx.status = 500
+      ctx.body = { error: result.err }
       return
     }
 
     ctx.status = 200
     ctx.body = {
-      data: result.data,
+      content: result.data,
+      ...metadata,
     }
   })
 
