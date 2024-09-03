@@ -1,5 +1,10 @@
 import KoaRouter from '@koa/router'
-import { ApplicantStatus, DetailedApplicant, Listing } from 'onecore-types'
+import {
+  ApplicantStatus,
+  DetailedApplicant,
+  Listing,
+  ListingStatus,
+} from 'onecore-types'
 import {
   applicationExists,
   createApplication,
@@ -7,15 +12,18 @@ import {
   getAllListingsWithApplicants,
   getListingById,
   getListingByRentalObjectCode,
+  getListingsByStatus,
 } from '../adapters/listing-adapter'
 import { z } from 'zod'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
-import { logger } from 'onecore-utilities'
+import { generateRouteMetadata, logger } from 'onecore-utilities'
 import {
   addPriorityToApplicantsBasedOnRentalRules,
   getDetailedApplicantInformation,
   sortApplicantsBasedOnRentalRules,
 } from '../priority-list-service'
+
+//todo: no metadata and content standardization exists for these routes
 
 /**
  * @swagger
@@ -488,6 +496,94 @@ export const routes = (router: KoaRouter) => {
         ctx.body = {
           error: error.message,
         }
+      }
+    }
+  })
+
+  /**
+   * @swagger
+   * /listings/by-status/{listingStatus}:
+   *   get:
+   *     summary: Get listings by status
+   *     description: Fetches all listings that match the provided status.
+   *     tags:
+   *       - Listings
+   *     parameters:
+   *       - in: path
+   *         name: listingStatus
+   *         required: true
+   *         schema:
+   *           type: integer
+   *           enum: [1, 2, 3, 4]
+   *           example: 1
+   *         description: The status of the listings to fetch. Allowed values are 1 (Active), 2 (Assigned), 3 (Deleted), 4 (Expired).
+   *     responses:
+   *       '200':
+   *         description: Successfully retrieved listings with the specified status.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 content:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                 metadata:
+   *                   type: object
+   *                   additionalProperties:
+   *                     type: string
+   *       '400':
+   *         description: Invalid status parameter provided.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 error:
+   *                   type: string
+   *                   description: The error message indicating the allowed status values.
+   *       '500':
+   *         description: Internal server error.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 error:
+   *                   type: string
+   *                   description: The error message.
+   */
+
+  //todo: write test cases
+  router.get('/listings/by-status/:listingStatus', async (ctx) => {
+    try {
+      const metadata = generateRouteMetadata(ctx)
+      const status = parseInt(ctx.params.listingStatus, 10) // Convert the status param to an integer
+
+      if (!Object.values(ListingStatus).includes(status)) {
+        ctx.status = 400 // Bad Request
+        ctx.body = {
+          error: `Invalid listing status.`,
+        }
+        return
+      }
+
+      const listings = await getListingsByStatus(status)
+
+      ctx.body = {
+        content: listings,
+        ...metadata,
+      }
+      ctx.status = 200
+    } catch (error) {
+      logger.error(
+        error,
+        'Error fetching listing by status: ' + ctx.params.listingStatus
+      )
+      ctx.status = 500 // Internal Server Error
+      ctx.body = {
+        error: 'An error occurred while fetching the listing.',
       }
     }
   })
