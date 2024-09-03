@@ -1,21 +1,12 @@
 import KoaRouter from '@koa/router'
 import { ApplicantStatus, DetailedApplicant, Listing } from 'onecore-types'
-import {
-  applicationExists,
-  createApplication,
-  createListing,
-  getAllListingsWithApplicants,
-  getListingById,
-  getListingByRentalObjectCode,
-} from '../adapters/listing-adapter'
 import { z } from 'zod'
-import { parseRequestBody } from '../../../middlewares/parse-request-body'
 import { logger } from 'onecore-utilities'
-import {
-  addPriorityToApplicantsBasedOnRentalRules,
-  getDetailedApplicantInformation,
-  sortApplicantsBasedOnRentalRules,
-} from '../priority-list-service'
+
+import { parseRequestBody } from '../../../middlewares/parse-request-body'
+import * as priorityListService from '../priority-list-service'
+import * as listingAdapter from '../adapters/listing-adapter'
+import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
 
 /**
  * @swagger
@@ -57,7 +48,7 @@ export const routes = (router: KoaRouter) => {
   router.post('(.*)/listings', async (ctx) => {
     try {
       const listingData = <Listing>ctx.request.body
-      const existingListing = await getListingByRentalObjectCode(
+      const existingListing = await listingAdapter.getListingByRentalObjectCode(
         listingData.rentalObjectCode
       )
       if (
@@ -68,7 +59,7 @@ export const routes = (router: KoaRouter) => {
         return
       }
 
-      const listing = await createListing(listingData)
+      const listing = await listingAdapter.createListing(listingData)
 
       ctx.status = 201 // HTTP status code for Created
       ctx.body = listing
@@ -184,7 +175,7 @@ export const routes = (router: KoaRouter) => {
       try {
         const applicantData = ctx.request.body
 
-        const exists = await applicationExists(
+        const exists = await listingAdapter.applicationExists(
           applicantData.contactCode,
           applicantData.listingId
         )
@@ -198,7 +189,8 @@ export const routes = (router: KoaRouter) => {
         }
 
         //todo: createApplication does not actually return any data
-        const applicationId = await createApplication(applicantData)
+        const applicationId =
+          await listingAdapter.createApplication(applicantData)
         ctx.status = 201 // HTTP status code for Created
         ctx.body = { applicationId }
       } catch (error) {
@@ -257,7 +249,7 @@ export const routes = (router: KoaRouter) => {
   router.get('/listings/by-id/:listingId', async (ctx) => {
     try {
       const listingId = ctx.params.listingId
-      const listing = await getListingById(listingId)
+      const listing = await listingAdapter.getListingById(listingId)
       if (listing == undefined) {
         ctx.status = 404
         return
@@ -321,7 +313,8 @@ export const routes = (router: KoaRouter) => {
   router.get('/listings/by-code/:rentalObjectCode', async (ctx) => {
     try {
       const rentaLObjectCode = ctx.params.rentalObjectCode
-      const listing = await getListingByRentalObjectCode(rentaLObjectCode)
+      const listing =
+        await listingAdapter.getListingByRentalObjectCode(rentaLObjectCode)
       if (listing == undefined) {
         ctx.status = 404
         return
@@ -391,7 +384,8 @@ export const routes = (router: KoaRouter) => {
    */
   router.get('/listings-with-applicants', async (ctx) => {
     try {
-      const listingsWithApplicants = await getAllListingsWithApplicants()
+      const listingsWithApplicants =
+        await listingAdapter.getAllListingsWithApplicants()
       ctx.status = 200
       ctx.body = { content: listingsWithApplicants }
     } catch (error) {
@@ -455,7 +449,7 @@ export const routes = (router: KoaRouter) => {
   router.get('(.*)/listing/:listingId/applicants/details', async (ctx) => {
     try {
       const listingId = ctx.params.listingId
-      const listing = await getListingById(listingId)
+      const listing = await listingAdapter.getListingById(listingId)
 
       if (!listing) {
         ctx.status = 404
@@ -467,19 +461,22 @@ export const routes = (router: KoaRouter) => {
       if (listing.applicants) {
         for (const applicant of listing.applicants) {
           const detailedApplicant =
-            await getDetailedApplicantInformation(applicant)
+            await priorityListService.getDetailedApplicantInformation(applicant)
           if (!detailedApplicant.ok)
             throw new Error('Err when getting detailed applicant information')
           applicants.push(detailedApplicant.data)
         }
       }
 
-      const applicantsWithPriority = addPriorityToApplicantsBasedOnRentalRules(
-        listing,
-        applicants
-      )
+      const applicantsWithPriority =
+        priorityListService.addPriorityToApplicantsBasedOnRentalRules(
+          listing,
+          applicants
+        )
 
-      ctx.body = sortApplicantsBasedOnRentalRules(applicantsWithPriority)
+      ctx.body = priorityListService.sortApplicantsBasedOnRentalRules(
+        applicantsWithPriority
+      )
     } catch (error: unknown) {
       logger.error(error, 'Error getting applicants for waiting list')
       ctx.status = 500
