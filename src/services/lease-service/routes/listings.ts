@@ -397,6 +397,19 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
+  router.get('/listings/sync', async (ctx) => {
+    const result = await xpandSoapAdapter.getPublishedInternalParkingSpaces()
+    if (result.ok) {
+      const internalParkingSpaces = result.data.filter(
+        (v: any) => v.WaitingListType === 'Bilplats (intern)'
+      )
+
+      console.log(internalParkingSpaces)
+    }
+
+    ctx.status = 200
+  })
+
   /**
    * Gets detailed information on a listings applicants
    * Returns a sorted list by rental rules for internal parking spaces of all applicants on a listing by listing id
