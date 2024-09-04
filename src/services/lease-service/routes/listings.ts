@@ -5,8 +5,8 @@ import { logger } from 'onecore-utilities'
 
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
 import * as priorityListService from '../priority-list-service'
+import * as syncParkingSpacesFromXpandService from '../sync-internal-parking-space-listings-from-xpand'
 import * as listingAdapter from '../adapters/listing-adapter'
-import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
 
 /**
  * @swagger
@@ -397,14 +397,29 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
-  router.get('/listings/sync', async (ctx) => {
-    const result = await xpandSoapAdapter.getPublishedInternalParkingSpaces()
-    if (result.ok) {
-      const internalParkingSpaces = result.data.filter(
-        (v: any) => v.WaitingListType === 'Bilplats (intern)'
+  router.get('/listings/sync-from-xpand', async (ctx) => {
+    const result =
+      await syncParkingSpacesFromXpandService.syncInternalParkingSpaces()
+
+    if (!result.ok) {
+      logger.error(
+        'Error when syncing internal parking spaces from Xpand SOAP API'
       )
 
-      console.log(internalParkingSpaces)
+      ctx.status = 500
+      return
+    }
+
+    logger.info('Finished syncing listings from Xpand SOAP API')
+    if (result.data.failed.length) {
+      logger.info(
+        result.data.failed.map((v) => ({
+          rentalObjectCode: v.listing.rentalObjectCode,
+          status: v.listing.status,
+          err: v.err,
+        })),
+        'Failed to insert the following listings when syncing from Xpand SOAP API:'
+      )
     }
 
     ctx.status = 200
