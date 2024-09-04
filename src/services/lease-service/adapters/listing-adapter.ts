@@ -47,7 +47,7 @@ function transformDbApplicant(row: DbApplicant): Applicant {
 }
 
 const createListing = async (
-  listingData: Listing
+  listingData: Omit<Listing, 'id'>
 ): Promise<AdapterResult<Listing, 'conflict-active-listing' | 'unknown'>> => {
   try {
     const insertedRow = await db<DbListing>('Listing')
@@ -73,6 +73,15 @@ const createListing = async (
 
     return { ok: true, data: transformFromDbListing(insertedRow[0]) }
   } catch (err) {
+    logger.error(
+      {
+        RentalObjectCode: listingData.rentalObjectCode,
+        Status: listingData.status,
+        err,
+      },
+      'Error when inserting listing'
+    )
+
     if (err instanceof RequestError) {
       if (err.message.includes('unique_rental_object_code_status')) {
         return { ok: false, err: 'conflict-active-listing' }
