@@ -51,7 +51,11 @@ const transformFromDbContact = (
     },
     phoneNumbers: phoneNumbers,
     emailAddress:
-      process.env.NODE_ENV === 'production' ? row.emailAddress : 'redacted',
+      process.env.NODE_ENV === 'production'
+        ? row.emailAddress == null
+          ? undefined
+          : row.emailAddress
+        : 'redacted',
     isTenant: leases.length > 0,
   }
 
