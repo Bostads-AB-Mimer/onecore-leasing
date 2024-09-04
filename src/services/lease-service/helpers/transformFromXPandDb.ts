@@ -1,8 +1,8 @@
 import { Lease, Contact, LeaseStatus } from 'onecore-types'
 
 const calculateStatus = (
-  lastDebitDateString: any,
-  startDateString: any
+  lastDebitDateString: string,
+  startDateString: string
 ): LeaseStatus => {
   const leaseStartDate = new Date(startDateString)
   const leaseLastDebitDate = new Date(lastDebitDateString)
