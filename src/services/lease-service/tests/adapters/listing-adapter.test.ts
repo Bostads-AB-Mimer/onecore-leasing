@@ -66,6 +66,47 @@ describe('listing-adapter', () => {
       expect(listingFromDatabase).toBeDefined()
       expect(listingFromDatabase.Id).toEqual(insertedListing.data.id)
     })
+
+    it('fails on duplicate combination of ListingStatus.Active and RentalObjectCode', async () => {
+      await listingAdapter.createListing(
+        factory.listing.build({
+          rentalObjectCode: '1',
+          status: ListingStatus.Active,
+        })
+      )
+
+      const insertionResult = await listingAdapter.createListing(
+        factory.listing.build({
+          rentalObjectCode: '1',
+          status: ListingStatus.Active,
+        })
+      )
+
+      expect(insertionResult).toEqual({
+        ok: false,
+        err: 'conflict-active-listing',
+      })
+    })
+
+    it('allows duplicate combination of other Listing statuses and RentalObjectCode', async () => {
+      await listingAdapter.createListing(
+        factory.listing.build({
+          rentalObjectCode: '1',
+          status: ListingStatus.Active,
+        })
+      )
+
+      const insertionResult = await listingAdapter.createListing(
+        factory.listing.build({
+          rentalObjectCode: '1',
+          status: ListingStatus.Expired,
+        })
+      )
+
+      expect(insertionResult).toMatchObject({
+        ok: true,
+      })
+    })
   })
 
   describe(listingAdapter.getListingByRentalObjectCode, () => {

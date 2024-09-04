@@ -8,6 +8,7 @@ import {
 
 import { db } from './db'
 import { AdapterResult, DbApplicant, DbListing } from './types'
+import { RequestError } from 'tedious'
 
 function transformFromDbListing(row: DbListing): Listing {
   return {
@@ -47,7 +48,7 @@ function transformDbApplicant(row: DbApplicant): Applicant {
 
 const createListing = async (
   listingData: Listing
-): Promise<AdapterResult<Listing, 'conflict-active-listing'>> => {
+): Promise<AdapterResult<Listing, 'conflict-active-listing' | 'unknown'>> => {
   try {
     const insertedRow = await db<DbListing>('Listing')
       .insert({
@@ -72,8 +73,13 @@ const createListing = async (
 
     return { ok: true, data: transformFromDbListing(insertedRow[0]) }
   } catch (err) {
-    console.log(err)
-    return { ok: false, err: 'conflict-active-listing' }
+    if (err instanceof RequestError) {
+      if (err.message.includes('unique_rental_object_code_status')) {
+        return { ok: false, err: 'conflict-active-listing' }
+      }
+    }
+
+    return { ok: false, err: 'unknown' }
   }
 }
 
