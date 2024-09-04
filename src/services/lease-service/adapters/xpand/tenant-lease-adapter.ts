@@ -406,13 +406,13 @@ const getContactQuery = () => {
       'cmadr.adress1 as street',
       'cmadr.adress3 as postalCode',
       'cmadr.adress4 as city',
-      db.raw('COALESCE(cmeml.cmemlben, "") as emailAddress'), // Handle null emails
+      'cmeml.cmemlben as emailAddress',
       'cmobj.keycmobj as keycmobj',
       'cmctc.keycmctc as contactKey'
     )
     .innerJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
     .leftJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
-    .innerJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
+    .leftJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
 }
 
 const getPhoneNumbersForContact = async (keycmobj: string) => {
