@@ -44,8 +44,6 @@ const getDetailedApplicantInformation = async (
 ): Promise<AdapterResult<DetailedApplicant, GetDetailedApplicantError>> => {
   const contact = await getContactByContactCode(applicant.contactCode, 'false')
 
-  console.log('contact', contact)
-
   if (!contact.ok) {
     return { ok: false, err: 'get-contact' }
   }
@@ -77,7 +75,7 @@ const getDetailedApplicantInformation = async (
     'true', //this filter does not consider upcoming leases
     undefined //do not include contacts
   )
-  console.log('leases', leases)
+  
   if (!leases.ok) {
     return {
       ok: false,
