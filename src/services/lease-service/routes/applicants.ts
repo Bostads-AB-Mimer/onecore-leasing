@@ -1,7 +1,7 @@
 import KoaRouter from '@koa/router'
 import { z } from 'zod'
 import { ApplicantStatus } from 'onecore-types'
-import { logger } from 'onecore-utilities'
+import { logger, generateRouteMetadata } from 'onecore-utilities'
 
 import {
   getApplicantByContactCodeAndListingId,
@@ -72,22 +72,27 @@ export const routes = (router: KoaRouter) => {
    *                   example: An error occurred while fetching the applicant.
    */
   router.get('/applicants/:contactCode/', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     const { contactCode } = ctx.params // Extracting from URL parameters
     try {
       const applicants = await getApplicantsByContactCode(contactCode)
       if (!applicants) {
         ctx.status = 404 // Not Found
         ctx.body = {
-          error: 'Applicant not found for the provided contactCode.',
+          reason: 'Applicant not found for the provided contactCode.',
+          ...metadata,
         }
       } else {
         ctx.status = 200 // OK
-        ctx.body = applicants
+        ctx.body = { content: applicants, ...metadata }
       }
     } catch (error) {
       logger.error(error, 'Error fetching applicant by contactCode:')
       ctx.status = 500 // Internal Server Error
-      ctx.body = { error: 'An error occurred while fetching the applicant.' }
+      ctx.body = {
+        error: 'An error occurred while fetching the applicant.',
+        ...metadata,
+      }
     }
   })
 
@@ -153,24 +158,24 @@ export const routes = (router: KoaRouter) => {
    *                   example: An error occurred while fetching the applicant.
    */
   router.get('/applicants/:contactCode/:listingId', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     const { contactCode, listingId } = ctx.params // Extracting from URL parameters
     try {
       const applicant = await getApplicantByContactCodeAndListingId(
         contactCode,
         parseInt(listingId)
       )
-      ctx.body = applicant
-      ctx.status = 200
 
       if (!applicant) {
         ctx.status = 404 // Not Found
         ctx.body = {
-          error:
+          reason:
             'Applicant not found for the provided contactCode and listingId.',
+          ...metadata,
         }
       } else {
         ctx.status = 200 // OK
-        ctx.body = applicant
+        ctx.body = { content: applicant, ...metadata }
       }
     } catch (error) {
       logger.error(
@@ -178,7 +183,10 @@ export const routes = (router: KoaRouter) => {
         'Error fetching applicant by contactCode and rentalObjectCode:'
       )
       ctx.status = 500 // Internal Server Error
-      ctx.body = { error: 'An error occurred while fetching the applicant.' }
+      ctx.body = {
+        error: 'An error occurred while fetching the applicant.',
+        ...metadata,
+      }
     }
   })
 
@@ -255,6 +263,7 @@ export const routes = (router: KoaRouter) => {
     '/applicants/:id/status',
     parseRequestBody(updateApplicantStatusParams),
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       const { id } = ctx.params
       const { status, contactCode } = ctx.request.body
 
@@ -264,7 +273,10 @@ export const routes = (router: KoaRouter) => {
           const applicant = await getApplicantById(Number(id))
           if (applicant?.contactCode !== contactCode) {
             ctx.status = 404
-            ctx.body = { error: 'Applicant not found for this contactCode' }
+            ctx.body = {
+              reason: 'Applicant not found for this contactCode',
+              ...metadata,
+            }
             return
           }
         }
@@ -272,16 +284,20 @@ export const routes = (router: KoaRouter) => {
         const applicantUpdated = await updateApplicantStatus(Number(id), status)
         if (applicantUpdated) {
           ctx.status = 200
-          ctx.body = { message: 'Applicant status updated successfully' }
+          ctx.body = {
+            message: 'Applicant status updated successfully',
+            ...metadata,
+          }
         } else {
           ctx.status = 404
-          ctx.body = { error: 'Applicant not found' }
+          ctx.body = { reason: 'Applicant not found', ...metadata }
         }
       } catch (error) {
         logger.error(error, 'Error updating applicant status')
         ctx.status = 500 // Internal Server Error
         ctx.body = {
           error: 'An error occurred while updating the applicant status.',
+          ...metadata,
         }
       }
     }
@@ -315,9 +331,21 @@ export const routes = (router: KoaRouter) => {
    *             schema:
    *               type: object
    *               properties:
+   *                 applicationType: string
+   *                 example: Additional - applicant is eligible for applying for an additional parking space. Replace - applicant is eligible for replacing their current parking space in the same residential area or property.
    *                 reason:
    *                   type: string
    *                   example: No property rental rules applies to this property.
+   *       400:
+   *         description: Rental object code is not a parking space.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 reason:
+   *                   type: string
+   *                   example: Rental object code entity is not a parking space.
    *       403:
    *         description: Applicant is not eligible for the property based on property rental rules.
    *         content:
@@ -350,16 +378,6 @@ export const routes = (router: KoaRouter) => {
    *                       value: Applicant was not found.
    *                     contactCodeMismatch:
    *                       value: Applicant not found for this contactCode.
-   *       409:
-   *         description: User already has an active parking space contract in the listing's residential area.
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 reason:
-   *                   type: string
-   *                   example: User already have an active parking space contract in the listings residential area.
    *       500:
    *         description: An error occurred while validating property rental rules.
    *         content:
@@ -374,6 +392,7 @@ export const routes = (router: KoaRouter) => {
   router.get(
     '(.*)/applicants/validatePropertyRentalRules/:contactCode/:rentalObjectCode',
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       try {
         const { contactCode, rentalObjectCode } = ctx.params
 
@@ -382,6 +401,10 @@ export const routes = (router: KoaRouter) => {
 
         if (!propertyInfo) {
           ctx.status = 404
+          ctx.body = {
+            reason: 'Listing was not found',
+            ...metadata,
+          }
           return
         }
 
@@ -389,6 +412,7 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 400
           ctx.body = {
             reason: 'Rental object code entity is not a parking space',
+            ...metadata,
           }
         }
 
@@ -400,7 +424,8 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 200
           ctx.body = {
             applicationType: 'Additional',
-            reason: 'No property rental rules applies to this parking space',
+            message: 'No property rental rules applies to this parking space',
+            ...metadata,
           }
           return
         }
@@ -409,7 +434,10 @@ export const routes = (router: KoaRouter) => {
 
         if (!contact.ok) {
           ctx.status = 500
-          ctx.body = 'Internal Error'
+          ctx.body = {
+            error: 'Internal Error',
+            ...metadata,
+          }
           return
         }
 
@@ -423,6 +451,7 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 403
           ctx.body = {
             reason: 'User is not a current or coming tenant in the property',
+            ...metadata,
           }
           return
         }
@@ -433,8 +462,9 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 200
           ctx.body = {
             applicationType: 'Additional',
-            reason:
+            message:
               'User is a tenant in the property and does not have any active parking space contracts in the listings residential area. User is eligible to apply with applicationType additional.',
+            ...metadata,
           }
           return
         }
@@ -456,8 +486,9 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 200
           ctx.body = {
             applicationType: 'Replace',
-            reason:
+            message:
               'User already have an active parking space contract in the listings residential area. User is eligible to apply with applicationType Replace.',
+            ...metadata,
           }
           return
         }
@@ -466,8 +497,9 @@ export const routes = (router: KoaRouter) => {
         ctx.status = 200
         ctx.body = {
           applicationType: 'Additional',
-          reason:
+          message:
             'User is a tenant in the property and does not have any active parking space contracts in the listings residential area. User is eligible to apply with applicationType additional.',
+          ...metadata,
         }
       } catch (error: unknown) {
         ctx.status = 500
@@ -479,6 +511,7 @@ export const routes = (router: KoaRouter) => {
           )
           ctx.body = {
             error: error.message,
+            ...metadata,
           }
         }
       }
@@ -507,12 +540,14 @@ export const routes = (router: KoaRouter) => {
    *         description: The xpand district code of the residential area to validate against.
    *     responses:
    *       200:
-   *         description: No residential area rental rules apply or applicant is eligible to apply for parking space.
+   *         description: Either no residential area rental rules apply or applicant is eligible to apply for parking space.
    *         content:
    *           application/json:
    *             schema:
    *               type: object
    *               properties:
+   *                 applicationType: string
+   *                 example: Additional - applicant is eligible for applying for an additional parking space. Replace - applicant is eligible for replacing their current parking space in the same residential area or property.
    *                 reason:
    *                   type: string
    *                   examples:
@@ -544,16 +579,6 @@ export const routes = (router: KoaRouter) => {
    *                       value: Listing was not found.
    *                     applicantNotFound:
    *                       value: Applicant was not found.
-   *       409:
-   *         description: User already has an active parking space contract in the listing's residential area.
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 reason:
-   *                   type: string
-   *                   example: Applicant already have an active parking space contract in the listings residential area.
    *       500:
    *         description: An error occurred while validating residential area rental rules.
    *         content:
@@ -565,10 +590,10 @@ export const routes = (router: KoaRouter) => {
    *                   type: string
    *                   example: An error occurred while validating residential area rental rules.
    */
-  router
   router.get(
     '(.*)/applicants/validateResidentialAreaRentalRules/:contactCode/:districtCode',
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       try {
         const { contactCode, districtCode } = ctx.params
 
@@ -576,8 +601,9 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 200
           ctx.body = {
             applicationType: 'Additional',
-            reason:
+            message:
               'No residential area rental rules applies to this parking space',
+            ...metadata,
           }
           return
         }
@@ -586,6 +612,7 @@ export const routes = (router: KoaRouter) => {
 
         if (!contact.ok) {
           ctx.status = 500
+          ctx.body = { error: 'Internal Error', ...metadata }
           return
         }
 
@@ -599,6 +626,7 @@ export const routes = (router: KoaRouter) => {
           ctx.body = {
             reason:
               'Subject does not have any current or upcoming housing contracts in the residential area',
+            ...metadata,
           }
           return
         }
@@ -614,8 +642,9 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 200
           ctx.body = {
             applicationType: 'Additional',
-            reason:
+            message:
               'Subject does not have any active parking space contracts in the listings residential area. Subject is eligible to apply to parking space with applicationType additional.',
+            ...metadata,
           }
           return
         }
@@ -625,8 +654,9 @@ export const routes = (router: KoaRouter) => {
         ctx.status = 200
         ctx.body = {
           applicationType: 'Replace',
-          reason:
+          message:
             'Subject already have an active parking space contract in the listings residential area. Subject is eligible to apply to parking space with applicationType replace.',
+          ...metadata,
         }
       } catch (err: unknown) {
         logger.error(err, 'Error when validating residential rental rules')
@@ -635,6 +665,7 @@ export const routes = (router: KoaRouter) => {
         if (err instanceof Error) {
           ctx.body = {
             error: err.message,
+            ...metadata,
           }
         }
       }

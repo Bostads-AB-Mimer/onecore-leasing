@@ -1,11 +1,14 @@
 import KoaRouter from '@koa/router'
 import { OfferStatus } from 'onecore-types'
-import { logger } from 'onecore-utilities'
+import { logger, generateRouteMetadata } from 'onecore-utilities'
 import { z } from 'zod'
 
 import * as offerAdapter from './../adapters/offer-adapter'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
-import { getOffersForContact } from './../adapters/offer-adapter'
+import {
+  getOfferByContactCodeAndOfferId,
+  getOffersForContact,
+} from './../adapters/offer-adapter'
 import { HttpStatusCode } from 'axios'
 
 /**
@@ -74,22 +77,98 @@ export const routes = (router: KoaRouter) => {
     '(.*)/offer',
     parseRequestBody(createOfferRequestParams),
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       try {
         const offer = await offerAdapter.create(ctx.request.body)
 
         ctx.status = 201
-        ctx.body = { data: offer }
+        ctx.body = { content: offer, ...metadata }
       } catch (err) {
         logger.error(err, 'Error creating offer: ')
         ctx.status = 500
+        ctx.body = { error: 'Error creating offer', ...metadata }
       }
     }
   )
 
-  //todo: add swagger docs
+  //todo: rewrite url to offers/applicant/:contactCode
+  /**
+   * @swagger
+   * /contacts/{contactCode}/offers:
+   *   get:
+   *     summary: Get offers for a specific contact
+   *     description: Retrieve a list of offers associated with a specific contact using the contact's code.
+   *     tags: [Offer]
+   *     parameters:
+   *       - in: path
+   *         name: contactCode
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The unique code identifying the contact.
+   *     responses:
+   *       200:
+   *         description: A list of offers for the specified contact.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *       404:
+   *         description: No offers found for the specified contact code.
+   */
+
   router.get('/contacts/:contactCode/offers', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     const responseData = await getOffersForContact(ctx.params.contactCode)
     if (!responseData.length) {
+      ctx.status = HttpStatusCode.NotFound
+      ctx.body = { error: 'No offers found', ...metadata }
+      return
+    }
+    ctx.body = {
+      content: responseData,
+      ...metadata,
+    }
+  })
+
+  /**
+   * @swagger
+   * /offers/{offerId}/applicants/{contactCode}:
+   *   get:
+   *     summary: Get a specific offer for an applicant
+   *     description: Retrieve details of a specific offer associated with an applicant using contact code and offer ID.
+   *     tags: [Offer]
+   *     parameters:
+   *       - in: path
+   *         name: offerId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The unique ID of the offer.
+   *       - in: path
+   *         name: contactCode
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The unique code identifying the applicant.
+   *     responses:
+   *       200:
+   *         description: Details of the specified offer.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *       404:
+   *         description: Offer not found for the specified contact code and offer ID.
+   */
+
+  router.get('/offers/:offerId/applicants/:contactCode', async (ctx) => {
+    const responseData = await getOfferByContactCodeAndOfferId(
+      ctx.params.contactCode,
+      parseInt(ctx.params.offerId)
+    )
+
+    if (!responseData) {
       ctx.status = HttpStatusCode.NotFound
       return
     }

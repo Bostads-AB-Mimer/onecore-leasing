@@ -8,6 +8,7 @@ jest.mock('onecore-utilities', () => {
         return
       },
     },
+    generateRouteMetadata: jest.fn(() => ({})),
   }
 })
 
@@ -33,7 +34,7 @@ app.use(router.routes())
 
 // Mock until this bug is fixed: https://github.com/kulshekhar/ts-jest/issues/3397
 const LeaseStatus = {
-  Active: 0,
+  Current: 0,
 }
 
 //todo: refactor according to route dir structure
@@ -45,7 +46,7 @@ describe('lease-service', () => {
       leaseNumber: '06',
       leaseStartDate: new Date('2023-09-07T00:00:00.000Z'),
       leaseEndDate: new Date('2024-09-07T00:00:00.000Z'),
-      status: LeaseStatus.Active,
+      status: LeaseStatus.Current,
       tenantContactIds: ['P174958'],
       tenants: [
         {
@@ -102,7 +103,7 @@ describe('lease-service', () => {
       leaseNumber: '',
       leaseStartDate: new Date('2010-12-01T00:00:00.000Z'),
       leaseEndDate: undefined,
-      status: LeaseStatus.Active,
+      status: LeaseStatus.Current,
       tenantContactIds: ['P965338'],
       tenants: [
         {
@@ -159,7 +160,7 @@ describe('lease-service', () => {
       leaseNumber: '07',
       leaseStartDate: new Date('2010-12-01T00:00:00.000Z'),
       leaseEndDate: undefined,
-      status: LeaseStatus.Active,
+      status: LeaseStatus.Current,
       tenantContactIds: ['P965339'],
       tenants: [
         {
@@ -223,9 +224,9 @@ describe('lease-service', () => {
         '/leases/for/nationalRegistrationNumber/194808075577'
       )
       expect(res.status).toBe(200)
-      expect(res.body.data).toBeInstanceOf(Array)
+      expect(res.body.content).toBeInstanceOf(Array)
       expect(getLeasesSpy).toHaveBeenCalled()
-      expect(res.body.data.length).toBe(3)
+      expect(res.body.content.length).toBe(3)
     })
   })
 
@@ -239,9 +240,9 @@ describe('lease-service', () => {
         '/leases/for/contactCode/P965339'
       )
       expect(res.status).toBe(200)
-      expect(res.body.data).toBeInstanceOf(Array)
+      expect(res.body.content).toBeInstanceOf(Array)
       expect(getLeasesSpy).toHaveBeenCalled()
-      expect(res.body.data.length).toBe(3)
+      expect(res.body.content.length).toBe(3)
     })
   })
 
@@ -255,9 +256,9 @@ describe('lease-service', () => {
         '/leases/for/propertyId/110-007-01-0203'
       )
       expect(res.status).toBe(200)
-      expect(res.body.data).toBeInstanceOf(Array)
+      expect(res.body.content).toBeInstanceOf(Array)
       expect(getLeasesSpy).toHaveBeenCalled()
-      expect(res.body.data.length).toBe(3)
+      expect(res.body.content.length).toBe(3)
     })
   })
 
@@ -271,7 +272,7 @@ describe('lease-service', () => {
       expect(res.status).toBe(200)
       expect(getLeaseSpy).toHaveBeenCalled()
 
-      expect(res.body.data.leaseId).toEqual('406-097-11-0201/06')
+      expect(res.body.content.leaseId).toEqual('406-097-11-0201/06')
     })
   })
 
@@ -352,7 +353,7 @@ describe('lease-service', () => {
       const result = await request(app.callback()).post('/leases')
 
       expect(xpandAdapterSpy).toHaveBeenCalled()
-      expect(result.body).toEqual({ LeaseId: '123-123-123/1' })
+      expect(result.body.content).toEqual({ LeaseId: '123-123-123/1' })
     })
 
     it('handles errors', async () => {

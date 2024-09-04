@@ -392,8 +392,8 @@ export const routes = (router: KoaRouter) => {
   router.get('/listings-with-applicants', async (ctx) => {
     try {
       const listingsWithApplicants = await getAllListingsWithApplicants()
-      ctx.body = listingsWithApplicants
       ctx.status = 200
+      ctx.body = { content: listingsWithApplicants }
     } catch (error) {
       logger.error(error, 'Error fetching listings with applicants:')
       ctx.status = 500 // Internal Server Error
@@ -468,6 +468,7 @@ export const routes = (router: KoaRouter) => {
         for (const applicant of listing.applicants) {
           const detailedApplicant =
             await getDetailedApplicantInformation(applicant)
+
           if (!detailedApplicant.ok)
             throw new Error('Err when getting detailed applicant information')
           applicants.push(detailedApplicant.data)
