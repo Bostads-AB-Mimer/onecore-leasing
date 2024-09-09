@@ -255,7 +255,8 @@ export const routes = (router: KoaRouter) => {
         return
       }
 
-      ctx.body = listing
+      // TODO: Inform others about this change.
+      ctx.body = { content: listing }
       ctx.status = 200
     } catch (error) {
       logger.error(error, 'Error fetching listing: ' + ctx.params.listingId)
@@ -460,10 +461,8 @@ export const routes = (router: KoaRouter) => {
 
     ctx.status = 200
     ctx.body = {
-      content: {
-        content: mapToResponseData(result.data),
-        ...metadata,
-      },
+      content: mapToResponseData(result.data),
+      ...metadata,
     }
   })
 

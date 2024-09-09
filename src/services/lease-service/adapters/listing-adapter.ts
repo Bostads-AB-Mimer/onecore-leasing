@@ -73,19 +73,25 @@ const createListing = async (
 
     return { ok: true, data: transformFromDbListing(insertedRow[0]) }
   } catch (err) {
-    logger.error(
-      {
-        RentalObjectCode: listingData.rentalObjectCode,
-        Status: listingData.status,
-        err,
-      },
-      'Error when inserting listing'
-    )
-
     if (err instanceof RequestError) {
       if (err.message.includes('unique_rental_object_code_status')) {
+        logger.info(
+          {
+            RentalObjectCode: listingData.rentalObjectCode,
+            Status: listingData.status,
+          },
+          'listingAdapter.createListing - can not insert duplicate active listing'
+        )
         return { ok: false, err: 'conflict-active-listing' }
       }
+
+      logger.error(
+        {
+          RentalObjectCode: listingData.rentalObjectCode,
+          err,
+        },
+        'listingAdapter.createListing'
+      )
     }
 
     return { ok: false, err: 'unknown' }
