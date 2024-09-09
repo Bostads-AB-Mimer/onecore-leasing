@@ -42,6 +42,24 @@ const ValidInternalParkingSpace = z.object({
   RentalObjectTypeCode: z.string().nullish(),
 })
 
+/*
+ * This service gets all published parking spaces from Xpand SOAP API
+ * Then it processes the data in the following way:
+ * - Keep only parking spaces that have WaitingListType Bilplats (intern)
+ * - Parse all internal parking spaces using the Zod schema
+ *   ValidInternalParkingSpace. Return an object with two properties:
+ *   'ok'      -> a list of parking spaces mapped to listings, ready to be inserted
+ *   'invalid' -> a list of { rentalObjectCode: string, err } where err is an
+ *   array of errors associated with this internal parking space.
+ *
+ *   We do this because there is at least one known issue, where internal
+ *   parking spaces are missing "PublishedTo", which is non-compatible with our
+ *   current database. So we basically return which one failed and why.
+ *
+ * - Then we take all the 'valid' parking spaces and try to insert them.
+ *   The ones who succeeded goes into an insertions.inserted array and the ones
+ *   who failed goes into an insertions.failed array.
+ */
 export async function syncInternalParkingSpaces(): Promise<
   AdapterResult<ServiceSuccessData, ServiceError>
 > {
