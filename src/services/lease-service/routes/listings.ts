@@ -1,7 +1,7 @@
 import KoaRouter from '@koa/router'
 import { ApplicantStatus, DetailedApplicant, Listing } from 'onecore-types'
 import { z } from 'zod'
-import { logger } from 'onecore-utilities'
+import { generateRouteMetadata, logger } from 'onecore-utilities'
 
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
 import * as priorityListService from '../priority-list-service'
@@ -397,7 +397,8 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
-  router.get('/listings/sync-from-xpand', async (ctx) => {
+  router.get('/listings/sync-internal-from-xpand', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     const result =
       await syncParkingSpacesFromXpandService.syncInternalParkingSpaces()
 
@@ -407,6 +408,7 @@ export const routes = (router: KoaRouter) => {
       )
 
       ctx.status = 500
+      ctx.body = { err: 'Internal server error', ...metadata }
       return
     }
 
@@ -423,6 +425,7 @@ export const routes = (router: KoaRouter) => {
     }
 
     ctx.status = 200
+    ctx.body = metadata
   })
 
   /**
