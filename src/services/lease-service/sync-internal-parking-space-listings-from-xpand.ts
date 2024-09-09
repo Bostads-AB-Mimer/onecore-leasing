@@ -1,4 +1,5 @@
 import { Listing, ListingStatus } from 'onecore-types'
+import { z } from 'zod'
 
 import * as xpandSoapAdapter from './adapters/xpand/xpand-soap-adapter'
 import * as listingAdapter from './adapters/listing-adapter'
@@ -13,12 +14,33 @@ type CreateListingErrors = Extract<
 >['err']
 
 type ServiceSuccessData = {
-  inserted: Array<Listing>
-  failed: Array<{
-    listing: CreateListingData
-    err: CreateListingErrors
-  }>
+  invalidParkingSpaces: ParseInternalParkingSpacesToInsertableListingsResult['invalid']
+  insertions: {
+    inserted: Array<Listing>
+    failed: Array<{
+      listing: CreateListingData
+      err: CreateListingErrors
+    }>
+  }
 }
+
+const ValidInternalParkingSpace = z.object({
+  RentalObjectCode: z.string(),
+  Address1: z.string(),
+  MonthRent: z.number(),
+  PublishedFrom: z.coerce.date(),
+  PublishedTo: z.coerce.date(),
+  VacantFrom: z.coerce.date(),
+  WaitingListType: z.literal('Bilplats (intern)'),
+  DistrictCaption: z.string().nullish(),
+  DistrictCode: z.string().nullish(),
+  BlockCaption: z.string().nullish(),
+  BlockCode: z.string().nullish(),
+  ObjectTypeCaption: z.string().nullish(),
+  ObjectTypeCode: z.string().nullish(),
+  RentalObjectTypeCaption: z.string().nullish(),
+  RentalObjectTypeCode: z.string().nullish(),
+})
 
 export async function syncInternalParkingSpaces(): Promise<
   AdapterResult<ServiceSuccessData, ServiceError>
@@ -34,12 +56,11 @@ export async function syncInternalParkingSpaces(): Promise<
       v.WaitingListType === 'Bilplats (intern)'
   )
 
-  const listingsData = internalParkingSpaces.map(
-    toInternalParkingSpaceListingsData
-  )
+  const parseInternalParkingSpacesResult =
+    parseInternalParkingSpacesToInsertableListings(internalParkingSpaces)
 
   const insertions = await Promise.all(
-    listingsData.map(async (listing) => ({
+    parseInternalParkingSpacesResult.ok.map(async (listing) => ({
       listing,
       insertionResult: await listingAdapter.createListing(listing),
     }))
@@ -52,12 +73,15 @@ export async function syncInternalParkingSpaces(): Promise<
 
   return {
     ok: true,
-    data: aggregatedInsertions,
+    data: {
+      invalidParkingSpaces: parseInternalParkingSpacesResult.invalid,
+      insertions: aggregatedInsertions,
+    },
   }
 }
 
 function aggregateInsertions(
-  result: ServiceSuccessData,
+  result: ServiceSuccessData['insertions'],
   data: {
     listing: CreateListingData
     insertionResult: Awaited<ReturnType<typeof listingAdapter.createListing>>
@@ -79,20 +103,60 @@ function aggregateInsertions(
   }
 }
 
-function toInternalParkingSpaceListingsData(item: any): CreateListingData {
+type ParseInternalParkingSpacesToInsertableListingsResult = {
+  ok: Array<CreateListingData>
+  invalid: Array<{
+    data: {
+      rentalObjectCode: string
+      err: Array<{ path: string | number; code: string }>
+    }
+  }>
+}
+
+export function parseInternalParkingSpacesToInsertableListings(
+  parkingspaces: Array<any>
+): ParseInternalParkingSpacesToInsertableListingsResult {
+  return parkingspaces.reduce<ParseInternalParkingSpacesToInsertableListingsResult>(
+    (acc, curr) => {
+      const parseResult = ValidInternalParkingSpace.safeParse(curr)
+
+      if (!parseResult.success) {
+        const errors = parseResult.error.errors.map((e) => {
+          return { path: e.path[0], code: e.code }
+        })
+
+        return {
+          ...acc,
+          invalid: acc.invalid.concat({
+            data: { rentalObjectCode: curr.RentalObjectCode, err: errors },
+          }),
+        }
+      }
+
+      return {
+        ...acc,
+        ok: acc.ok.concat(toInternalParkingSpaceListingsData(parseResult.data)),
+      }
+    },
+    { ok: [], invalid: [] }
+  )
+}
+
+export function toInternalParkingSpaceListingsData(
+  item: z.infer<typeof ValidInternalParkingSpace>
+): CreateListingData {
   return {
     rentalObjectCode: item.RentalObjectCode,
     address: item.Address1,
     monthlyRent: item.MonthRent,
-    objectTypeCaption: item.ObjectTypeCaption,
-    objectTypeCode: item.ObjectTypeCode,
-    rentalObjectTypeCaption: item.RentalObjectTypeCaption,
-    rentalObjectTypeCode: item.RentalObjectTypeCode,
+    objectTypeCaption: item.ObjectTypeCaption ?? undefined,
+    objectTypeCode: item.ObjectTypeCode ?? undefined,
+    rentalObjectTypeCaption: item.RentalObjectTypeCaption ?? undefined,
+    rentalObjectTypeCode: item.RentalObjectTypeCode ?? undefined,
     publishedFrom: new Date(item.PublishedFrom),
     publishedTo: new Date(item.PublishedTo),
     vacantFrom: new Date(item.VacantFrom),
-    // TODO: Can we trust status should be active?
     status: ListingStatus.Active,
-    waitingListType: 'Bilplats (intern)',
+    waitingListType: item.WaitingListType,
   }
 }
