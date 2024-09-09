@@ -425,7 +425,19 @@ export const routes = (router: KoaRouter) => {
     }
 
     ctx.status = 200
-    ctx.body = metadata
+    ctx.body = {
+      content: {
+        inserted: result.data.inserted.map((v) => ({
+          id: v.id,
+          rentalObjectCode: v.rentalObjectCode,
+        })),
+        failed: result.data.failed.map((v) => ({
+          rentalObjectCode: v.listing.rentalObjectCode,
+          err: v.err,
+        })),
+      },
+      ...metadata,
+    }
   })
 
   /**
