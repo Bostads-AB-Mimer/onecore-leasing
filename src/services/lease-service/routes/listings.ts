@@ -397,6 +397,15 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
+  // TODO: Use from onecore-types once mim-15 is merged
+  type InternalParkingSpaceSyncSuccessResponse = {
+    inserted: Array<{ rentalObjectCode: string; id: number }>
+    failed: Array<{
+      rentalObjectCode: string
+      err: 'unknown' | 'active-listing-exists'
+    }>
+  }
+
   router.post('/listings/sync-internal-from-xpand', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     const result =
@@ -424,19 +433,26 @@ export const routes = (router: KoaRouter) => {
       )
     }
 
+    const mapToResponseData = (
+      data: (typeof result)['data']
+    ): InternalParkingSpaceSyncSuccessResponse => ({
+      inserted: data.inserted.map((v) => ({
+        id: v.id,
+        rentalObjectCode: v.rentalObjectCode,
+      })),
+      failed: data.failed.map((v) => ({
+        rentalObjectCode: v.listing.rentalObjectCode,
+        err:
+          v.err === 'conflict-active-listing' ? 'active-listing-exists' : v.err,
+      })),
+    })
+
     ctx.status = 200
     ctx.body = {
       content: {
-        inserted: result.data.inserted.map((v) => ({
-          id: v.id,
-          rentalObjectCode: v.rentalObjectCode,
-        })),
-        failed: result.data.failed.map((v) => ({
-          rentalObjectCode: v.listing.rentalObjectCode,
-          err: v.err,
-        })),
+        content: mapToResponseData(result.data),
+        ...metadata,
       },
-      ...metadata,
     }
   })
 
