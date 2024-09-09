@@ -397,7 +397,7 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
-  router.get('/listings/sync-internal-from-xpand', async (ctx) => {
+  router.post('/listings/sync-internal-from-xpand', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     const result =
       await syncParkingSpacesFromXpandService.syncInternalParkingSpaces()
