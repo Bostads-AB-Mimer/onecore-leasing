@@ -14,7 +14,7 @@ type CreateListingErrors = Extract<
 >['err']
 
 type ServiceSuccessData = {
-  invalidParkingSpaces: ParseInternalParkingSpacesToInsertableListingsResult['invalid']
+  invalid: ParseInternalParkingSpacesToInsertableListingsResult['invalid']
   insertions: {
     inserted: Array<Listing>
     failed: Array<{
@@ -74,7 +74,7 @@ export async function syncInternalParkingSpaces(): Promise<
   return {
     ok: true,
     data: {
-      invalidParkingSpaces: parseInternalParkingSpacesResult.invalid,
+      invalid: parseInternalParkingSpacesResult.invalid,
       insertions: aggregatedInsertions,
     },
   }
@@ -106,10 +106,8 @@ function aggregateInsertions(
 type ParseInternalParkingSpacesToInsertableListingsResult = {
   ok: Array<CreateListingData>
   invalid: Array<{
-    data: {
-      rentalObjectCode: string
-      err: Array<{ path: string | number; code: string }>
-    }
+    rentalObjectCode: string
+    err: Array<{ path: string; code: string }>
   }>
 }
 
@@ -119,16 +117,16 @@ export function parseInternalParkingSpacesToInsertableListings(
   return parkingspaces.reduce<ParseInternalParkingSpacesToInsertableListingsResult>(
     (acc, curr) => {
       const parseResult = ValidInternalParkingSpace.safeParse(curr)
-
       if (!parseResult.success) {
         const errors = parseResult.error.errors.map((e) => {
-          return { path: e.path[0], code: e.code }
+          return { path: String(e.path[0]), code: e.code }
         })
 
         return {
           ...acc,
           invalid: acc.invalid.concat({
-            data: { rentalObjectCode: curr.RentalObjectCode, err: errors },
+            rentalObjectCode: curr.RentalObjectCode,
+            err: errors,
           }),
         }
       }

@@ -399,11 +399,17 @@ export const routes = (router: KoaRouter) => {
 
   // TODO: Use from onecore-types once mim-15 is merged
   type InternalParkingSpaceSyncSuccessResponse = {
-    inserted: Array<{ rentalObjectCode: string; id: number }>
-    failed: Array<{
+    invalid: Array<{
       rentalObjectCode: string
-      err: 'unknown' | 'active-listing-exists'
+      err: Array<{ path: string; code: string }>
     }>
+    insertions: {
+      inserted: Array<{ rentalObjectCode: string; id: number }>
+      failed: Array<{
+        rentalObjectCode: string
+        err: 'unknown' | 'active-listing-exists'
+      }>
+    }
   }
 
   router.post('/listings/sync-internal-from-xpand', async (ctx) => {
@@ -422,9 +428,9 @@ export const routes = (router: KoaRouter) => {
     }
 
     logger.info('Finished syncing listings from Xpand SOAP API')
-    if (result.data.failed.length) {
+    if (result.data.insertions.failed.length) {
       logger.info(
-        result.data.failed.map((v) => ({
+        result.data.insertions.failed.map((v) => ({
           rentalObjectCode: v.listing.rentalObjectCode,
           status: v.listing.status,
           err: v.err,
@@ -436,15 +442,20 @@ export const routes = (router: KoaRouter) => {
     const mapToResponseData = (
       data: (typeof result)['data']
     ): InternalParkingSpaceSyncSuccessResponse => ({
-      inserted: data.inserted.map((v) => ({
-        id: v.id,
-        rentalObjectCode: v.rentalObjectCode,
-      })),
-      failed: data.failed.map((v) => ({
-        rentalObjectCode: v.listing.rentalObjectCode,
-        err:
-          v.err === 'conflict-active-listing' ? 'active-listing-exists' : v.err,
-      })),
+      invalid: result.data.invalid,
+      insertions: {
+        inserted: data.insertions.inserted.map((v) => ({
+          id: v.id,
+          rentalObjectCode: v.rentalObjectCode,
+        })),
+        failed: data.insertions.failed.map((v) => ({
+          rentalObjectCode: v.listing.rentalObjectCode,
+          err:
+            v.err === 'conflict-active-listing'
+              ? 'active-listing-exists'
+              : v.err,
+        })),
+      },
     })
 
     ctx.status = 200
