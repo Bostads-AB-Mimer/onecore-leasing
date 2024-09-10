@@ -46,6 +46,7 @@ export const routes = (router: KoaRouter) => {
   //can add listing
   //cannot add duplicate listing
   router.post('(.*)/listings', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const listingData = <Listing>ctx.request.body
       const existingListing = await listingAdapter.getListingByRentalObjectCode(
@@ -56,20 +57,24 @@ export const routes = (router: KoaRouter) => {
         existingListing.rentalObjectCode === listingData.rentalObjectCode
       ) {
         ctx.status = 409
+        ctx.body = {
+          error: 'Listing with the same rentalObjectCode already exists.',
+          ...metadata,
+        }
         return
       }
 
       const listing = await listingAdapter.createListing(listingData)
 
       ctx.status = 201 // HTTP status code for Created
-      ctx.body = listing
+      ctx.body = { content: listing, ...metadata }
     } catch (error) {
       ctx.status = 500 // Internal Server Error
 
       if (error instanceof Error) {
-        ctx.body = { error: error.message }
+        ctx.body = { error: error.message, ...metadata }
       } else {
-        ctx.body = { error: 'An unexpected error occurred.' }
+        ctx.body = { error: 'An unexpected error occurred.', ...metadata }
       }
     }
   })
@@ -172,6 +177,7 @@ export const routes = (router: KoaRouter) => {
     '(.*)/listings/apply',
     parseRequestBody(CreateApplicantRequestParamsSchema),
     async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
       try {
         const applicantData = ctx.request.body
 
@@ -183,7 +189,8 @@ export const routes = (router: KoaRouter) => {
         if (exists) {
           ctx.status = 409 // Conflict
           ctx.body = {
-            error: 'Applicant has already applied for this listing.',
+            reason: 'Applicant has already applied for this listing.',
+            ...metadata,
           }
           return
         }
@@ -192,13 +199,13 @@ export const routes = (router: KoaRouter) => {
         const applicationId =
           await listingAdapter.createApplication(applicantData)
         ctx.status = 201 // HTTP status code for Created
-        ctx.body = { applicationId }
+        ctx.body = { content: applicationId, ...metadata }
       } catch (error) {
         ctx.status = 500 // Internal Server Error
         if (error instanceof Error) {
-          ctx.body = { error: error.message }
+          ctx.body = { error: error.message, ...metadata }
         } else {
-          ctx.body = { error: 'An unexpected error occurred.' }
+          ctx.body = { error: 'An unexpected error occurred.', ...metadata }
         }
       }
     }
@@ -247,16 +254,17 @@ export const routes = (router: KoaRouter) => {
    *                   description: The error message.
    */
   router.get('/listings/by-id/:listingId', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const listingId = ctx.params.listingId
       const listing = await listingAdapter.getListingById(listingId)
       if (listing == undefined) {
         ctx.status = 404
+        ctx.body = { reason: 'Listing not found', ...metadata }
         return
       }
 
-      // TODO: Inform others about this change.
-      ctx.body = { content: listing }
+      ctx.body = { content: listing, ...metadata }
       ctx.status = 200
     } catch (error) {
       logger.error(error, 'Error fetching listing: ' + ctx.params.listingId)
@@ -265,6 +273,7 @@ export const routes = (router: KoaRouter) => {
         error:
           'An error occurred while fetching listing with the provided listingId: ' +
           ctx.params.listingId,
+        ...metadata,
       }
     }
   })
@@ -312,16 +321,18 @@ export const routes = (router: KoaRouter) => {
    *                   description: The error message.
    */
   router.get('/listings/by-code/:rentalObjectCode', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const rentaLObjectCode = ctx.params.rentalObjectCode
       const listing =
         await listingAdapter.getListingByRentalObjectCode(rentaLObjectCode)
       if (listing == undefined) {
         ctx.status = 404
+        ctx.body = { reason: 'Listing not found', ...metadata }
         return
       }
 
-      ctx.body = listing
+      ctx.body = { content: listing, ...metadata }
       ctx.status = 200
     } catch (error) {
       logger.error(
@@ -333,6 +344,7 @@ export const routes = (router: KoaRouter) => {
         error:
           'An error occurred while fetching listing with the provided rentalObjectCode: ' +
           ctx.params.rentalObjectCode,
+        ...metadata,
       }
     }
   })
@@ -384,16 +396,18 @@ export const routes = (router: KoaRouter) => {
    *                   description: The error message.
    */
   router.get('/listings-with-applicants', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const listingsWithApplicants =
         await listingAdapter.getAllListingsWithApplicants()
       ctx.status = 200
-      ctx.body = { content: listingsWithApplicants }
+      ctx.body = { content: listingsWithApplicants, ...metadata }
     } catch (error) {
       logger.error(error, 'Error fetching listings with applicants:')
       ctx.status = 500 // Internal Server Error
       ctx.body = {
         error: 'An error occurred while fetching listings with applicants.',
+        ...metadata,
       }
     }
   })
@@ -516,12 +530,17 @@ export const routes = (router: KoaRouter) => {
    *                   description: The error message.
    */
   router.get('(.*)/listing/:listingId/applicants/details', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     try {
       const listingId = ctx.params.listingId
       const listing = await listingAdapter.getListingById(listingId)
 
       if (!listing) {
         ctx.status = 404
+        ctx.body = {
+          reason: 'Listing not found',
+          ...metadata,
+        }
         return
       }
 
@@ -531,6 +550,7 @@ export const routes = (router: KoaRouter) => {
         for (const applicant of listing.applicants) {
           const detailedApplicant =
             await priorityListService.getDetailedApplicantInformation(applicant)
+
           if (!detailedApplicant.ok)
             throw new Error('Err when getting detailed applicant information')
           applicants.push(detailedApplicant.data)
@@ -543,11 +563,12 @@ export const routes = (router: KoaRouter) => {
           applicants
         )
 
-      // TODO: Inform about this change
+      ctx.status = 200
       ctx.body = {
         content: priorityListService.sortApplicantsBasedOnRentalRules(
           applicantsWithPriority
         ),
+        ...metadata,
       }
     } catch (error: unknown) {
       logger.error(error, 'Error getting applicants for waiting list')
@@ -556,6 +577,7 @@ export const routes = (router: KoaRouter) => {
       if (error instanceof Error) {
         ctx.body = {
           error: error.message,
+          ...metadata,
         }
       }
     }
