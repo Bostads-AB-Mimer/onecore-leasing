@@ -3,10 +3,11 @@ import { z } from 'zod'
 
 import * as xpandSoapAdapter from './adapters/xpand/xpand-soap-adapter'
 import * as listingAdapter from './adapters/listing-adapter'
+import * as leaseAdapter from './adapters/xpand/tenant-lease-adapter'
 import { AdapterResult } from './adapters/types'
 
 type CreateListingData = Omit<Listing, 'id'>
-type ServiceError = 'get-parking-spaces' | 'unknown'
+type ServiceError = 'get-parking-spaces' | 'get-residential-area' | 'unknown'
 
 type CreateListingErrors = Extract<
   Awaited<ReturnType<typeof listingAdapter.createListing>>,
@@ -77,8 +78,30 @@ export async function syncInternalParkingSpaces(): Promise<
   const parseInternalParkingSpacesResult =
     parseInternalParkingSpacesToInsertableListings(internalParkingSpaces)
 
+  const withResidentialArea = await Promise.all(
+    parseInternalParkingSpacesResult.ok.map(async (v) => {
+      const result = await leaseAdapter.getResidentialAreaByRentalPropertyId(
+        v.rentalObjectCode
+      )
+
+      if (!result.ok) {
+        return Promise.reject('oops')
+      }
+
+      return {
+        ...v,
+        districtCode: result.data?.code,
+        districtCaption: result.data?.caption,
+      }
+    })
+  ).catch(() => 'error' as const)
+
+  if (withResidentialArea === 'error') {
+    return { ok: false, err: 'get-residential-area' }
+  }
+
   const insertions = await Promise.all(
-    parseInternalParkingSpacesResult.ok.map(async (listing) => ({
+    withResidentialArea.map(async (listing) => ({
       listing,
       insertionResult: await listingAdapter.createListing(listing),
     }))

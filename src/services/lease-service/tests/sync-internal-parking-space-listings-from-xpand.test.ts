@@ -102,6 +102,7 @@ describe(service.syncInternalParkingSpaces, () => {
     const result = await service.syncInternalParkingSpaces()
 
     expect(soapSpy).toHaveBeenCalledTimes(1)
+
     expect(result).toEqual({
       ok: true,
       data: {
