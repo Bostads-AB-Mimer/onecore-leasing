@@ -543,9 +543,12 @@ export const routes = (router: KoaRouter) => {
           applicants
         )
 
-      ctx.body = priorityListService.sortApplicantsBasedOnRentalRules(
-        applicantsWithPriority
-      )
+      // TODO: Inform about this change
+      ctx.body = {
+        content: priorityListService.sortApplicantsBasedOnRentalRules(
+          applicantsWithPriority
+        ),
+      }
     } catch (error: unknown) {
       logger.error(error, 'Error getting applicants for waiting list')
       ctx.status = 500
