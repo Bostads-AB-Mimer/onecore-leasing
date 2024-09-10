@@ -120,12 +120,12 @@ function aggregateInsertions(
     }
   }
 }
-
+// TODO: Use from onecore-types once merged
 type ParseInternalParkingSpacesToInsertableListingsResult = {
   ok: Array<CreateListingData>
   invalid: Array<{
     rentalObjectCode: string
-    err: Array<{ path: string; code: string }>
+    errors: Array<{ path: string; code: string }>
   }>
 }
 
@@ -144,7 +144,7 @@ export function parseInternalParkingSpacesToInsertableListings(
           ...acc,
           invalid: acc.invalid.concat({
             rentalObjectCode: curr.RentalObjectCode,
-            err: errors,
+            errors,
           }),
         }
       }
