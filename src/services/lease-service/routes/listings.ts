@@ -574,12 +574,23 @@ export const routes = (router: KoaRouter) => {
   })
 
   router.delete('(.*)/listings/:listingId', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
     const result = await listingAdapter.deleteListing(
       Number(ctx.params.listingId)
     )
 
     if (!result.ok) {
-      ctx.status = 409
+      if (result.err === 'conflict') {
+        ctx.status = 409
+        ctx.body = { message: 'Could not delete listing.', ...metadata }
+        return
+      }
+      ctx.status = 500
+      ctx.body = { ...metadata }
+      return
     }
+
+    ctx.status = 200
+    ctx.body = { ...metadata }
   })
 }
