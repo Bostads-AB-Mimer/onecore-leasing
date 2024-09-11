@@ -193,7 +193,9 @@ function patchParkingSpacesWithResidentialArea(
       )
 
       if (!result.ok) {
-        return Promise.reject('oops')
+        return Promise.reject(
+          'Something went wrong, this operation should fail'
+        )
       }
 
       return {
