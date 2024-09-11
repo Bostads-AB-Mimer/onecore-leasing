@@ -573,6 +573,37 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
+  /**
+   * @swagger
+   * /listings/{listingId}:
+   *   delete:
+   *     summary: Delete a Listing by ID
+   *     description: Deletes a listing by it's ID.
+   *     tags:
+   *       - Listings
+   *     parameters:
+   *       - in: path
+   *         name: listingId
+   *         required: true
+   *         schema:
+   *           type: number
+   *         description: ID of the listing to fetch.
+   *     responses:
+   *       '200':
+   *         description: Successfully deleted listing.
+   *       '409':
+   *         description: Conflict.
+   *       '500':
+   *         description: Internal server error.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 error:
+   *                   type: string
+   *                   description: The error message.
+   */
   router.delete('(.*)/listings/:listingId', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     const result = await listingAdapter.deleteListing(
@@ -586,7 +617,7 @@ export const routes = (router: KoaRouter) => {
         return
       }
       ctx.status = 500
-      ctx.body = { ...metadata }
+      ctx.body = { error: 'Internal server error', ...metadata }
       return
     }
 
