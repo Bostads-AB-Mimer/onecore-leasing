@@ -88,6 +88,28 @@ describe(service.syncInternalParkingSpaces, () => {
     )
   })
 
+  it('fails with error if fail to patch with residential data', async () => {
+    getResidentialAreaSpy.mockRejectedValue({
+      ok: false,
+      err: null,
+    })
+
+    const internalParkingSpaceMocks =
+      factories.soapInternalParkingSpace.buildList(10)
+
+    const soapSpy = jest
+      .spyOn(xpandSoapAdapter, 'getPublishedInternalParkingSpaces')
+      .mockResolvedValueOnce({
+        ok: true,
+        data: internalParkingSpaceMocks,
+      })
+
+    const result = await service.syncInternalParkingSpaces()
+
+    expect(soapSpy).toHaveBeenCalledTimes(1)
+    expect(result).toEqual({ ok: false, err: 'get-residential-area' })
+  })
+
   it('fails gracefully on duplicates and invalid entries and inserts the rest', async () => {
     getResidentialAreaSpy.mockResolvedValue({
       ok: true,
