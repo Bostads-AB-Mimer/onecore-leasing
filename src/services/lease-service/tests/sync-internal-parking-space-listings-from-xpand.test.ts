@@ -3,7 +3,13 @@ import assert from 'node:assert'
 import { db, migrate, teardown } from '../adapters/db'
 import * as service from '../sync-internal-parking-space-listings-from-xpand'
 import * as xpandSoapAdapter from '../adapters/xpand/xpand-soap-adapter'
+import * as leaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 import * as factories from './factories'
+
+const getResidentialAreaSpy = jest.spyOn(
+  leaseAdapter,
+  'getResidentialAreaByRentalPropertyId'
+)
 
 describe(service.parseInternalParkingSpacesToInsertableListings, () => {
   it('if parking space missing PublishedTo, returns it as invalid', () => {
@@ -48,7 +54,13 @@ describe(service.syncInternalParkingSpaces, () => {
   afterAll(async () => {
     await teardown()
   })
+
   it('inserts parking spaces as listings', async () => {
+    getResidentialAreaSpy.mockResolvedValue({
+      ok: true,
+      data: { code: 'foo', caption: 'bar' },
+    })
+
     const internalParkingSpaceMocks =
       factories.soapInternalParkingSpace.buildList(10)
     const soapSpy = jest
@@ -77,6 +89,11 @@ describe(service.syncInternalParkingSpaces, () => {
   })
 
   it('fails gracefully on duplicates and invalid entries and inserts the rest', async () => {
+    getResidentialAreaSpy.mockResolvedValue({
+      ok: true,
+      data: { code: 'foo', caption: 'bar' },
+    })
+
     const valid_1 = factories.soapInternalParkingSpace.build({
       RentalObjectCode: '1',
     })

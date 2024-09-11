@@ -57,6 +57,10 @@ const ValidInternalParkingSpace = z.object({
  *   parking spaces are missing "PublishedTo", which is non-compatible with our
  *   current database. So we basically return which one failed and why.
  *
+ * - Then we iterate all the parsed parking spaces and patch them with
+ *   residential area info (districtCode, districtCaption), as that
+ *   info is missing from the Xpand Soap response.
+ *
  * - Then we take all the 'valid' parking spaces and try to insert them.
  *   The ones who succeeded goes into an insertions.inserted array and the ones
  *   who failed goes into an insertions.failed array.
@@ -78,39 +82,20 @@ export async function syncInternalParkingSpaces(): Promise<
   const parseInternalParkingSpacesResult =
     parseInternalParkingSpacesToInsertableListings(internalParkingSpaces)
 
-  const withResidentialArea = await Promise.all(
-    parseInternalParkingSpacesResult.ok.map(async (v) => {
-      const result = await leaseAdapter.getResidentialAreaByRentalPropertyId(
-        v.rentalObjectCode
-      )
+  const patchParkingSpacesWithResidentialAreaResult =
+    await patchParkingSpacesWithResidentialArea(
+      parseInternalParkingSpacesResult.ok
+    )
 
-      if (!result.ok) {
-        return Promise.reject('oops')
-      }
-
-      return {
-        ...v,
-        districtCode: result.data?.code,
-        districtCaption: result.data?.caption,
-      }
-    })
-  ).catch(() => 'error' as const)
-
-  if (withResidentialArea === 'error') {
+  if (!patchParkingSpacesWithResidentialAreaResult.ok) {
     return { ok: false, err: 'get-residential-area' }
   }
 
-  const insertions = await Promise.all(
-    withResidentialArea.map(async (listing) => ({
-      listing,
-      insertionResult: await listingAdapter.createListing(listing),
-    }))
+  const insertions = await insertListings(
+    patchParkingSpacesWithResidentialAreaResult.data
   )
 
-  const aggregatedInsertions = insertions.reduce(aggregateInsertions, {
-    inserted: [],
-    failed: [],
-  })
+  const aggregatedInsertions = aggregateInsertions(insertions)
 
   return {
     ok: true,
@@ -121,28 +106,45 @@ export async function syncInternalParkingSpaces(): Promise<
   }
 }
 
+function insertListings(items: Array<CreateListingData>) {
+  return Promise.all(
+    items.map(async (listing) => ({
+      listing,
+      insertionResult: await listingAdapter.createListing(listing),
+    }))
+  )
+}
+
 function aggregateInsertions(
-  result: ServiceSuccessData['insertions'],
-  data: {
+  insertions: Array<{
     listing: CreateListingData
     insertionResult: Awaited<ReturnType<typeof listingAdapter.createListing>>
-  }
+  }>
 ) {
-  if (!data.insertionResult.ok) {
-    return {
-      ...result,
-      failed: result.failed.concat({
-        listing: data.listing,
-        err: data.insertionResult.err,
-      }),
+  return insertions.reduce<ServiceSuccessData['insertions']>(
+    (acc, curr) => {
+      if (!curr.insertionResult.ok) {
+        return {
+          ...acc,
+          failed: acc.failed.concat({
+            listing: curr.listing,
+            err: curr.insertionResult.err,
+          }),
+        }
+      } else {
+        return {
+          ...acc,
+          inserted: acc.inserted.concat(curr.insertionResult.data),
+        }
+      }
+    },
+    {
+      inserted: [],
+      failed: [],
     }
-  } else {
-    return {
-      ...result,
-      inserted: result.inserted.concat(data.insertionResult.data),
-    }
-  }
+  )
 }
+
 // TODO: Use from onecore-types once merged
 type ParseInternalParkingSpacesToInsertableListingsResult = {
   ok: Array<CreateListingData>
@@ -179,6 +181,30 @@ export function parseInternalParkingSpacesToInsertableListings(
     },
     { ok: [], invalid: [] }
   )
+}
+
+function patchParkingSpacesWithResidentialArea(
+  items: Array<CreateListingData>
+): Promise<AdapterResult<Array<CreateListingData>, 'get-residential-area'>> {
+  return Promise.all(
+    items.map(async (v) => {
+      const result = await leaseAdapter.getResidentialAreaByRentalPropertyId(
+        v.rentalObjectCode
+      )
+
+      if (!result.ok) {
+        return Promise.reject('oops')
+      }
+
+      return {
+        ...v,
+        districtCode: result.data?.code,
+        districtCaption: result.data?.caption,
+      }
+    })
+  )
+    .then((items) => ({ ok: true, data: items }) as const)
+    .catch(() => ({ ok: false, err: 'get-residential-area' }) as const)
 }
 
 export function toInternalParkingSpaceListingsData(
