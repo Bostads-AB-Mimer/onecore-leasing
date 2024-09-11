@@ -1,5 +1,10 @@
 import KoaRouter from '@koa/router'
-import { ApplicantStatus, DetailedApplicant, Listing } from 'onecore-types'
+import {
+  ApplicantStatus,
+  DetailedApplicant,
+  InternalParkingSpaceSyncSuccessResponse,
+  Listing,
+} from 'onecore-types'
 import { z } from 'zod'
 import { generateRouteMetadata, logger } from 'onecore-utilities'
 
@@ -411,21 +416,6 @@ export const routes = (router: KoaRouter) => {
       }
     }
   })
-
-  // TODO: Use from onecore-types once mim-15 is merged
-  type InternalParkingSpaceSyncSuccessResponse = {
-    invalid: Array<{
-      rentalObjectCode: string
-      errors: Array<{ path: string; code: string }>
-    }>
-    insertions: {
-      inserted: Array<{ rentalObjectCode: string; id: number }>
-      failed: Array<{
-        rentalObjectCode: string
-        err: 'unknown' | 'active-listing-exists'
-      }>
-    }
-  }
 
   router.post('/listings/sync-internal-from-xpand', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
