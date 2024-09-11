@@ -4,19 +4,6 @@ import * as factory from './../../factories'
 import { ApplicantStatus, ListingStatus } from 'onecore-types'
 import assert from 'node:assert'
 
-jest.mock('onecore-utilities', () => {
-  return {
-    logger: {
-      info: () => {
-        return
-      },
-      error: () => {
-        return
-      },
-    },
-  }
-})
-
 beforeAll(async () => {
   await migrate()
 })
