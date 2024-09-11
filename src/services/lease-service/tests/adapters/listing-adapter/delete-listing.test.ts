@@ -23,7 +23,7 @@ describe(listingAdapter.deleteListing, () => {
     const deletion = await listingAdapter.deleteListing(listing.data.id)
     const deletedListing = await listingAdapter.getListingById(listing.data.id)
 
-    expect(deletion).toMatchObject({ ok: false })
+    expect(deletion).toEqual({ ok: false, err: 'conflict' })
     expect(deletedListing).not.toBe(undefined)
   })
 
@@ -36,5 +36,23 @@ describe(listingAdapter.deleteListing, () => {
 
     expect(deletion).toMatchObject({ ok: true })
     expect(deletedListing).toBe(undefined)
+  })
+
+  it('only deletes one', async () => {
+    const listing_1 = await listingAdapter.createListing(
+      factory.listing.build()
+    )
+    const listing_2 = await listingAdapter.createListing(
+      factory.listing.build()
+    )
+    assert(listing_1.ok)
+    assert(listing_2.ok)
+
+    const deletion = await listingAdapter.deleteListing(listing_1.data.id)
+    const remainingListings =
+      await listingAdapter.getAllListingsWithApplicants()
+
+    expect(deletion).toMatchObject({ ok: true })
+    expect(remainingListings).toHaveLength(1)
   })
 })

@@ -573,5 +573,13 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
-  router.delete('(.*)/listings/:listingId', async (ctx) => {})
+  router.delete('(.*)/listings/:listingId', async (ctx) => {
+    const result = await listingAdapter.deleteListing(
+      Number(ctx.params.listingId)
+    )
+
+    if (!result.ok) {
+      ctx.status = 409
+    }
+  })
 }
