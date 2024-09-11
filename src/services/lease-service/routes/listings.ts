@@ -262,7 +262,7 @@ export const routes = (router: KoaRouter) => {
     const metadata = generateRouteMetadata(ctx)
     try {
       const listingId = ctx.params.listingId
-      const listing = await listingAdapter.getListingById(listingId)
+      const listing = await listingAdapter.getListingById(Number(listingId))
       if (listing == undefined) {
         ctx.status = 404
         ctx.body = { reason: 'Listing not found', ...metadata }
@@ -523,7 +523,7 @@ export const routes = (router: KoaRouter) => {
     const metadata = generateRouteMetadata(ctx)
     try {
       const listingId = ctx.params.listingId
-      const listing = await listingAdapter.getListingById(listingId)
+      const listing = await listingAdapter.getListingById(Number(listingId))
 
       if (!listing) {
         ctx.status = 404
@@ -572,4 +572,6 @@ export const routes = (router: KoaRouter) => {
       }
     }
   })
+
+  router.delete('(.*)/listings/:listingId', async (ctx) => {})
 }

@@ -120,7 +120,7 @@ const getListingByRentalObjectCode = async (
 }
 
 const getListingById = async (
-  listingId: string
+  listingId: number
 ): Promise<Listing | undefined> => {
   logger.info({ listingId }, 'Getting listing from leasing DB')
   const result = await db
@@ -372,6 +372,18 @@ const updateListingStatuses = async (
   return updateCount
 }
 
+const deleteListing = async (
+  listingId: number
+): Promise<AdapterResult<null, 'unknown'>> => {
+  try {
+    await db('listing').delete().where('Id', listingId)
+    return { ok: true, data: null }
+  } catch (err) {
+    logger.error(err, 'listingAdapter.deleteListing')
+    return { ok: false, err: 'unknown' }
+  }
+}
+
 export {
   createListing,
   createApplication,
@@ -385,4 +397,5 @@ export {
   updateApplicantStatus,
   getExpiredListings,
   updateListingStatuses,
+  deleteListing,
 }
