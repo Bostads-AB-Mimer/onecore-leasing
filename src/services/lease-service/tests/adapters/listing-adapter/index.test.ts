@@ -1,6 +1,6 @@
-import { db, migrate, teardown } from '../../adapters/db'
-import * as listingAdapter from '../../adapters/listing-adapter'
-import * as factory from './../factories'
+import { db, migrate, teardown } from '../../../adapters/db'
+import * as listingAdapter from '../../../adapters/listing-adapter'
+import * as factory from './../../factories'
 import { ApplicantStatus, ListingStatus } from 'onecore-types'
 import assert from 'node:assert'
 
