@@ -1,15 +1,13 @@
 import KoaRouter from '@koa/router'
-import { OfferStatus } from 'onecore-types'
+import { ApplicantStatus, ListingStatus, OfferStatus } from 'onecore-types'
 import { logger, generateRouteMetadata } from 'onecore-utilities'
+import { HttpStatusCode } from 'axios'
 import { z } from 'zod'
 
 import * as offerAdapter from './../adapters/offer-adapter'
+import * as listingAdapter from './../adapters/listing-adapter'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
-import {
-  getOfferByContactCodeAndOfferId,
-  getOffersForContact,
-} from './../adapters/offer-adapter'
-import { HttpStatusCode } from 'axios'
+import { db } from '../adapters/db'
 
 /**
  * @swagger
@@ -140,7 +138,9 @@ export const routes = (router: KoaRouter) => {
 
   router.get('/contacts/:contactCode/offers', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
-    const responseData = await getOffersForContact(ctx.params.contactCode)
+    const responseData = await offerAdapter.getOffersForContact(
+      ctx.params.contactCode
+    )
     if (!responseData.length) {
       ctx.status = HttpStatusCode.NotFound
       ctx.body = { error: 'No offers found', ...metadata }
@@ -185,7 +185,7 @@ export const routes = (router: KoaRouter) => {
 
   router.get('/offers/:offerId/applicants/:contactCode', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
-    const responseData = await getOfferByContactCodeAndOfferId(
+    const responseData = await offerAdapter.getOfferByContactCodeAndOfferId(
       ctx.params.contactCode,
       parseInt(ctx.params.offerId)
     )
@@ -198,6 +198,79 @@ export const routes = (router: KoaRouter) => {
     ctx.body = {
       content: responseData,
       ...metadata,
+    }
+  })
+
+  router.put('/offers/:offerId/close-by-accept', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+
+    try {
+      const offer = await offerAdapter.getOfferByOfferId(
+        Number(ctx.params.offerId)
+      )
+
+      if (!offer) {
+        return 'err'
+      }
+
+      await db.transaction(async (trx) => {
+        try {
+          const updateListing = await listingAdapter.updateListingStatuses(
+            [offer.listingId],
+            ListingStatus.Assigned,
+            trx
+          )
+
+          if (updateListing === 0) {
+            return 'update-listing-status'
+          }
+
+          try {
+            const updateApplicant = await listingAdapter.updateApplicantStatus(
+              offer.offeredApplicant.id,
+              ApplicantStatus.OfferAccepted,
+              trx
+            )
+
+            if (!updateApplicant) {
+              return 'update-applicant-status'
+            }
+
+            const updateOffer = await offerAdapter.updateOfferStatus(
+              OfferStatus.Accepted,
+              offer.id,
+              trx
+            )
+
+            if (!updateOffer.ok) {
+              return 'update-offer'
+            }
+            ctx.status = 200
+            ctx.body = {
+              content: 'all good',
+              ...metadata,
+            }
+          } catch (err) {
+            ctx.status = 500
+            ctx.body = {
+              content: 'update-applicant-status',
+              ...metadata,
+            }
+          }
+        } catch (err) {
+          ctx.status = 500
+          ctx.body = {
+            content: 'update-listing-status',
+            ...metadata,
+          }
+        }
+      })
+    } catch (err) {
+      ctx.status = 500
+      ctx.body = {
+        content: 'dont know',
+        ...metadata,
+      }
     }
   })
 }
