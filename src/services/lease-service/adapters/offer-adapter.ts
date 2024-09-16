@@ -3,6 +3,7 @@ import {
   Offer,
   Applicant,
   DetailedOffer,
+  OfferStatus,
 } from 'onecore-types'
 
 import { db } from './db'
@@ -10,6 +11,7 @@ import { AdapterResult, DbApplicant, DbDetailedOffer, DbOffer } from './types'
 
 import * as dbUtils from './utils'
 import { logger } from 'onecore-utilities'
+import { Knex } from 'knex'
 
 type CreateOfferParams = Omit<
   Offer,
@@ -248,6 +250,26 @@ export async function getOfferByOfferId(
     }
   } catch (error) {
     logger.error(error, 'Error getting waiting list using Xpand SOAP API')
+    return { ok: false, err: 'unknown' }
+  }
+}
+
+export async function updateOfferStatus(
+  status: OfferStatus,
+  offerId: number,
+  // TODO: What to put as type parameters to knex?
+  dbConnection: Knex<any, any> = db
+): Promise<AdapterResult<null, 'no-update' | 'unknown'>> {
+  try {
+    const query = await dbConnection('offer')
+      .update({ Status: status })
+      .where({ Id: offerId })
+
+    if (query === 0) {
+      return { ok: false, err: 'no-update' }
+    }
+    return { ok: true, data: null }
+  } catch (err) {
     return { ok: false, err: 'unknown' }
   }
 }
