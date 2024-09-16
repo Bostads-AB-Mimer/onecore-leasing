@@ -1,14 +1,11 @@
 import KoaRouter from '@koa/router'
-import { ApplicantStatus, ListingStatus, OfferStatus } from 'onecore-types'
+import { OfferStatus } from 'onecore-types'
 import { logger, generateRouteMetadata } from 'onecore-utilities'
 import { HttpStatusCode } from 'axios'
 import { z } from 'zod'
 
 import * as offerAdapter from './../adapters/offer-adapter'
-import * as listingAdapter from './../adapters/listing-adapter'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
-import { db } from '../adapters/db'
-import { closeOfferByAccept } from '../adapters/offer-transactions'
 
 /**
  * @swagger
@@ -215,7 +212,7 @@ export const routes = (router: KoaRouter) => {
       }
 
       //todo: call offer-transactions-service
-      const result = await closeOfferByAccept(offer)
+      // const result = await closeOfferByAccept(offer)
       //todo: check err codes from result
     } catch (err) {
       ctx.status = 500

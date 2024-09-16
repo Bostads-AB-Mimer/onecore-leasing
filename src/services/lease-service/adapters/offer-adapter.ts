@@ -255,8 +255,8 @@ export async function getOfferByOfferId(
 }
 
 export async function updateOfferStatus(
-  status: OfferStatus,
   offerId: number,
+  status: OfferStatus,
   // TODO: What to put as type parameters to knex?
   dbConnection: Knex<any, any> = db
 ): Promise<AdapterResult<null, 'no-update' | 'unknown'>> {
