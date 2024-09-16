@@ -178,6 +178,73 @@ export async function getOfferByContactCodeAndOfferId(
   }
 }
 
+export async function getOfferByOfferId(
+  offerId: number
+): Promise<DetailedOffer | undefined> {
+  const row = await db
+    .select(
+      'offer.Id',
+      'offer.SentAt',
+      'offer.ExpiresAt',
+      'offer.AnsweredAt',
+      'offer.Status',
+      'offer.ListingId',
+      'offer.ApplicantId',
+      'offer.CreatedAt',
+      'listing.RentalObjectCode',
+      'listing.VacantFrom',
+      'applicant.Id as ApplicantApplicantId',
+      'applicant.Name as ApplicantName',
+      'applicant.NationalRegistrationNumber as ApplicantNationalRegistrationNumber',
+      'applicant.ContactCode as ApplicantContactCode',
+      'applicant.ApplicationDate as ApplicantApplicationDate',
+      'applicant.ApplicationType as ApplicantApplicationType',
+      'applicant.Status as ApplicantStatus',
+      'applicant.ListingId as ApplicantListingId'
+    )
+    .from('offer')
+    .innerJoin('listing', 'listing.Id', 'offer.ListingId')
+    .innerJoin('applicant', 'applicant.Id', 'offer.ApplicantId')
+    .where('offer.Id', offerId)
+    .first()
+
+  if (row == undefined) {
+    logger.info(
+      { offerId },
+      'Getting offer from leasing DB complete - offer not found'
+    )
+    return undefined
+  }
+  const {
+    ApplicantApplicantId,
+    ApplicantName,
+    ApplicantNationalRegistrationNumber,
+    ApplicantApplicationDate,
+    ApplicantApplicationType,
+    ApplicantContactCode,
+    ApplicantStatus,
+    ApplicantListingId,
+    RentalObjectCode,
+    VacantFrom,
+    ...offer
+  } = row
+
+  return {
+    ...transformToDetailedOfferFromDbOffer(offer, {
+      ApplicationDate: ApplicantApplicationDate,
+      ContactCode: ApplicantContactCode,
+      Id: ApplicantApplicantId,
+      ListingId: ApplicantListingId,
+      Name: ApplicantName,
+      NationalRegistrationNumber: ApplicantNationalRegistrationNumber,
+      Status: ApplicantStatus,
+      ApplicationType: ApplicantApplicationType,
+    }),
+    rentalObjectCode: RentalObjectCode,
+    vacantFrom: VacantFrom,
+  }
+}
+
 const transformToDetailedOfferFromDbOffer = (
   o: DbDetailedOffer,
   a: DbApplicant
