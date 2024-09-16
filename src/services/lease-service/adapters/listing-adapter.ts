@@ -248,6 +248,7 @@ const updateApplicantStatus = async (
 
     return updateCount > 0
   } catch (error) {
+    console.log('Error updating applicant status')
     logger.error(error, 'Error updating applicant status')
     throw error
   }

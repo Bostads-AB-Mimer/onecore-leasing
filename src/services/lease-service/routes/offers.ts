@@ -8,6 +8,7 @@ import * as offerAdapter from './../adapters/offer-adapter'
 import * as listingAdapter from './../adapters/listing-adapter'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
 import { db } from '../adapters/db'
+import { closeOfferByAccept } from '../adapters/offer-transactions'
 
 /**
  * @swagger
@@ -213,58 +214,9 @@ export const routes = (router: KoaRouter) => {
         return 'err'
       }
 
-      await db.transaction(async (trx) => {
-        try {
-          const updateListing = await listingAdapter.updateListingStatuses(
-            [offer.listingId],
-            ListingStatus.Assigned,
-            trx
-          )
-
-          if (updateListing === 0) {
-            return 'update-listing-status'
-          }
-
-          try {
-            const updateApplicant = await listingAdapter.updateApplicantStatus(
-              offer.offeredApplicant.id,
-              ApplicantStatus.OfferAccepted,
-              trx
-            )
-
-            if (!updateApplicant) {
-              return 'update-applicant-status'
-            }
-
-            const updateOffer = await offerAdapter.updateOfferStatus(
-              OfferStatus.Accepted,
-              offer.id,
-              trx
-            )
-
-            if (!updateOffer.ok) {
-              return 'update-offer'
-            }
-            ctx.status = 200
-            ctx.body = {
-              content: 'all good',
-              ...metadata,
-            }
-          } catch (err) {
-            ctx.status = 500
-            ctx.body = {
-              content: 'update-applicant-status',
-              ...metadata,
-            }
-          }
-        } catch (err) {
-          ctx.status = 500
-          ctx.body = {
-            content: 'update-listing-status',
-            ...metadata,
-          }
-        }
-      })
+      //todo: call offer-transactions-service
+      const result = await closeOfferByAccept(offer)
+      //todo: check err codes from result
     } catch (err) {
       ctx.status = 500
       ctx.body = {
