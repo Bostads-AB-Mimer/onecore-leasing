@@ -97,6 +97,11 @@ export const routes = (router: KoaRouter) => {
       const offer = await offerAdapter.getOfferByOfferId(
         parseInt(ctx.params.offerId)
       )
+      if (!offer) {
+        ctx.status = HttpStatusCode.NotFound
+        ctx.body = { error: 'Offer not found', ...metadata }
+        return
+      }
 
       ctx.status = 200
       ctx.body = { content: offer, ...metadata }
