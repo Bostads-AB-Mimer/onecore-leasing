@@ -172,7 +172,7 @@ describe('offers', () => {
     it('responds with 404 if offer not found', async () => {
       const getOfferSpy = jest
         .spyOn(offerAdapter, 'getOfferByOfferId')
-        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce({ ok: false, err: 'not-found' })
       const res = await request(app.callback()).put(
         '/offers/NON_EXISTING_OFFER/close-by-accept'
       )
@@ -185,7 +185,10 @@ describe('offers', () => {
     it('responds with 500 if error when updating', async () => {
       const getOfferSpy = jest
         .spyOn(offerAdapter, 'getOfferByOfferId')
-        .mockResolvedValueOnce(factory.detailedOffer.build())
+        .mockResolvedValueOnce({
+          ok: true,
+          data: factory.detailedOffer.build(),
+        })
 
       const acceptOfferSpy = jest
         .spyOn(offerService, 'acceptOffer')
@@ -201,7 +204,10 @@ describe('offers', () => {
     it('responds with 200 if successful', async () => {
       const getOfferSpy = jest
         .spyOn(offerAdapter, 'getOfferByOfferId')
-        .mockResolvedValueOnce(factory.detailedOffer.build())
+        .mockResolvedValueOnce({
+          ok: true,
+          data: factory.detailedOffer.build(),
+        })
 
       const acceptOfferSpy = jest
         .spyOn(offerService, 'acceptOffer')

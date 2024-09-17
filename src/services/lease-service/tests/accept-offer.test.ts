@@ -165,10 +165,11 @@ describe('acceptOffer', () => {
     const updatedListing = await listingAdapter.getListingById(listing.data.id)
     const updatedApplicant = await listingAdapter.getApplicantById(applicant.id)
     const updatedOffer = await offerAdapter.getOfferByOfferId(offer.id)
+    assert(updatedOffer.ok)
 
     expect(updatedListing?.status).toBe(ListingStatus.Assigned)
     expect(updatedApplicant?.status).toBe(ApplicantStatus.OfferAccepted)
     // TODO: Offer status is incorrectly a string because of db column type!!
-    expect(Number(updatedOffer?.status)).toBe(OfferStatus.Accepted)
+    expect(Number(updatedOffer.data.status)).toBe(OfferStatus.Accepted)
   })
 })
