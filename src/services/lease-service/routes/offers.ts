@@ -247,16 +247,19 @@ export const routes = (router: KoaRouter) => {
           error: 'Internal server error',
           ...metadata,
         }
+        return
       }
 
       ctx.status = 200
       ctx.body = { ...metadata }
+      return
     } catch (err) {
       ctx.status = 500
       ctx.body = {
         error: 'Internal server error',
         ...metadata,
       }
+      return
     }
   })
 }
