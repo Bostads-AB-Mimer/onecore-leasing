@@ -224,36 +224,29 @@ export const routes = (router: KoaRouter) => {
   router.put('/offers/:offerId/close-by-accept', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
 
-    try {
-      const offer = await offerAdapter.getOfferByOfferId(
-        Number(ctx.params.offerId)
-      )
+    const offer = await offerAdapter.getOfferByOfferId(
+      Number(ctx.params.offerId)
+    )
 
-      if (!offer) {
+    if (!offer.ok) {
+      if (offer.err === 'not-found') {
         ctx.status = 404
         ctx.body = { reason: 'Offer not found', ...metadata }
         return
-      }
-
-      const result = await offerService.acceptOffer({
-        listingId: offer.listingId,
-        applicantId: offer.offeredApplicant.id,
-        offerId: offer.id,
-      })
-
-      if (!result.ok) {
+      } else {
         ctx.status = 500
-        ctx.body = {
-          error: 'Internal server error',
-          ...metadata,
-        }
+        ctx.body = { error: 'Internal server error', ...metadata }
         return
       }
+    }
 
-      ctx.status = 200
-      ctx.body = { ...metadata }
-      return
-    } catch (err) {
+    const result = await offerService.acceptOffer({
+      listingId: offer.data.listingId,
+      applicantId: offer.data.offeredApplicant.id,
+      offerId: offer.data.id,
+    })
+
+    if (!result.ok) {
       ctx.status = 500
       ctx.body = {
         error: 'Internal server error',
@@ -261,5 +254,9 @@ export const routes = (router: KoaRouter) => {
       }
       return
     }
+
+    ctx.status = 200
+    ctx.body = { ...metadata }
+    return
   })
 }

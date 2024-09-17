@@ -5,13 +5,13 @@ import {
   DetailedOffer,
   OfferStatus,
 } from 'onecore-types'
+import { logger } from 'onecore-utilities'
+import { Knex } from 'knex'
 
 import { db } from './db'
 import { AdapterResult, DbApplicant, DbDetailedOffer, DbOffer } from './types'
 
 import * as dbUtils from './utils'
-import { logger } from 'onecore-utilities'
-import { Knex } from 'knex'
 
 type CreateOfferParams = Omit<
   Offer,
@@ -260,7 +260,7 @@ export async function updateOfferStatus(
     status: OfferStatus
   },
   // TODO: What to put as type parameters to knex?
-  dbConnection: Knex<any, any> = db
+  dbConnection: Knex = db
 ): Promise<AdapterResult<null, 'no-update' | 'unknown'>> {
   try {
     // TODO: OfferStatus is stored as a string in the db. I think it should be
