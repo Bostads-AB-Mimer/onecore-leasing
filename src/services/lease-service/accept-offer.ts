@@ -25,7 +25,6 @@ export const acceptOffer = async (params: {
 
     return { ok: true, data: null }
   } catch (err) {
-    console.log(err)
     if (err === 'update-listing') {
       return { ok: false, err }
     }
