@@ -184,7 +184,6 @@ const assignPriorityToApplicantBasedOnRentalRules = (
   listing: Listing,
   applicant: DetailedApplicant
 ): DetailedApplicant => {
-  console.log({ applicant: JSON.stringify(applicant, null, 2), listing })
   if (applicant.listingId !== listing.id) {
     throw new Error(
       `applicant ${applicant.contactCode} does not belong to listing ${listing.id}`
