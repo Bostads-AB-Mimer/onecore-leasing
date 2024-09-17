@@ -25,6 +25,7 @@ export const acceptOffer = async (params: {
 
     return { ok: true, data: null }
   } catch (err) {
+    console.log(err)
     if (err === 'update-listing') {
       return { ok: false, err }
     }
@@ -74,19 +75,15 @@ const updateApplicant = async (applicantId: number, trx: Knex) => {
 }
 
 const updateOffer = async (offerId: number, trx: Knex) => {
-  try {
-    const updateOffer = await offerAdapter.updateOfferStatus(
-      {
-        offerId,
-        status: OfferStatus.Accepted,
-      },
-      trx
-    )
+  const updateOffer = await offerAdapter.updateOfferStatus(
+    {
+      offerId,
+      status: OfferStatus.Accepted,
+    },
+    trx
+  )
 
-    if (!updateOffer.ok) {
-      throw 'update-offer'
-    }
-  } catch (err) {
+  if (!updateOffer.ok) {
     throw 'update-offer'
   }
 }

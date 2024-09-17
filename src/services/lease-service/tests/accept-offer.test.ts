@@ -9,8 +9,7 @@ import * as service from '../accept-offer'
 
 beforeAll(migrate)
 
-afterEach(jest.restoreAllMocks)
-afterEach(async () => {
+beforeEach(async () => {
   await db('offer').del()
   await db('applicant').del()
   await db('listing').del()
@@ -18,20 +17,16 @@ afterEach(async () => {
 
 afterAll(teardown)
 
-const updateListingStatusSpy = jest.spyOn(
-  listingAdapter,
-  'updateListingStatuses'
-)
-
-const updateApplicantStatusSpy = jest.spyOn(
-  listingAdapter,
-  'updateApplicantStatus'
-)
-
-const updateOfferSpy = jest.spyOn(offerAdapter, 'updateOfferStatus')
+afterEach(jest.restoreAllMocks)
 
 describe('acceptOffer', () => {
   it('returns gracefully if listing update fails', async () => {
+    const updateListingStatusSpy = jest.spyOn(
+      listingAdapter,
+      'updateListingStatuses'
+    )
+
+    updateListingStatusSpy.mockRejectedValueOnce({ err: 'error' })
     const listing = await listingAdapter.createListing(
       factory.listing.build({ status: ListingStatus.Expired })
     )
@@ -48,7 +43,6 @@ describe('acceptOffer', () => {
       expiresAt: new Date(),
     })
 
-    updateListingStatusSpy.mockRejectedValueOnce({ err: 'error' })
     const res = await service.acceptOffer({
       applicantId: applicant.id,
       listingId: listing.data.id,
@@ -60,6 +54,11 @@ describe('acceptOffer', () => {
   })
 
   it('rollbacks listing status change if update applicant fails', async () => {
+    const updateApplicantStatusSpy = jest.spyOn(
+      listingAdapter,
+      'updateApplicantStatus'
+    )
+
     const listing = await listingAdapter.createListing(
       factory.listing.build({ status: ListingStatus.Expired })
     )
@@ -91,6 +90,7 @@ describe('acceptOffer', () => {
   })
 
   it('rollbacks listing status change and applicant status change if update offer fails', async () => {
+    const updateOfferSpy = jest.spyOn(offerAdapter, 'updateOfferStatus')
     const listing = await listingAdapter.createListing(
       factory.listing.build({ status: ListingStatus.Expired })
     )
@@ -107,7 +107,7 @@ describe('acceptOffer', () => {
       expiresAt: new Date(),
     })
 
-    updateOfferSpy.mockRejectedValueOnce('foo')
+    updateOfferSpy.mockResolvedValueOnce({ ok: false, err: 'unknown' })
     const res = await service.acceptOffer({
       applicantId: applicant.id,
       listingId: listing.data.id,
@@ -124,6 +124,17 @@ describe('acceptOffer', () => {
   })
 
   it('updates listing, applicant and offer', async () => {
+    const updateListingStatusSpy = jest.spyOn(
+      listingAdapter,
+      'updateListingStatuses'
+    )
+
+    const updateApplicantStatusSpy = jest.spyOn(
+      listingAdapter,
+      'updateApplicantStatus'
+    )
+
+    const updateOfferSpy = jest.spyOn(offerAdapter, 'updateOfferStatus')
     const listing = await listingAdapter.createListing(
       factory.listing.build({ status: ListingStatus.Expired })
     )
