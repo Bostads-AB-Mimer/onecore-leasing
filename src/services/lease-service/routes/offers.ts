@@ -6,6 +6,7 @@ import { z } from 'zod'
 
 import * as offerAdapter from './../adapters/offer-adapter'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
+import * as offerService from '../accept-offer'
 
 /**
  * @swagger
@@ -208,16 +209,31 @@ export const routes = (router: KoaRouter) => {
       )
 
       if (!offer) {
-        return 'err'
+        ctx.status = 404
+        ctx.body = { reason: 'Offer not found', ...metadata }
+        return
       }
 
-      //todo: call offer-transactions-service
-      // const result = await closeOfferByAccept(offer)
-      //todo: check err codes from result
+      const result = await offerService.acceptOffer({
+        listingId: offer.listingId,
+        applicantId: offer.offeredApplicant.id,
+        offerId: offer.id,
+      })
+
+      if (!result.ok) {
+        ctx.status = 500
+        ctx.body = {
+          error: 'Internal server error',
+          ...metadata,
+        }
+      }
+
+      ctx.status = 200
+      ctx.body = { ...metadata }
     } catch (err) {
       ctx.status = 500
       ctx.body = {
-        content: 'dont know',
+        error: 'Internal server error',
         ...metadata,
       }
     }
