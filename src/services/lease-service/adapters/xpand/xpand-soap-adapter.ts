@@ -206,6 +206,57 @@ const addApplicantToToWaitingList = async (
   }
 }
 
+const removeApplicantFromWaitingList = async (
+  nationalRegistrationNumber: string,
+  contactCode: string,
+  waitingListTypeCaption: string
+): Promise<AdapterResult<undefined, 'not-in-waiting-list' | 'unknown'>> => {
+  const headers = getHeaders()
+
+  const xml = `
+   <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ser="http://incit.xpand.eu/service/" xmlns:inc="http://incit.xpand.eu/">
+   <soap:Header xmlns:wsa='http://www.w3.org/2005/08/addressing'><wsa:Action>http://incit.xpand.eu/service/RemoveApplicantWaitingListTime/RemoveApplicantWaitingListTime</wsa:Action><wsa:To>${Config.xpandSoap.url}</wsa:To></soap:Header>
+     <soap:Body>
+        <ser:RemoveApplicantWaitingListTimeRequest>
+          <inc:CivicNumber>${nationalRegistrationNumber}</inc:CivicNumber>
+          <inc:Code>${contactCode}</inc:Code>
+          <inc:CompanyCode>001</inc:CompanyCode>
+          <inc:MessageCulture>${Config.xpandSoap.messageCulture}</inc:MessageCulture>
+          <inc:WaitingListTypeCaption>${waitingListTypeCaption}</inc:WaitingListTypeCaption> 
+        </ser:RemoveApplicantWaitingListTimeRequest>
+    </soap:Body>
+</soap:Envelope>`
+
+  const { response } = await soapRequest({
+    url: Config.xpandSoap.url,
+    headers: headers,
+    xml: xml,
+  })
+  const { body } = response
+
+  const options = {
+    ignoreAttributes: false,
+    ignoreNameSpace: false,
+    removeNSPrefix: true,
+  }
+
+  const parser = new XMLParser(options)
+  const parsedResponse = parser.parse(body)['Envelope']['Body']['ResultBase']
+
+  try {
+    if (parsedResponse.Success) return { ok: true, data: undefined }
+    else if (parsedResponse['Message'] == 'Kötid saknas')
+      return { ok: false, err: 'not-in-waiting-list' }
+    else return { ok: false, err: 'unknown' }
+  } catch (error) {
+    logger.error(
+      error,
+      'Error adding applicant to waitinglist using Xpand SOAP API'
+    )
+    throw error
+  }
+}
+
 async function getPublishedParkingSpaces(): Promise<
   AdapterResult<any[], 'not-found'>
 > {
@@ -289,6 +340,7 @@ export {
   createLease,
   getWaitingList,
   addApplicantToToWaitingList,
+  removeApplicantFromWaitingList,
   healthCheck,
   getPublishedInternalParkingSpaces,
 }
