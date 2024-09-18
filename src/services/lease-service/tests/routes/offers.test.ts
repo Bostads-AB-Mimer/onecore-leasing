@@ -1,19 +1,3 @@
-import { DetailedOfferFactory } from '../factories/offer'
-
-jest.mock('onecore-utilities', () => {
-  return {
-    logger: {
-      info: () => {
-        return
-      },
-      error: () => {
-        return
-      },
-    },
-    generateRouteMetadata: jest.fn(() => ({})),
-  }
-})
-
 import request from 'supertest'
 import Koa from 'koa'
 import KoaRouter from '@koa/router'
@@ -23,7 +7,6 @@ import { OfferStatus } from 'onecore-types'
 import { routes } from '../../routes/offers'
 import * as offerAdapter from '../../adapters/offer-adapter'
 import * as factory from '../factories'
-import { detailedOffer } from '../factories'
 
 const app = new Koa()
 const router = new KoaRouter()
