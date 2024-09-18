@@ -547,12 +547,7 @@ export const routes = (router: KoaRouter) => {
             throw new Error('Err when getting detailed applicant information')
 
           applicants.push({
-            id: applicant.id,
-            name: applicant.name,
-            applicationDate: applicant.applicationDate,
-            status: applicant.status,
-            listingId: applicant.listingId,
-            applicationType: applicant.applicationType,
+            ...applicant,
             contactCode: tenant.data.contactCode,
             nationalRegistrationNumber: tenant.data.nationalRegistrationNumber,
             queuePoints: tenant.data.queuePoints,
