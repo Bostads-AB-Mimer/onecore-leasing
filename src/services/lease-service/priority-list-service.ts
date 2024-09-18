@@ -4,7 +4,6 @@
  * Sorting applicants based on rental rules
  */
 
-const ok = 'ok'
 import { logger } from 'onecore-utilities'
 import {
   DetailedApplicant,
