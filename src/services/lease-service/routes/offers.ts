@@ -1,15 +1,15 @@
-import KoaRouter from '@koa/router'
-import { OfferStatus } from 'onecore-types'
-import { logger, generateRouteMetadata } from 'onecore-utilities'
-import { z } from 'zod'
+import KoaRouter from "@koa/router";
+import { OfferStatus } from "onecore-types";
+import { logger, generateRouteMetadata } from "onecore-utilities";
+import { z } from "zod";
 
-import * as offerAdapter from './../adapters/offer-adapter'
-import { parseRequestBody } from '../../../middlewares/parse-request-body'
+import * as offerAdapter from "./../adapters/offer-adapter";
+import { parseRequestBody } from "../../../middlewares/parse-request-body";
 import {
   getOfferByContactCodeAndOfferId,
   getOffersForContact,
-} from './../adapters/offer-adapter'
-import { HttpStatusCode } from 'axios'
+} from "./../adapters/offer-adapter";
+import { HttpStatusCode } from "axios";
 
 /**
  * @swagger
@@ -24,7 +24,7 @@ export const routes = (router: KoaRouter) => {
     selectedApplicants: z.any().array(),
     listingId: z.coerce.number(),
     applicantId: z.number(),
-  })
+  });
 
   /**
    * @swagger
@@ -74,43 +74,43 @@ export const routes = (router: KoaRouter) => {
    *         description: Internal server error
    */
   router.post(
-    '(.*)/offer',
+    "(.*)/offer",
     parseRequestBody(createOfferRequestParams),
     async (ctx) => {
-      const metadata = generateRouteMetadata(ctx)
+      const metadata = generateRouteMetadata(ctx);
       try {
-        const offer = await offerAdapter.create(ctx.request.body)
+        const offer = await offerAdapter.create(ctx.request.body);
 
-        ctx.status = 201
-        ctx.body = { content: offer, ...metadata }
+        ctx.status = 201;
+        ctx.body = { content: offer, ...metadata };
       } catch (err) {
-        logger.error(err, 'Error creating offer: ')
-        ctx.status = 500
-        ctx.body = { error: 'Error creating offer', ...metadata }
+        logger.error(err, "Error creating offer: ");
+        ctx.status = 500;
+        ctx.body = { error: "Error creating offer", ...metadata };
       }
     }
-  )
+  );
 
-  router.get('(.*)/offers/:offerId', async (ctx) => {
-    const metadata = generateRouteMetadata(ctx)
+  router.get("(.*)/offers/:offerId", async (ctx) => {
+    const metadata = generateRouteMetadata(ctx);
     try {
       const res = await offerAdapter.getOfferByOfferId(
         parseInt(ctx.params.offerId)
-      )
+      );
       if (!res.ok) {
-        ctx.status = HttpStatusCode.NotFound
-        ctx.body = { error: 'Offer not found', ...metadata }
-        return
+        ctx.status = HttpStatusCode.NotFound;
+        ctx.body = { error: "Offer not found", ...metadata };
+        return;
       }
 
-      ctx.status = 200
-      ctx.body = { content: res.data, ...metadata }
+      ctx.status = 200;
+      ctx.body = { content: res.data, ...metadata };
     } catch (err) {
-      logger.error(err, 'Error getting offer: ')
-      ctx.status = 500
-      ctx.body = { error: 'Error getting offer', ...metadata }
+      logger.error(err, "Error getting offer: ");
+      ctx.status = 500;
+      ctx.body = { error: "Error getting offer", ...metadata };
     }
-  })
+  });
 
   //todo: rewrite url to offers/applicant/:contactCode
   /**
@@ -138,19 +138,19 @@ export const routes = (router: KoaRouter) => {
    *         description: No offers found for the specified contact code.
    */
 
-  router.get('/contacts/:contactCode/offers', async (ctx) => {
-    const metadata = generateRouteMetadata(ctx)
-    const responseData = await getOffersForContact(ctx.params.contactCode)
+  router.get("/contacts/:contactCode/offers", async (ctx) => {
+    const metadata = generateRouteMetadata(ctx);
+    const responseData = await getOffersForContact(ctx.params.contactCode);
     if (!responseData.length) {
-      ctx.status = HttpStatusCode.NotFound
-      ctx.body = { error: 'No offers found', ...metadata }
-      return
+      ctx.status = HttpStatusCode.NotFound;
+      ctx.body = { error: "No offers found", ...metadata };
+      return;
     }
     ctx.body = {
       content: responseData,
       ...metadata,
-    }
-  })
+    };
+  });
 
   /**
    * @swagger
@@ -183,21 +183,21 @@ export const routes = (router: KoaRouter) => {
    *         description: Offer not found for the specified contact code and offer ID.
    */
 
-  router.get('/offers/:offerId/applicants/:contactCode', async (ctx) => {
-    const metadata = generateRouteMetadata(ctx)
+  router.get("/offers/:offerId/applicants/:contactCode", async (ctx) => {
+    const metadata = generateRouteMetadata(ctx);
     const responseData = await getOfferByContactCodeAndOfferId(
       ctx.params.contactCode,
       parseInt(ctx.params.offerId)
-    )
+    );
 
     if (!responseData) {
-      ctx.status = HttpStatusCode.NotFound
-      ctx.body = { error: 'Offer not found', ...metadata }
-      return
+      ctx.status = HttpStatusCode.NotFound;
+      ctx.body = { error: "Offer not found", ...metadata };
+      return;
     }
     ctx.body = {
       content: responseData,
       ...metadata,
-    }
-  })
-}
+    };
+  });
+};

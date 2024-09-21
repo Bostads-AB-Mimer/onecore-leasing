@@ -29,9 +29,7 @@ const createLease = async (
         })}</inc:ContractFromDate>
         <!--Optional:<inc:ContractToDate></inc:ContractToDate> Måste ta bort den helt-->
         <!--Optional:-->
-        <inc:MessageCulture>${
-          Config.xpandSoap.messageCulture
-        }</inc:MessageCulture>
+        <inc:MessageCulture>${Config.xpandSoap.messageCulture}</inc:MessageCulture>
         <!--Optional:-->
         <inc:MovingFromId/>
         <!--Optional:-->
