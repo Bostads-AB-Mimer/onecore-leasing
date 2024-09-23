@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 import * as offerAdapter from './../adapters/offer-adapter'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
-import * as offerService from '../accept-offer'
+import * as offerService from '../offer-service'
 
 /**
  * @swagger

@@ -5,7 +5,7 @@ import * as factory from './factories'
 import * as listingAdapter from '../adapters/listing-adapter'
 import * as offerAdapter from '../adapters/offer-adapter'
 import { db, migrate, teardown } from '../adapters/db'
-import * as service from '../accept-offer'
+import * as service from '../offer-service'
 
 beforeAll(migrate)
 

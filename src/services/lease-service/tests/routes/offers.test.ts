@@ -7,7 +7,7 @@ import { OfferStatus } from 'onecore-types'
 import { routes } from '../../routes/offers'
 import * as offerAdapter from '../../adapters/offer-adapter'
 import * as factory from '../factories'
-import * as offerService from '../../accept-offer'
+import * as offerService from '../../offer-service'
 
 const app = new Koa()
 const router = new KoaRouter()
