@@ -26,7 +26,7 @@ describe('acceptOffer', () => {
       'updateListingStatuses'
     )
 
-    updateListingStatusSpy.mockRejectedValueOnce({ err: 'error' })
+    updateListingStatusSpy.mockResolvedValueOnce({ ok: false, err: 'unknown' })
     const listing = await listingAdapter.createListing(
       factory.listing.build({ status: ListingStatus.Expired })
     )
@@ -75,7 +75,10 @@ describe('acceptOffer', () => {
       expiresAt: new Date(),
     })
 
-    updateApplicantStatusSpy.mockRejectedValueOnce({ err: 'error' })
+    updateApplicantStatusSpy.mockResolvedValueOnce({
+      ok: false,
+      err: 'unknown',
+    })
     const res = await service.acceptOffer({
       applicantId: applicant.id,
       listingId: listing.data.id,
@@ -178,7 +181,7 @@ describe('denyOffer', () => {
   it('returns gracefully if offer update fails', async () => {
     const updateOfferStatusSpy = jest.spyOn(offerAdapter, 'updateOfferStatus')
 
-    updateOfferStatusSpy.mockRejectedValueOnce({ err: 'error' })
+    updateOfferStatusSpy.mockResolvedValueOnce({ ok: false, err: 'unknown' })
 
     const listing = await listingAdapter.createListing(
       factory.listing.build({ status: ListingStatus.Expired })
@@ -224,7 +227,7 @@ describe('denyOffer', () => {
       expiresAt: new Date(),
     })
 
-    updateOfferStatusSpy.mockRejectedValueOnce({ err: 'error' })
+    updateOfferStatusSpy.mockResolvedValueOnce({ ok: false, err: 'unknown' })
     const res = await service.denyOffer({
       applicantId: applicant.id,
       offerId: offer.id,
@@ -270,7 +273,7 @@ describe('denyOffer', () => {
     expect(updateApplicantStatusSpy).toHaveBeenCalled()
     expect(updateOfferSpy).toHaveBeenCalled()
     expect(res).toEqual({ ok: true, data: null })
-    
+
     const updatedApplicant = await listingAdapter.getApplicantById(applicant.id)
     const updatedOffer = await offerAdapter.getOfferByOfferId(offer.id)
     assert(updatedOffer.ok)

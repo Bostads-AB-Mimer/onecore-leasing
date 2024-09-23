@@ -76,17 +76,13 @@ export const denyOffer = async (params: {
 }
 
 const updateListing = async (listingId: number, trx: Knex) => {
-  try {
-    const updateListing = await listingAdapter.updateListingStatuses(
-      [listingId],
-      ListingStatus.Assigned,
-      trx
-    )
+  const updateListing = await listingAdapter.updateListingStatuses(
+    [listingId],
+    ListingStatus.Assigned,
+    trx
+  )
 
-    if (updateListing === 0) {
-      throw 'update-listing'
-    }
-  } catch (err) {
+  if (!updateListing.ok) {
     throw 'update-listing'
   }
 }
@@ -96,17 +92,13 @@ const updateApplicant = async (
   applicantStatus: ApplicantStatus,
   trx: Knex
 ) => {
-  try {
-    const updateApplicant = await listingAdapter.updateApplicantStatus(
-      applicantId,
-      applicantStatus,
-      trx
-    )
+  const updateApplicant = await listingAdapter.updateApplicantStatus(
+    applicantId,
+    applicantStatus,
+    trx
+  )
 
-    if (!updateApplicant) {
-      throw 'update-applicant'
-    }
-  } catch (err) {
+  if (!updateApplicant.ok) {
     throw 'update-applicant'
   }
 }
@@ -116,18 +108,14 @@ const updateOffer = async (
   offerStatus: OfferStatus,
   trx: Knex
 ) => {
-  try {
-    const updateOffer = await offerAdapter.updateOfferStatus(
-      {
-        offerId,
-        status: offerStatus,
-      },
-      trx
-    )
-    if (!updateOffer.ok) {
-      throw 'update-offer'
-    }
-  } catch (err) {
+  const updateOffer = await offerAdapter.updateOfferStatus(
+    {
+      offerId,
+      status: offerStatus,
+    },
+    trx
+  )
+  if (!updateOffer.ok) {
     throw 'update-offer'
   }
 }
