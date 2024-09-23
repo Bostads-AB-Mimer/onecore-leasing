@@ -233,12 +233,12 @@ const updateApplicantStatus = async (
   dbConnection: Knex<any, unknown[]> = db
 ): Promise<AdapterResult<null, 'no-update' | 'unknown'>> => {
   try {
-    const updateCount = await dbConnection('applicant')
+    const query = await dbConnection('applicant')
       .where('Id', applicantId)
       .update({
         Status: status,
       })
-    if (updateCount === 0) {
+    if (!query) {
       return { ok: false, err: 'no-update' }
     }
 
@@ -366,11 +366,11 @@ const updateListingStatuses = async (
   dbConnection: Knex<any, unknown[]> = db
 ): Promise<AdapterResult<null, 'no-update' | 'unknown'>> => {
   try {
-    const updateCount = await dbConnection('listing')
+    const query = await dbConnection('listing')
       .whereIn('Id', listingIds)
       .update({ Status: status })
 
-    if (updateCount === 0) {
+    if (!query) {
       return { ok: false, err: 'no-update' }
     }
     return { ok: true, data: null }
