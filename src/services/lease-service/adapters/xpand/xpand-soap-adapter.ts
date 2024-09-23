@@ -170,23 +170,23 @@ const addApplicantToToWaitingList = async (
     </soap:Body>
 </soap:Envelope>`
 
-  const { response } = await soapRequest({
-    url: Config.xpandSoap.url,
-    headers: headers,
-    xml: xml,
-  })
-  const { body } = response
-
-  const options = {
-    ignoreAttributes: false,
-    ignoreNameSpace: false,
-    removeNSPrefix: true,
-  }
-
-  const parser = new XMLParser(options)
-  const parsedResponse = parser.parse(body)['Envelope']['Body']['ResultBase']
-
   try {
+    const { response } = await soapRequest({
+      url: Config.xpandSoap.url,
+      headers: headers,
+      xml: xml,
+    })
+    const { body } = response
+
+    const options = {
+      ignoreAttributes: false,
+      ignoreNameSpace: false,
+      removeNSPrefix: true,
+    }
+
+    const parser = new XMLParser(options)
+    const parsedResponse = parser.parse(body)['Envelope']['Body']['ResultBase']
+
     if (parsedResponse.Success) {
       return
     } else if (parsedResponse['Message'] == 'Kötyp finns redan') {
@@ -227,23 +227,23 @@ const removeApplicantFromWaitingList = async (
     </soap:Body>
 </soap:Envelope>`
 
-  const { response } = await soapRequest({
-    url: Config.xpandSoap.url,
-    headers: headers,
-    xml: xml,
-  })
-  const { body } = response
-
-  const options = {
-    ignoreAttributes: false,
-    ignoreNameSpace: false,
-    removeNSPrefix: true,
-  }
-
-  const parser = new XMLParser(options)
-  const parsedResponse = parser.parse(body)['Envelope']['Body']['ResultBase']
-
   try {
+    const { response } = await soapRequest({
+      url: Config.xpandSoap.url,
+      headers: headers,
+      xml: xml,
+    })
+    const { body } = response
+
+    const options = {
+      ignoreAttributes: false,
+      ignoreNameSpace: false,
+      removeNSPrefix: true,
+    }
+
+    const parser = new XMLParser(options)
+    const parsedResponse = parser.parse(body)['Envelope']['Body']['ResultBase']
+
     if (parsedResponse.Success) return { ok: true, data: undefined }
     else if (parsedResponse['Message'] == 'Kötid saknas')
       return { ok: false, err: 'not-in-waiting-list' }
@@ -258,7 +258,7 @@ const removeApplicantFromWaitingList = async (
 }
 
 async function getPublishedParkingSpaces(): Promise<
-  AdapterResult<any[], 'not-found'>
+  AdapterResult<any[], 'not-found' | 'unknown'>
 > {
   const headers = getHeaders()
 
@@ -272,39 +272,46 @@ async function getPublishedParkingSpaces(): Promise<
       </ser:GetPublishedRentalObjectsRequest08352>
    </soap:Body>
 </soap:Envelope>`
+  try {
+    const { response } = await soapRequest({
+      url: Config.xpandSoap.url,
+      headers: headers,
+      xml: xml,
+    })
+    const { body } = response
 
-  const { response } = await soapRequest({
-    url: Config.xpandSoap.url,
-    headers: headers,
-    xml: xml,
-  })
-  const { body } = response
+    const options = {
+      ignoreAttributes: false,
+      ignoreNameSpace: false,
+      removeNSPrefix: true,
+    }
 
-  const options = {
-    ignoreAttributes: false,
-    ignoreNameSpace: false,
-    removeNSPrefix: true,
-  }
+    const parser = new XMLParser(options)
 
-  const parser = new XMLParser(options)
+    const parsedResponse =
+      parser.parse(body)['Envelope']['Body']['PublishedRentalObjectResult08352']
 
-  const parsedResponse =
-    parser.parse(body)['Envelope']['Body']['PublishedRentalObjectResult08352']
+    if (!parsedResponse['PublishedRentalObjects08352']) {
+      return { ok: false, err: 'not-found' }
+    }
 
-  if (!parsedResponse['PublishedRentalObjects08352']) {
-    return { ok: false, err: 'not-found' }
-  }
-
-  return {
-    ok: true,
-    data: parsedResponse['PublishedRentalObjects08352'][
-      'PublishedRentalObjectDataContract08352'
-    ],
+    return {
+      ok: true,
+      data: parsedResponse['PublishedRentalObjects08352'][
+        'PublishedRentalObjectDataContract08352'
+      ],
+    }
+  } catch (err) {
+    logger.error(
+      err,
+      'Error getting published parking spaces using Xpand SOAP API'
+    )
+    return { ok: false, err: 'unknown' }
   }
 }
 
 async function getPublishedInternalParkingSpaces(): Promise<
-  AdapterResult<any[], 'not-found'>
+  AdapterResult<any[], 'not-found' | 'unknown'>
 > {
   const result = await getPublishedParkingSpaces()
   if (!result.ok) {
