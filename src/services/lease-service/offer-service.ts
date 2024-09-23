@@ -19,8 +19,12 @@ export const acceptOffer = async (params: {
   try {
     await db.transaction(async (trx) => {
       await updateListing(params.listingId, trx)
-      await updateApplicant(params.applicantId, trx)
-      await updateOffer(params.offerId, trx)
+      await updateApplicant(
+        params.applicantId,
+        ApplicantStatus.OfferAccepted,
+        trx
+      )
+      await updateOffer(params.offerId, OfferStatus.Accepted, trx)
     })
 
     return { ok: true, data: null }
@@ -57,11 +61,15 @@ const updateListing = async (listingId: number, trx: Knex) => {
   }
 }
 
-const updateApplicant = async (applicantId: number, trx: Knex) => {
+const updateApplicant = async (
+  applicantId: number,
+  applicantStatus: ApplicantStatus,
+  trx: Knex
+) => {
   try {
     const updateApplicant = await listingAdapter.updateApplicantStatus(
       applicantId,
-      ApplicantStatus.OfferAccepted,
+      applicantStatus,
       trx
     )
 
@@ -73,11 +81,15 @@ const updateApplicant = async (applicantId: number, trx: Knex) => {
   }
 }
 
-const updateOffer = async (offerId: number, trx: Knex) => {
+const updateOffer = async (
+  offerId: number,
+  offerStatus: OfferStatus,
+  trx: Knex
+) => {
   const updateOffer = await offerAdapter.updateOfferStatus(
     {
       offerId,
-      status: OfferStatus.Accepted,
+      status: offerStatus,
     },
     trx
   )
