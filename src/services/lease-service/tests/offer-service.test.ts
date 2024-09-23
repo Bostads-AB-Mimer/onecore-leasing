@@ -262,24 +262,21 @@ describe('denyOffer', () => {
       expiresAt: new Date(),
     })
 
-    const res = await service.acceptOffer({
+    const res = await service.denyOffer({
       applicantId: applicant.id,
-      listingId: listing.data.id,
       offerId: offer.id,
     })
 
     expect(updateApplicantStatusSpy).toHaveBeenCalled()
     expect(updateOfferSpy).toHaveBeenCalled()
     expect(res).toEqual({ ok: true, data: null })
-
-    const updatedListing = await listingAdapter.getListingById(listing.data.id)
+    
     const updatedApplicant = await listingAdapter.getApplicantById(applicant.id)
     const updatedOffer = await offerAdapter.getOfferByOfferId(offer.id)
     assert(updatedOffer.ok)
 
-    expect(updatedListing?.status).toBe(ListingStatus.Assigned)
-    expect(updatedApplicant?.status).toBe(ApplicantStatus.OfferAccepted)
+    expect(updatedApplicant?.status).toBe(ApplicantStatus.WithdrawnByUser)
     // TODO: Offer status is incorrectly a string because of db column type!!
-    expect(Number(updatedOffer.data.status)).toBe(OfferStatus.Accepted)
+    expect(Number(updatedOffer.data.status)).toBe(OfferStatus.Declined)
   })
 })
