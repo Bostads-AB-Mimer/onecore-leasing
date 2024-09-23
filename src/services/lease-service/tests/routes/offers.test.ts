@@ -220,4 +220,57 @@ describe('offers', () => {
       expect(res.status).toBe(200)
     })
   })
+
+  describe('PUT /offers/:offerId/deny', () => {
+    it('responds with 404 if offer not found', async () => {
+      const getOfferSpy = jest
+        .spyOn(offerAdapter, 'getOfferByOfferId')
+        .mockResolvedValueOnce({ ok: false, err: 'not-found' })
+      const res = await request(app.callback()).put(
+        '/offers/NON_EXISTING_OFFER/deny'
+      )
+
+      expect(res.status).toBe(404)
+      expect(getOfferSpy).toHaveBeenCalledTimes(1)
+      expect(res.body.data).toBeUndefined()
+    })
+
+    it('responds with 500 if error when updating', async () => {
+      const getOfferSpy = jest
+        .spyOn(offerAdapter, 'getOfferByOfferId')
+        .mockResolvedValueOnce({
+          ok: true,
+          data: factory.detailedOffer.build(),
+        })
+
+      const acceptOfferSpy = jest
+        .spyOn(offerService, 'denyOffer')
+        .mockResolvedValueOnce({ ok: false, err: 'unknown' })
+
+      const res = await request(app.callback()).put('/offers/1/deny')
+
+      expect(getOfferSpy).toHaveBeenCalledTimes(1)
+      expect(acceptOfferSpy).toHaveBeenCalledTimes(1)
+      expect(res.status).toBe(500)
+    })
+
+    it('responds with 200 if successful', async () => {
+      const getOfferSpy = jest
+        .spyOn(offerAdapter, 'getOfferByOfferId')
+        .mockResolvedValueOnce({
+          ok: true,
+          data: factory.detailedOffer.build(),
+        })
+
+      const acceptOfferSpy = jest
+        .spyOn(offerService, 'denyOffer')
+        .mockResolvedValueOnce({ ok: true, data: null })
+
+      const res = await request(app.callback()).put('/offers/1/deny')
+
+      expect(getOfferSpy).toHaveBeenCalledTimes(1)
+      expect(acceptOfferSpy).toHaveBeenCalledTimes(1)
+      expect(res.status).toBe(200)
+    })
+  })
 })

@@ -173,3 +173,113 @@ describe('acceptOffer', () => {
     expect(Number(updatedOffer.data.status)).toBe(OfferStatus.Accepted)
   })
 })
+
+describe('denyOffer', () => {
+  it('returns gracefully if offer update fails', async () => {
+    const updateOfferStatusSpy = jest.spyOn(offerAdapter, 'updateOfferStatus')
+
+    updateOfferStatusSpy.mockRejectedValueOnce({ err: 'error' })
+
+    const listing = await listingAdapter.createListing(
+      factory.listing.build({ status: ListingStatus.Expired })
+    )
+    assert(listing.ok)
+    const applicant = await listingAdapter.createApplication(
+      factory.applicant.build({ listingId: listing.data.id })
+    )
+
+    const offer = await offerAdapter.create({
+      status: OfferStatus.Active,
+      listingId: listing.data.id,
+      applicantId: applicant.id,
+      selectedApplicants: [],
+      expiresAt: new Date(),
+    })
+
+    const res = await service.denyOffer({
+      applicantId: applicant.id,
+      offerId: offer.id,
+    })
+
+    expect(updateOfferStatusSpy).toHaveBeenCalled()
+    expect(res).toEqual({ ok: false, err: 'update-offer' })
+  })
+
+  it('rollbacks applicant status change if update offer fails', async () => {
+    const updateOfferStatusSpy = jest.spyOn(offerAdapter, 'updateOfferStatus')
+
+    const listing = await listingAdapter.createListing(
+      factory.listing.build({ status: ListingStatus.Expired })
+    )
+    assert(listing.ok)
+    const applicant = await listingAdapter.createApplication(
+      factory.applicant.build({ listingId: listing.data.id })
+    )
+
+    const offer = await offerAdapter.create({
+      status: OfferStatus.Active,
+      listingId: listing.data.id,
+      applicantId: applicant.id,
+      selectedApplicants: [],
+      expiresAt: new Date(),
+    })
+
+    updateOfferStatusSpy.mockRejectedValueOnce({ err: 'error' })
+    const res = await service.denyOffer({
+      applicantId: applicant.id,
+      offerId: offer.id,
+    })
+
+    expect(updateOfferStatusSpy).toHaveBeenCalled()
+    expect(res).toEqual({ ok: false, err: 'update-offer' })
+
+    const applicantFromDb = await listingAdapter.getApplicantById(
+      listing.data.id
+    )
+    expect(applicantFromDb?.status).toBe(applicant.status)
+  })
+
+  it('updates applicant and offer', async () => {
+    const updateApplicantStatusSpy = jest.spyOn(
+      listingAdapter,
+      'updateApplicantStatus'
+    )
+
+    const updateOfferSpy = jest.spyOn(offerAdapter, 'updateOfferStatus')
+    const listing = await listingAdapter.createListing(
+      factory.listing.build({ status: ListingStatus.Expired })
+    )
+    assert(listing.ok)
+    const applicant = await listingAdapter.createApplication(
+      factory.applicant.build({ listingId: listing.data.id })
+    )
+
+    const offer = await offerAdapter.create({
+      status: OfferStatus.Active,
+      listingId: listing.data.id,
+      applicantId: applicant.id,
+      selectedApplicants: [],
+      expiresAt: new Date(),
+    })
+
+    const res = await service.acceptOffer({
+      applicantId: applicant.id,
+      listingId: listing.data.id,
+      offerId: offer.id,
+    })
+
+    expect(updateApplicantStatusSpy).toHaveBeenCalled()
+    expect(updateOfferSpy).toHaveBeenCalled()
+    expect(res).toEqual({ ok: true, data: null })
+
+    const updatedListing = await listingAdapter.getListingById(listing.data.id)
+    const updatedApplicant = await listingAdapter.getApplicantById(applicant.id)
+    const updatedOffer = await offerAdapter.getOfferByOfferId(offer.id)
+    assert(updatedOffer.ok)
+
+    expect(updatedListing?.status).toBe(ListingStatus.Assigned)
+    expect(updatedApplicant?.status).toBe(ApplicantStatus.OfferAccepted)
+    // TODO: Offer status is incorrectly a string because of db column type!!
+    expect(Number(updatedOffer.data.status)).toBe(OfferStatus.Accepted)
+  })
+})
