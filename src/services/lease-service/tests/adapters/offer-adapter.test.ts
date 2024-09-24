@@ -263,4 +263,64 @@ describe('offer-adapter', () => {
       if (!res.ok) expect(res.err).toBe('not-found')
     })
   })
+
+  describe(offerAdapter.getOffersByListingId, () => {
+    it('gets offers by listing id', async () => {
+      const listing = await listingAdapter.createListing(
+        factory.listing.build({ rentalObjectCode: '1' })
+      )
+      assert(listing.ok)
+
+      const applicants = factory.applicant.buildList(2, {
+        listingId: listing.data.id,
+      })
+
+      await Promise.all(applicants.map(listingAdapter.createApplication))
+
+      // TODO: Should be a db constraint on multiple active offers per listing
+      await offerAdapter.create({
+        status: OfferStatus.Active,
+        expiresAt: new Date(),
+        listingId: listing.data.id,
+        applicantId: applicants[0].id,
+        selectedApplicants: [
+          factory.detailedApplicant.build({ id: applicants[0].id }),
+        ],
+      })
+
+      await offerAdapter.create({
+        status: OfferStatus.Expired,
+        expiresAt: new Date(),
+        listingId: listing.data.id,
+        applicantId: applicants[1].id,
+        selectedApplicants: [
+          factory.detailedApplicant.build({ id: applicants[1].id }),
+        ],
+      })
+
+      const res = await offerAdapter.getOffersByListingId(listing.data.id)
+      assert(res.ok)
+
+      expect(res.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            status: OfferStatus.Active,
+            listingId: listing.data.id,
+            offeredApplicant: expect.objectContaining({ id: applicants[0].id }),
+            selectedApplicants: [
+              expect.objectContaining({ id: applicants[0].id }),
+            ],
+          }),
+          expect.objectContaining({
+            status: OfferStatus.Expired,
+            listingId: listing.data.id,
+            offeredApplicant: expect.objectContaining({ id: applicants[1].id }),
+            selectedApplicants: [
+              expect.objectContaining({ id: applicants[1].id }),
+            ],
+          }),
+        ])
+      )
+    })
+  })
 })

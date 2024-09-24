@@ -321,4 +321,46 @@ export const routes = (router: KoaRouter) => {
     ctx.body = { ...metadata }
     return
   })
+
+  /**
+   * @swagger
+   * /offers/listing-id/{listingId}:
+   *   get:
+   *     summary: Get offers for a specific listing
+   *     description: Get all offers for a listing.
+   *     tags: [Offer]
+   *     parameters:
+   *       - in: path
+   *         name: listingId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: The unique ID of the listing.
+   *     responses:
+   *       200:
+   *         description: A list with offers.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *       500:
+   *         description: Internal server error.
+   */
+  router.get('/offers/listing-id/:listingId', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+    const responseData = await offerAdapter.getOffersByListingId(
+      ctx.params.contactCode,
+      parseInt(ctx.params.offerId)
+    )
+
+    if (!responseData) {
+      ctx.status = HttpStatusCode.NotFound
+      ctx.body = { error: 'Offer not found', ...metadata }
+      return
+    }
+    ctx.body = {
+      content: responseData,
+      ...metadata,
+    }
+  })
 }
