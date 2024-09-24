@@ -338,7 +338,7 @@ export const routes = (router: KoaRouter) => {
    *         description: The unique ID of the listing.
    *     responses:
    *       200:
-   *         description: A list with offers.
+   *         description: A list of offers.
    *         content:
    *           application/json:
    *             schema:
@@ -348,19 +348,17 @@ export const routes = (router: KoaRouter) => {
    */
   router.get('/offers/listing-id/:listingId', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
-    const responseData = await offerAdapter.getOffersByListingId(
-      ctx.params.contactCode,
-      parseInt(ctx.params.offerId)
+    const result = await offerAdapter.getOffersByListingId(
+      Number.parseInt(ctx.params.listingId)
     )
 
-    if (!responseData) {
-      ctx.status = HttpStatusCode.NotFound
-      ctx.body = { error: 'Offer not found', ...metadata }
+    if (!result.ok) {
+      ctx.status = 500
+      ctx.body = { error: 'Internal server error', ...metadata }
       return
     }
-    ctx.body = {
-      content: responseData,
-      ...metadata,
-    }
+
+    ctx.status = 200
+    ctx.body = { content: result.data, ...metadata }
   })
 }
