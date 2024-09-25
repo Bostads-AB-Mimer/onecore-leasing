@@ -28,9 +28,6 @@ const addPriorityToApplicantsBasedOnRentalRules = (
 ) => {
   const applicantsWithAssignedPriority: DetailedApplicant[] = []
   for (const applicant of applicants) {
-    //todo: is below check enough?
-    //todo: we probably need to add priority undefined to non active applicants
-    //todo: with that the snapshot won't "filter out" applicants already handled
     applicantsWithAssignedPriority.push(
       assignPriorityToApplicantBasedOnRentalRules(listing, applicant)
     )
@@ -87,8 +84,8 @@ const assignPriorityToApplicantBasedOnRentalRules = (
 
   //applicants that have already responded to an offer should not be considered for a new offer
   //however they should still be included in the result but without a priority
+  //todo: we might need to add more status in this checks, like AssignedToOther
   if (
-    applicant.status === ApplicantStatus.Offered ||
     applicant.status === ApplicantStatus.OfferDeclined ||
     applicant.status === ApplicantStatus.OfferAccepted
   ) {
