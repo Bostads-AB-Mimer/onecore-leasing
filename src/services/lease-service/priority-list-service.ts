@@ -6,6 +6,7 @@
 
 import { logger } from 'onecore-utilities'
 import {
+  ApplicantStatus,
   DetailedApplicant,
   Lease,
   Listing,
@@ -20,6 +21,7 @@ import {
   isHousingContractsOfApplicantInSameAreaAsListing,
   isListingInAreaWithSpecificRentalRules,
 } from './residential-area-rental-rules-validator'
+import { updateApplicantStatus } from './adapters/listing-adapter'
 
 const addPriorityToApplicantsBasedOnRentalRules = (
   listing: Listing,
@@ -27,9 +29,14 @@ const addPriorityToApplicantsBasedOnRentalRules = (
 ) => {
   const applicantsWithAssignedPriority: DetailedApplicant[] = []
   for (const applicant of applicants) {
-    applicantsWithAssignedPriority.push(
-      assignPriorityToApplicantBasedOnRentalRules(listing, applicant)
-    )
+    //todo: is below check enough?
+    //todo: we probably need to add priority undefined to non active applicants
+    //todo: with that the snapshot won't "filter out" applicants already handled
+    if (applicant.status === ApplicantStatus.Active) {
+      applicantsWithAssignedPriority.push(
+        assignPriorityToApplicantBasedOnRentalRules(listing, applicant)
+      )
+    }
   }
 
   return applicantsWithAssignedPriority

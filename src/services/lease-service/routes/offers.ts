@@ -76,10 +76,45 @@ export const routes = (router: KoaRouter) => {
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
       try {
-        const offer = await offerAdapter.create(ctx.request.body)
+        const existingOffers = await offerAdapter.getOffersByListingId(
+          ctx.request.body.listingId
+        )
 
+        console.log('existing offers: ', existingOffers)
+
+        if (!existingOffers.ok) {
+          ctx.status = 500
+          ctx.body = { error: 'Error getting existing offers', ...metadata }
+          return
+        }
+
+        //create initial offers if no previous offers exist
+        if (!existingOffers.data.length) {
+          const offer = await offerAdapter.create(ctx.request.body)
+          ctx.status = 201
+          ctx.body = { content: offer, ...metadata }
+          console.log('initial offer created')
+          return
+        }
+
+        //check if any of the existing offers are still active
+        if (existingOffers.data.some((o) => o.status === OfferStatus.Active)) {
+          console.log("Can't create new offer when an active offer exists")
+          ctx.status = 409
+          ctx.body = {
+            error: 'Cannot create new offer when an active offer exists',
+            ...metadata,
+          }
+          return
+        }
+
+        //create new offer if no active offers exist
+        //todo: check applicant status as well?
+        //todo: or just let priority-listing-service take care of that
+        const offer = await offerAdapter.create(ctx.request.body)
         ctx.status = 201
         ctx.body = { content: offer, ...metadata }
+        console.log(`offer # ${existingOffers.data.length + 1} created`)
       } catch (err) {
         logger.error(err, 'Error creating offer: ')
         ctx.status = 500
