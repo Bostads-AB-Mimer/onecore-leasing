@@ -5,6 +5,7 @@ import { db, migrate, teardown } from '../../adapters/db'
 import * as offerAdapter from '../../adapters/offer-adapter'
 import * as factory from './../factories'
 import * as listingAdapter from '../../adapters/listing-adapter'
+import { Knex } from 'knex'
 
 beforeAll(async () => {
   await migrate()
@@ -265,6 +266,14 @@ describe('offer-adapter', () => {
   })
 
   describe(offerAdapter.getOffersByListingId, () => {
+    it('fails correctly', async () => {
+      const res = await offerAdapter.getOffersByListingId(1, {
+        select: jest.fn().mockRejectedValueOnce('boom'),
+      } as unknown as Knex)
+
+      expect(res).toEqual({ ok: false, err: 'unknown' })
+    })
+
     it('gets offers by listing id', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
