@@ -5,6 +5,7 @@ import bodyParser from 'koa-bodyparser'
 import { OfferStatus } from 'onecore-types'
 
 import { routes } from '../../routes/offers'
+import * as listingAdapter from '../../adapters/listing-adapter'
 import * as offerAdapter from '../../adapters/offer-adapter'
 import * as factory from '../factories'
 import * as offerService from '../../offer-service'
@@ -44,6 +45,9 @@ describe('offers', () => {
 
     it('creates an offer', async () => {
       const offer = factory.offer.build()
+      jest
+        .spyOn(offerAdapter, 'getOffersByListingId')
+        .mockResolvedValueOnce({ ok: true, data: [] })
       jest.spyOn(offerAdapter, 'create').mockResolvedValueOnce(offer)
 
       const payload = {
@@ -65,6 +69,10 @@ describe('offers', () => {
       expect(res.body.content.createdAt).toBeDefined()
       expect(res.body.content.listingId).toEqual(expected.listingId)
       expect(res.body.content.expiresAt).toEqual(expected.expiresAt)
+    })
+
+    it('creates subsequent offer if existing offer is not active', async () => {
+      console.log('implement me!')
     })
   })
 
