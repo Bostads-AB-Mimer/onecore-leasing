@@ -290,7 +290,7 @@ describe('offers', () => {
       })
     })
 
-    it('should return an error if not found', async () => {
+    it('should respond with an error if get offers fails', async () => {
       jest
         .spyOn(offerAdapter, 'getOffersByListingId')
         .mockResolvedValueOnce({ ok: false, err: 'unknown' })
