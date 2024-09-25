@@ -109,8 +109,6 @@ export const routes = (router: KoaRouter) => {
         }
 
         //create new offer if no active offers exist
-        //todo: check applicant status as well?
-        //todo: or just let priority-listing-service take care of that
         const offer = await offerAdapter.create(ctx.request.body)
         ctx.status = 201
         ctx.body = { content: offer, ...metadata }
