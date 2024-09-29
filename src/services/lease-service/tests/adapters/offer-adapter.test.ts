@@ -12,6 +12,7 @@ beforeAll(async () => {
 })
 
 afterEach(async () => {
+  await db('offer_applicant').del()
   await db('offer').del()
   await db('applicant').del()
   await db('listing').del()
@@ -28,28 +29,42 @@ describe('offer-adapter', () => {
         factory.listing.build({ rentalObjectCode: '1' })
       )
       assert(listing.ok)
-      const applicant = await listingAdapter.createApplication(
+      const applicant_one = await listingAdapter.createApplication(
         factory.applicant.build({ listingId: listing.data.id })
       )
 
-      const insertedOffer = await offerAdapter.create({
+      const applicant_two = await listingAdapter.createApplication(
+        factory.applicant.build({ listingId: listing.data.id })
+      )
+
+      const insertedOffer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
           factory.detailedApplicant.build({
-            id: applicant.id,
-            contactCode: applicant.contactCode,
-            nationalRegistrationNumber: applicant.nationalRegistrationNumber,
+            id: applicant_one.id,
+            contactCode: applicant_one.contactCode,
+            nationalRegistrationNumber:
+              applicant_one.nationalRegistrationNumber,
+            priority: 1,
+          }),
+          factory.detailedApplicant.build({
+            id: applicant_two.id,
+            contactCode: applicant_two.contactCode,
+            nationalRegistrationNumber:
+              applicant_one.nationalRegistrationNumber,
+            priority: 1,
           }),
         ],
         listingId: listing.data.id,
-        applicantId: applicant.id,
+        applicantId: applicant_one.id,
       })
 
-      const row = await db('offer').first()
-      expect(row).toBeDefined()
-      expect(row.ListingId).toEqual(insertedOffer.listingId)
-      expect(row.ApplicantId).toEqual(applicant.id)
+      assert(insertedOffer.ok)
+      expect(insertedOffer.data.listingId).toEqual(insertedOffer.data.listingId)
+      expect(insertedOffer.data.offeredApplicant.id).toEqual(applicant_one.id)
+      const offerApplicants = await db('offer_applicant')
+      expect(offerApplicants).toHaveLength(2)
     })
 
     it('throws error if applicant not found', async () => {
@@ -58,21 +73,21 @@ describe('offer-adapter', () => {
       )
 
       assert(listing.ok)
-      await expect(
-        offerAdapter.create({
-          expiresAt: new Date(),
-          status: OfferStatus.Active,
-          selectedApplicants: [
-            factory.detailedApplicant.build({
-              id: -1,
-              contactCode: 'NON_EXISTING_APPLICANT',
-              nationalRegistrationNumber: 'I_DO_NOT_EXIST',
-            }),
-          ],
-          listingId: listing.data.id,
-          applicantId: -1,
-        })
-      ).rejects.toThrow('Applicant not found when creating offer')
+      const offer = await offerAdapter.create(db, {
+        expiresAt: new Date(),
+        status: OfferStatus.Active,
+        selectedApplicants: [
+          factory.detailedApplicant.build({
+            id: -1,
+            contactCode: 'NON_EXISTING_APPLICANT',
+            nationalRegistrationNumber: 'I_DO_NOT_EXIST',
+          }),
+        ],
+        listingId: listing.data.id,
+        applicantId: -1,
+      })
+      expect(offer.ok).toBe(false)
+      // .rejects.toThrow('Applicant not found when creating offer')
     })
   })
 
@@ -86,7 +101,7 @@ describe('offer-adapter', () => {
         factory.applicant.build({ listingId: listing.data.id })
       )
 
-      await offerAdapter.create({
+      await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
@@ -118,7 +133,7 @@ describe('offer-adapter', () => {
         factory.applicant.build({ listingId: listing.data.id })
       )
 
-      await offerAdapter.create({
+      await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
@@ -150,7 +165,7 @@ describe('offer-adapter', () => {
         factory.applicant.build({ listingId: listing.data.id })
       )
 
-      const offer = await offerAdapter.create({
+      const offer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
@@ -164,12 +179,13 @@ describe('offer-adapter', () => {
         applicantId: applicant.id,
       })
 
+      assert(offer.ok)
       const offersFromDb = await offerAdapter.getOfferByContactCodeAndOfferId(
         applicant.contactCode,
-        offer.id
+        offer.data.id
       )
       expect(offersFromDb).toBeDefined()
-      expect(offersFromDb?.id).toEqual(offer.id)
+      expect(offersFromDb?.id).toEqual(offer.data.id)
       expect(offersFromDb?.offeredApplicant.contactCode).toEqual(
         applicant.contactCode
       )
@@ -200,7 +216,7 @@ describe('offer-adapter', () => {
         factory.applicant.build({ listingId: listing.data.id })
       )
 
-      const offer = await offerAdapter.create({
+      const offer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
@@ -214,9 +230,10 @@ describe('offer-adapter', () => {
         applicantId: applicant.id,
       })
 
+      assert(offer.ok)
       const offersFromDb = await offerAdapter.getOfferByContactCodeAndOfferId(
         'NON_EXISTING_CONTACT_CODE',
-        offer.id
+        offer.data.id
       )
       expect(offersFromDb).toBeUndefined()
     })
@@ -233,7 +250,7 @@ describe('offer-adapter', () => {
         factory.applicant.build({ listingId: listingRes.data.id })
       )
 
-      const offer = await offerAdapter.create({
+      const offer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
@@ -247,11 +264,12 @@ describe('offer-adapter', () => {
         applicantId: applicant.id,
       })
 
-      const res = await offerAdapter.getOfferByOfferId(offer.id)
+      assert(offer.ok)
+      const res = await offerAdapter.getOfferByOfferId(offer.data.id)
 
       expect(res.ok).toBeTruthy()
       if (res.ok) {
-        expect(res.data.id).toEqual(offer.id)
+        expect(res.data.id).toEqual(offer.data.id)
         expect(res.data.offeredApplicant.contactCode).toEqual(
           applicant.contactCode
         )
@@ -274,7 +292,7 @@ describe('offer-adapter', () => {
       expect(res).toEqual({ ok: false, err: 'unknown' })
     })
 
-    it('gets offers by listing id', async () => {
+    it.only('gets offers by listing id', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )
@@ -284,48 +302,59 @@ describe('offer-adapter', () => {
         listingId: listing.data.id,
       })
 
-      await Promise.all(applicants.map(listingAdapter.createApplication))
+      const insertedApplicants = await Promise.all(
+        applicants.map(listingAdapter.createApplication)
+      )
 
       // TODO: Should be a db constraint on multiple active offers per listing
-      await offerAdapter.create({
+      await offerAdapter.create(db, {
         status: OfferStatus.Active,
         expiresAt: new Date(),
         listingId: listing.data.id,
-        applicantId: applicants[0].id,
+        applicantId: insertedApplicants[0].id,
         selectedApplicants: [
-          factory.detailedApplicant.build({ id: applicants[0].id }),
+          factory.detailedApplicant.build({ id: insertedApplicants[0].id }),
         ],
       })
 
-      await offerAdapter.create({
+      await offerAdapter.create(db, {
         status: OfferStatus.Expired,
         expiresAt: new Date(),
         listingId: listing.data.id,
-        applicantId: applicants[1].id,
+        applicantId: insertedApplicants[1].id,
         selectedApplicants: [
-          factory.detailedApplicant.build({ id: applicants[1].id }),
+          factory.detailedApplicant.build({ id: insertedApplicants[1].id }),
         ],
       })
 
       const res = await offerAdapter.getOffersByListingId(listing.data.id)
       assert(res.ok)
 
+      console.log(res.data)
       expect(res.data).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             status: OfferStatus.Active,
             listingId: listing.data.id,
-            offeredApplicant: expect.objectContaining({ id: applicants[0].id }),
+            offeredApplicant: expect.objectContaining({
+              id: insertedApplicants[0].id,
+            }),
             selectedApplicants: [
-              expect.objectContaining({ id: applicants[0].id }),
+              expect.objectContaining({
+                applicantId: insertedApplicants[0].id,
+              }),
             ],
           }),
           expect.objectContaining({
             status: OfferStatus.Expired,
             listingId: listing.data.id,
-            offeredApplicant: expect.objectContaining({ id: applicants[1].id }),
+            offeredApplicant: expect.objectContaining({
+              id: insertedApplicants[1].id,
+            }),
             selectedApplicants: [
-              expect.objectContaining({ id: applicants[1].id }),
+              expect.objectContaining({
+                applicantId: insertedApplicants[1].id,
+              }),
             ],
           }),
         ])

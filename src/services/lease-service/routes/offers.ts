@@ -7,6 +7,7 @@ import { z } from 'zod'
 import * as offerAdapter from './../adapters/offer-adapter'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
 import * as offerService from '../offer-service'
+import { db } from '../adapters/db'
 
 /**
  * @swagger
@@ -76,7 +77,21 @@ export const routes = (router: KoaRouter) => {
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
       try {
-        const offer = await offerAdapter.create(ctx.request.body)
+        const offer = await db.transaction(async (trx) => {
+          const offer = await offerAdapter.create(trx, ctx.request.body)
+          const offerRound = await offerAdapter.createOfferRoundsFromApplicants(
+            trx,
+            {
+              listingId: ctx.request.body.listingId,
+              applicants: ctx.request.body.selectedApplicants,
+            }
+          )
+
+          if (offerRound.ok) {
+            throw 'offer-round'
+          }
+          return offer
+        })
 
         ctx.status = 201
         ctx.body = { content: offer, ...metadata }
