@@ -24,6 +24,23 @@ afterAll(async () => {
 
 describe('offer-adapter', () => {
   describe(offerAdapter.create, () => {
+    it('fails if applicant does not exist', async () => {
+      const listing = await listingAdapter.createListing(
+        factory.listing.build({ rentalObjectCode: '1' })
+      )
+      assert(listing.ok)
+
+      const insertedOffer = await offerAdapter.create(db, {
+        expiresAt: new Date(),
+        status: OfferStatus.Active,
+        selectedApplicants: [],
+        listingId: listing.data.id,
+        applicantId: -1,
+      })
+
+      expect(insertedOffer).toEqual({ ok: false, err: 'no-applicant' })
+    })
+
     it('inserts a new offer in the database', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
@@ -330,7 +347,6 @@ describe('offer-adapter', () => {
       const res = await offerAdapter.getOffersByListingId(listing.data.id)
       assert(res.ok)
 
-      console.log(res.data)
       expect(res.data).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
