@@ -49,7 +49,14 @@ export type OfferApplicant = {
   createdAt: Date
 }
 
-type CreateOfferApplicantParams = Omit<DbOfferApplicant, 'id' | 'createdAt'>
+type OfferWithOfferApplicants = Omit<Offer, 'selectedApplicants'> & {
+  selectedApplicants: Array<OfferApplicant>
+}
+
+type CreateOfferApplicantParams = Omit<
+  DbOfferApplicant,
+  'id' | 'createdAt' | 'offerId' | 'sortOrder'
+>
 
 type CreateOfferParams = {
   status: OfferStatus
@@ -57,10 +64,6 @@ type CreateOfferParams = {
   listingId: number
   applicantId: number
   selectedApplicants: Array<CreateOfferApplicantParams>
-}
-
-type OfferWithOfferApplicants = Omit<Offer, 'selectedApplicants'> & {
-  selectedApplicants: Array<OfferApplicant>
 }
 
 // TODO: Should this function construct the offer applicants partly based on
@@ -113,19 +116,21 @@ export async function create(
         ]
       )
 
-      const offerApplicantsValues = selectedApplicants.map((offerApplicant) => [
-        offer.Id,
-        params.listingId,
-        offerApplicant.applicantId,
-        offerApplicant.applicantStatus,
-        offerApplicant.applicantApplicationType,
-        offerApplicant.applicantQueuePoints,
-        offerApplicant.applicantAddress,
-        offerApplicant.applicantHasParkingSpace,
-        offerApplicant.applicantHousingLeaseStatus,
-        offerApplicant.applicantPriority,
-        offerApplicant.sortOrder,
-      ])
+      const offerApplicantsValues = selectedApplicants.map(
+        (offerApplicant, i) => [
+          offer.Id,
+          params.listingId,
+          offerApplicant.applicantId,
+          offerApplicant.applicantStatus,
+          offerApplicant.applicantApplicationType,
+          offerApplicant.applicantQueuePoints,
+          offerApplicant.applicantAddress,
+          offerApplicant.applicantHasParkingSpace,
+          offerApplicant.applicantHousingLeaseStatus,
+          offerApplicant.applicantPriority,
+          i + 1,
+        ]
+      )
 
       const placeholders = selectedApplicants
         .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
