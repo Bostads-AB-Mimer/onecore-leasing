@@ -263,10 +263,18 @@ export async function updateOfferStatus(
   dbConnection: Knex = db
 ): Promise<AdapterResult<null, 'no-update' | 'unknown'>> {
   try {
+    let fieldsToUpdate
+    if (
+      params.status == OfferStatus.Accepted ||
+      params.status == OfferStatus.Declined
+    )
+      fieldsToUpdate = { Status: params.status, AnsweredAt: new Date() }
+    else fieldsToUpdate = { Status: params.status }
+
     // TODO: OfferStatus is stored as a string in the db. I think it should be
     // an integer to correspond to our enum.
     const query = await dbConnection('offer')
-      .update({ Status: params.status })
+      .update(fieldsToUpdate)
       .where({ Id: params.offerId })
 
     if (!query) {
