@@ -69,7 +69,7 @@ export async function create(
   db: Knex,
   params: CreateOfferParams
 ): Promise<
-  AdapterResult<NewOffer, 'no-applicant' | 'no-offer-applicants' | 'unknown'>
+  AdapterResult<Offer, 'no-applicant' | 'no-offer-applicants' | 'unknown'>
 > {
   try {
     const applicant = await db<DbApplicant>('applicant')
@@ -128,7 +128,7 @@ export async function create(
         .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .join(', ')
 
-      await trx.raw(
+      await trx.raw<Array<DbOfferApplicant>>(
         `INSERT INTO offer_applicant (
           offerId,
           listingId,
@@ -141,7 +141,7 @@ export async function create(
           applicantHousingLeaseStatus,
           applicantPriority,
           sortOrder
-        ) OUTPUT INSERTED.*
+        )
         VALUES ${placeholders}`,
         offerApplicantsValues.flat()
       )
@@ -149,7 +149,29 @@ export async function create(
       return offer
     })
 
-    return { ok: true, data: transformToOfferFromDbOffer(offer, applicant) }
+    return {
+      ok: true,
+      data: {
+        id: offer.Id,
+        listingId: offer.ListingId,
+        status: offer.Status,
+        expiresAt: offer.ExpiresAt,
+        sentAt: offer.CreatedAt,
+        selectedApplicants: [],
+        offeredApplicant: {
+          id: applicant.Id,
+          name: applicant.Name,
+          listingId: applicant.ListingId,
+          status: applicant.Status,
+          applicationType: applicant.ApplicationType ?? undefined,
+          applicationDate: applicant.ApplicationDate,
+          contactCode: applicant.ContactCode,
+          nationalRegistrationNumber: applicant.NationalRegistrationNumber,
+        },
+        createdAt: offer.CreatedAt,
+        answeredAt: offer.AnsweredAt,
+      },
+    }
   } catch (err) {
     logger.error(err, 'Error creating offer')
     return { ok: false, err: 'unknown' }
@@ -421,8 +443,8 @@ export async function updateOfferApplicant(
   }
 }
 
-type NewDbOffer = DbOffer & {
-  selectionSnapshot: Array<
+type GetOffersByListingIdQueryResult = DbOffer & {
+  offerApplicants: Array<
     DbOfferApplicant & { applicantApplicationDate: string }
   >
   offeredApplicant: DbApplicant
@@ -433,7 +455,7 @@ export async function getOffersByListingId(
   listingId: number
 ): Promise<AdapterResult<Array<NewOffer>, 'unknown'>> {
   try {
-    const rows = await db.raw<Array<NewDbOffer>>(`
+    const rows = await db.raw<Array<GetOffersByListingIdQueryResult>>(`
       SELECT 
       offer.Id,
       offer.SentAt,
@@ -469,7 +491,7 @@ export async function getOffersByListingId(
         WHERE offer_applicant.offerId = offer.Id
         ORDER BY offer_applicant.sortOrder ASC
         FOR JSON PATH
-      ) as selectionSnapshot
+      ) as offerApplicants
       FROM offer
       -- TODO: This is a SQL injection vulnerability. Use parameterized queries.
       WHERE offer.ListingId = ${listingId}
@@ -477,11 +499,12 @@ export async function getOffersByListingId(
 
     const mappedRows = rows.map((row) => {
       const offeredApplicant = JSON.parse(row.offeredApplicant as any)
-      const selectedApplicants = JSON.parse(row.selectionSnapshot as any)
+      const offerApplicants = JSON.parse(row.offerApplicants as any)
 
-      return transformOffer2(
-        { ...row, selectionSnapshot: selectedApplicants },
-        offeredApplicant
+      return transformOfferByListingIdQueryResult(
+        row,
+        offeredApplicant,
+        offerApplicants
       )
     })
 
@@ -496,18 +519,19 @@ export async function getOffersByListingId(
   }
 }
 
-const transformOffer2 = (
-  o: NewDbOffer,
-  offeredApplicant: DbApplicant
+const transformOfferByListingIdQueryResult = (
+  offer: DbOffer,
+  offeredApplicant: DbApplicant,
+  offerApplicants: Array<DbOfferApplicant & { applicantApplicationDate: Date }>
 ): NewOffer => {
   return {
-    id: o.Id,
-    sentAt: o.SentAt,
-    expiresAt: o.ExpiresAt,
-    answeredAt: o.AnsweredAt,
-    status: o.Status,
-    listingId: o.ListingId,
-    createdAt: o.CreatedAt,
+    id: offer.Id,
+    sentAt: offer.SentAt,
+    expiresAt: offer.ExpiresAt,
+    answeredAt: offer.AnsweredAt,
+    status: offer.Status,
+    listingId: offer.ListingId,
+    createdAt: offer.CreatedAt,
     offeredApplicant: {
       id: offeredApplicant.Id,
       name: offeredApplicant.Name,
@@ -518,7 +542,7 @@ const transformOffer2 = (
       contactCode: offeredApplicant.ContactCode,
       nationalRegistrationNumber: offeredApplicant.NationalRegistrationNumber,
     },
-    selectedApplicants: o.selectionSnapshot.map((a) => ({
+    selectedApplicants: offerApplicants.map((a) => ({
       id: a.id,
       listingId: a.listingId,
       offerId: a.offerId,

@@ -124,7 +124,7 @@ export const routes = (router: KoaRouter) => {
           ctx.status = 201
           ctx.body = { content: offer.data, ...metadata }
           logger.info(
-            `offer # ${existingOffers.data.length + 1} created for listing ${offer.data.listingId}`
+            `offer # ${existingOffers.data.length + 1} created for listing ${ctx.request.body.listingId}`
           )
         }
 

@@ -79,8 +79,12 @@ describe('offer-adapter', () => {
       })
 
       assert(insertedOffer.ok)
-      expect(insertedOffer.data.listingId).toEqual(insertedOffer.data.listingId)
-      expect(insertedOffer.data.offeredApplicant.id).toEqual(applicant_one.id)
+      const [offerFromDb] = await db.raw(
+        `SELECT * from offer WHERE id = ${insertedOffer.data.id}`
+      )
+
+      expect(offerFromDb.ListingId).toEqual(listing.data.id)
+      expect(offerFromDb.ApplicantId).toEqual(applicant_one.id)
     })
 
     it('inserts offer applicants', async () => {
@@ -108,8 +112,6 @@ describe('offer-adapter', () => {
       })
 
       assert(insertedOffer.ok)
-      expect(insertedOffer.data.listingId).toEqual(insertedOffer.data.listingId)
-      expect(insertedOffer.data.offeredApplicant.id).toEqual(applicant_one.id)
       const selectedApplicantsFromDb = await db.raw(
         'SELECT * FROM offer_applicant ORDER BY sortOrder ASC'
       )
