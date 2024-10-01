@@ -15,7 +15,7 @@ import { AdapterResult, DbApplicant, DbDetailedOffer, DbOffer } from './types'
 
 import * as dbUtils from './utils'
 
-type OfferApplicant = {
+export type OfferApplicant = {
   id: number
   listingId: number
   offerId: number
@@ -33,21 +33,18 @@ type OfferApplicant = {
 
 type CreateOfferApplicantParams = Omit<OfferApplicant, 'id' | 'createdAt'>
 
-type CreateOfferParams = Omit<
-  Offer,
-  'id' | 'sentAt' | 'answeredAt' | 'offeredApplicant' | 'createdAt'
-> & { applicantId: number }
+type CreateOfferParams = {
+  status: OfferStatus
+  expiresAt: Date
+  listingId: number
+  applicantId: number
+  offerApplicants: Array<CreateOfferApplicantParams>
+}
 
 export async function create(
   db: Knex,
   params: CreateOfferParams
 ): Promise<AdapterResult<Offer, 'no-applicant' | 'unknown'>> {
-  const { selectedApplicants, ...rest } = params
-  const values = {
-    ...rest,
-    selectionSnapshot: JSON.stringify(selectedApplicants),
-  }
-
   try {
     const applicant = await db<DbApplicant>('applicant')
       .select('*')
@@ -63,31 +60,12 @@ export async function create(
     }
 
     const offer = await db.transaction(async (trx) => {
+      const { offerApplicants, ...offerParams } = params
       const [offer] = await trx<DbOffer>('offer')
-        .insert(dbUtils.camelToPascal(values))
+        .insert(dbUtils.camelToPascal(offerParams))
         .returning('*')
 
-      const insertableOfferApplicants = params.selectedApplicants.map(
-        (a, i): CreateOfferApplicantParams => ({
-          applicantId: a.id,
-          applicantStatus: a.status,
-          listingId: params.listingId,
-          offerId: offer.Id,
-          applicantApplicationType: a.applicationType || ('Additional' as any),
-          applicantPriority: a.priority ?? null,
-          applicantQueuePoints: a.queuePoints,
-          sortOrder: i + 1,
-          applicantAddress: a.address
-            ? `${a.address.street} ${a.address.number}`
-            : '', // TODO: Needs address
-          applicantHasParkingSpace: true,
-          applicantHousingLeaseStatus: 1,
-        })
-      )
-
-      await trx<OfferApplicant>('offer_applicant').insert(
-        insertableOfferApplicants
-      )
+      await trx<OfferApplicant>('offer_applicant').insert(offerApplicants)
 
       return offer
     })

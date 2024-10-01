@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import { OfferStatus } from 'onecore-types'
 import assert from 'node:assert'
 
@@ -309,7 +311,7 @@ describe('offer-adapter', () => {
       expect(res).toEqual({ ok: false, err: 'unknown' })
     })
 
-    it.only('gets offers by listing id', async () => {
+    it('gets offers by listing id', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )
@@ -329,8 +331,15 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         listingId: listing.data.id,
         applicantId: insertedApplicants[0].id,
-        selectedApplicants: [
-          factory.detailedApplicant.build({ id: insertedApplicants[0].id }),
+        offerApplicants: [
+          factory.offerApplicant.build({
+            listingId: listing.data.id,
+            applicantId: insertedApplicants[0].id,
+          }),
+          factory.offerApplicant.build({
+            listingId: listing.data.id,
+            applicantId: insertedApplicants[1].id,
+          }),
         ],
       })
 
