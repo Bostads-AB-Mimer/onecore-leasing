@@ -98,12 +98,14 @@ export const routes = (router: KoaRouter) => {
         //create initial offers if no previous offers exist
         if (!existingOffers.data.length) {
           const offer = await offerAdapter.create(db, requestBody)
-          if (offer.ok) {
-            ctx.status = 201
-            ctx.body = { content: offer.data, ...metadata }
+          if (!offer.ok) {
+            ctx.status = 500
+            ctx.body = { error: 'Internal server error', ...metadata }
             return
           }
-          //todo: add error handling
+          ctx.status = 500
+          ctx.body = { content: offer.data, ...metadata }
+          return
         }
 
         //check if any of the existing offers are still active
