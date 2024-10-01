@@ -280,7 +280,7 @@ describe('offer-adapter', () => {
     })
   })
 
-  describe.only(offerAdapter.getOffersByListingId, () => {
+  describe(offerAdapter.getOffersByListingId, () => {
     it('fails correctly', async () => {
       const res = await offerAdapter.getOffersByListingId(1, {
         select: jest.fn().mockRejectedValueOnce('boom'),
@@ -289,7 +289,7 @@ describe('offer-adapter', () => {
       expect(res).toEqual({ ok: false, err: 'unknown' })
     })
 
-    it('gets offers by listing id', async () => {
+    it.only('gets offers by listing id', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )
@@ -309,11 +309,11 @@ describe('offer-adapter', () => {
         listingId: listing.data.id,
         applicantId: insertedApplicants[0].id,
         offerApplicants: [
-          factory.offerApplicant.build({
+          factory.dbOfferApplicant.build({
             listingId: listing.data.id,
             applicantId: insertedApplicants[0].id,
           }),
-          factory.offerApplicant.build({
+          factory.dbOfferApplicant.build({
             listingId: listing.data.id,
             applicantId: insertedApplicants[1].id,
           }),
@@ -326,7 +326,7 @@ describe('offer-adapter', () => {
         listingId: listing.data.id,
         applicantId: insertedApplicants[1].id,
         offerApplicants: [
-          factory.offerApplicant.build({
+          factory.dbOfferApplicant.build({
             listingId: listing.data.id,
             applicantId: insertedApplicants[1].id,
           }),
@@ -359,11 +359,11 @@ describe('offer-adapter', () => {
             selectedApplicants: [
               expect.objectContaining({
                 applicantId: insertedApplicants[0].id,
-                applicantApplicationDate: expect.any(Date),
+                applicationDate: expect.any(Date),
               }),
               expect.objectContaining({
                 applicantId: insertedApplicants[1].id,
-                applicantApplicationDate: expect.any(Date),
+                applicationDate: expect.any(Date),
               }),
             ],
           }),
@@ -376,7 +376,7 @@ describe('offer-adapter', () => {
             selectedApplicants: [
               expect.objectContaining({
                 applicantId: insertedApplicants[1].id,
-                applicantApplicationDate: expect.any(Date),
+                applicationDate: expect.any(Date),
               }),
             ],
           }),

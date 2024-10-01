@@ -31,8 +31,21 @@ export type DbOfferApplicant = {
   createdAt: Date
 }
 
-export type OfferApplicant = DbOfferApplicant & {
-  applicantApplicationDate: Date
+export type OfferApplicant = {
+  id: number
+  listingId: number
+  offerId: number
+  applicantId: number
+  status: ApplicantStatus
+  applicationType: 'Replace' | 'Additional'
+  queuePoints: number
+  address: string
+  hasParkingSpace: boolean
+  housingLeaseStatus: LeaseStatus
+  applicationDate: Date
+  priority: number | null
+  sortOrder: number
+  createdAt: Date
 }
 
 type CreateOfferApplicantParams = Omit<DbOfferApplicant, 'id' | 'createdAt'>
@@ -370,19 +383,19 @@ export async function updateOfferStatus(
   }
 }
 
+type NewDbOffer = DbOffer & {
+  selectionSnapshot: Array<
+    DbOfferApplicant & { applicantApplicationDate: string }
+  >
+  offeredApplicant: DbApplicant
+}
+
 export async function getOffersByListingId(
   listingId: number,
   dbConnection: Knex = db
 ): Promise<AdapterResult<Array<NewOffer>, 'unknown'>> {
   try {
-    const rows = await dbConnection.raw<
-      Array<
-        DbOffer & {
-          selectionSnapshot: Array<DbOfferApplicant>
-          offeredApplicant: Applicant
-        }
-      >
-    >(`
+    const rows = await dbConnection.raw<Array<NewDbOffer>>(`
       SELECT 
       offer.Id,
       offer.SentAt,
@@ -399,7 +412,19 @@ export async function getOffersByListingId(
       ) as offeredApplicant,
       (
         SELECT 
-          offer_applicant.*, 
+          offer_applicant.id,
+          offer_applicant.listingId,
+          offer_applicant.offerId,
+          offer_applicant.applicantId,
+          offer_applicant.applicantStatus,
+          offer_applicant.applicantApplicationType,
+          offer_applicant.applicantQueuePoints,
+          offer_applicant.applicantAddress,
+          offer_applicant.applicantHasParkingSpace,
+          offer_applicant.applicantHousingLeaseStatus,
+          offer_applicant.applicantPriority,
+          offer_applicant.sortOrder,
+          offer_applicant.createdAt,
           applicant.applicationDate as applicantApplicationDate
         FROM offer_applicant
         INNER JOIN applicant ON offer_applicant.applicantId = applicant.Id
@@ -412,26 +437,65 @@ export async function getOffersByListingId(
       WHERE offer.ListingId = ${listingId}
     `)
 
-    const mappedRows = rows
-      .map((row) => {
-        const offeredApplicant = JSON.parse(row.offeredApplicant as any)
-        return {
-          ...row,
-          offeredApplicant: {
-            ...offeredApplicant,
-            applicationDate: new Date(offeredApplicant.ApplicationDate),
-          },
-        }
-      })
-      .map((row) => transformToOfferFromDbOffer(row, row.offeredApplicant))
+    const mappedRows = rows.map((row) => {
+      const offeredApplicant = JSON.parse(row.offeredApplicant as any)
+      const selectedApplicants = JSON.parse(row.selectionSnapshot as any)
+
+      return transformOffer2(
+        { ...row, selectionSnapshot: selectedApplicants },
+        offeredApplicant
+      )
+    })
 
     return {
       ok: true,
       data: mappedRows,
     }
   } catch (err) {
+    console.log(err)
     logger.error(err, 'Error getting offers by listing ID')
     return { ok: false, err: 'unknown' }
+  }
+}
+
+const transformOffer2 = (
+  o: NewDbOffer,
+  offeredApplicant: DbApplicant
+): NewOffer => {
+  return {
+    id: o.Id,
+    sentAt: o.SentAt,
+    expiresAt: o.ExpiresAt,
+    answeredAt: o.AnsweredAt,
+    status: o.Status,
+    listingId: o.ListingId,
+    createdAt: o.CreatedAt,
+    offeredApplicant: {
+      id: offeredApplicant.Id,
+      name: offeredApplicant.Name,
+      listingId: offeredApplicant.ListingId,
+      status: offeredApplicant.Status,
+      applicationType: offeredApplicant.ApplicationType ?? undefined,
+      applicationDate: new Date(offeredApplicant.ApplicationDate),
+      contactCode: offeredApplicant.ContactCode,
+      nationalRegistrationNumber: offeredApplicant.NationalRegistrationNumber,
+    },
+    selectedApplicants: o.selectionSnapshot.map((a) => ({
+      id: a.id,
+      listingId: a.listingId,
+      offerId: a.offerId,
+      applicantId: a.applicantId,
+      status: a.applicantStatus,
+      applicationType: a.applicantApplicationType,
+      queuePoints: a.applicantQueuePoints,
+      address: a.applicantAddress,
+      hasParkingSpace: a.applicantHasParkingSpace,
+      housingLeaseStatus: a.applicantHousingLeaseStatus,
+      priority: a.applicantPriority,
+      sortOrder: a.sortOrder,
+      createdAt: new Date(a.createdAt),
+      applicationDate: new Date(a.applicantApplicationDate),
+    })),
   }
 }
 
@@ -463,6 +527,8 @@ const transformToOfferFromDbOffer = (o: DbOffer, a: DbApplicant): NewOffer => {
     ).map((a) => ({
       ...a,
       createdAt: new Date(a.createdAt),
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-expect-error
       applicantApplicationDate: new Date(a.applicantApplicationDate),
     })),
     offeredApplicant: {
