@@ -89,7 +89,7 @@ describe('offers', () => {
         .post('/offer')
         .send(payloadSubsequentOffer)
       expect(resSubsequentOffer.status).toBe(409)
-      expect(resSubsequentOffer.body.error).toBe(
+      expect(resSubsequentOffer.body.reason).toBe(
         'Cannot create new offer when an active offer exists'
       )
     })

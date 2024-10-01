@@ -100,7 +100,7 @@ export const routes = (router: KoaRouter) => {
         if (existingOffers.data.some((o) => o.status === OfferStatus.Active)) {
           ctx.status = 409
           ctx.body = {
-            error: 'Cannot create new offer when an active offer exists',
+            reason: 'Cannot create new offer when an active offer exists',
             ...metadata,
           }
           return
