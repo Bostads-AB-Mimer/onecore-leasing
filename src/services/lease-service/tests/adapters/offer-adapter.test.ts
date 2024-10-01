@@ -290,7 +290,7 @@ describe('offer-adapter', () => {
       expect(res).toEqual({ ok: false, err: 'unknown' })
     })
 
-    it.only('gets offers by listing id', async () => {
+    it('gets offers by listing id', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )

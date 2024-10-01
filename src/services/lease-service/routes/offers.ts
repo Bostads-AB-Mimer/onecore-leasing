@@ -352,6 +352,7 @@ export const routes = (router: KoaRouter) => {
     const result = await offerService.denyOffer({
       applicantId: offer.data.offeredApplicant.id,
       offerId: offer.data.id,
+      listingId: offer.data.listingId,
     })
 
     if (!result.ok) {

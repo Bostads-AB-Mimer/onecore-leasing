@@ -66,7 +66,9 @@ type NewOffer = Omit<Offer, 'selectedApplicants'> & {
 export async function create(
   db: Knex,
   params: CreateOfferParams
-): Promise<AdapterResult<NewOffer, 'no-applicant' | 'unknown'>> {
+): Promise<
+  AdapterResult<NewOffer, 'no-applicant' | 'no-offer-applicants' | 'unknown'>
+> {
   try {
     const applicant = await db<DbApplicant>('applicant')
       .select('*')
@@ -81,10 +83,9 @@ export async function create(
       return { ok: false, err: 'no-applicant' }
     }
 
-    //todo: implement
-    // if(!params.offerApplicants.length){
-    //   return { ok: false, err: 'no-applicants' }
-    // }
+    if (!params.offerApplicants.length) {
+      return { ok: false, err: 'no-offer-applicants' }
+    }
 
     const offer = await db.transaction(async (trx) => {
       const { offerApplicants, ...offerParams } = params

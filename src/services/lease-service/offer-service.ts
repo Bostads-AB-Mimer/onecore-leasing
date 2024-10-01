@@ -63,8 +63,12 @@ export const acceptOffer = async (params: {
 export const denyOffer = async (params: {
   applicantId: number
   offerId: number
+  listingId: number
 }): Promise<
-  AdapterResult<null, 'update-applicant' | 'update-offer' | 'unknown'>
+  AdapterResult<
+    null,
+    'update-applicant' | 'update-offer' | 'update-offer-applicant' | 'unknown'
+  >
 > => {
   try {
     await db.transaction(async (trx) => {
@@ -74,6 +78,13 @@ export const denyOffer = async (params: {
         trx
       )
       await updateOffer(params.offerId, OfferStatus.Declined, trx)
+      await updateOfferApplicants(
+        trx,
+        params.offerId,
+        params.listingId,
+        params.applicantId,
+        ApplicantStatus.OfferDeclined
+      )
     })
 
     return { ok: true, data: null }
@@ -83,6 +94,10 @@ export const denyOffer = async (params: {
     }
 
     if (err === 'update-offer') {
+      return { ok: false, err }
+    }
+
+    if (err === 'update-offer-applicant') {
       return { ok: false, err }
     }
 

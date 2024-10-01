@@ -69,7 +69,6 @@ describe('offers', () => {
       }
 
       expect(res.status).toBe(201)
-      console.log(res.body)
       expect(res.body.content.createdAt).toBeDefined()
       expect(res.body.content.listingId).toEqual(expected.listingId)
       expect(res.body.content.expiresAt).toEqual(expected.expiresAt)
