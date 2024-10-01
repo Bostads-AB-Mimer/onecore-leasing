@@ -413,10 +413,16 @@ export async function getOffersByListingId(
     `)
 
     const mappedRows = rows
-      .map((row) => ({
-        ...row,
-        offeredApplicant: JSON.parse(row.offeredApplicant as any),
-      }))
+      .map((row) => {
+        const offeredApplicant = JSON.parse(row.offeredApplicant as any)
+        return {
+          ...row,
+          offeredApplicant: {
+            ...offeredApplicant,
+            applicationDate: new Date(offeredApplicant.ApplicationDate),
+          },
+        }
+      })
       .map((row) => transformToOfferFromDbOffer(row, row.offeredApplicant))
 
     return {

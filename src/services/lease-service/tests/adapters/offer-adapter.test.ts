@@ -338,10 +338,23 @@ describe('offer-adapter', () => {
       expect(res.data).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
+            id: expect.any(Number),
+            sentAt: null,
+            expiresAt: expect.any(Date),
+            answeredAt: null,
             status: OfferStatus.Active,
             listingId: listing.data.id,
+            createdAt: expect.any(Date),
             offeredApplicant: expect.objectContaining({
               id: insertedApplicants[0].id,
+              name: insertedApplicants[0].name,
+              contactCode: insertedApplicants[0].contactCode,
+              applicationDate: expect.any(Date),
+              applicationType: insertedApplicants[0].applicationType,
+              status: insertedApplicants[0].status,
+              listingId: listing.data.id,
+              nationalRegistrationNumber:
+                insertedApplicants[0].nationalRegistrationNumber,
             }),
             selectedApplicants: [
               expect.objectContaining({
