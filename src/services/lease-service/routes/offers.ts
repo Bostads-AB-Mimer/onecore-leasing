@@ -19,7 +19,7 @@ export const routes = (router: KoaRouter) => {
   const createOfferRequestParams = z.object({
     expiresAt: z.coerce.date(),
     status: z.nativeEnum(OfferStatus),
-    selectedApplicants: z.any().array(),
+    selectedApplicants: z.any().array().min(1),
     listingId: z.coerce.number(),
     applicantId: z.number(),
   })
@@ -68,6 +68,8 @@ export const routes = (router: KoaRouter) => {
    *                 data:
    *                   type: object
    *                   description: The created offer
+   *       409:
+   *         description: Conflict - An active offer already exists for this listing.
    *       500:
    *         description: Internal server error
    */
@@ -77,24 +79,53 @@ export const routes = (router: KoaRouter) => {
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
       try {
-        const offer = await db.transaction(async (trx) => {
-          const offer = await offerAdapter.create(trx, ctx.request.body)
-          const offerRound = await offerAdapter.createOfferRoundsFromApplicants(
-            trx,
-            {
-              listingId: ctx.request.body.listingId,
-              applicants: ctx.request.body.selectedApplicants,
-            }
-          )
+        const existingOffers = await offerAdapter.getOffersByListingId(
+          ctx.request.body.listingId
+        )
 
-          if (offerRound.ok) {
-            throw 'offer-round'
+        if (!existingOffers.ok) {
+          ctx.status = 500
+          ctx.body = { error: 'Error getting existing offers', ...metadata }
+          return
+        }
+
+        const requestBody = {
+          ...ctx.request.body,
+          offerApplicants: ctx.request.body.selectedApplicants,
+        }
+
+        //create initial offers if no previous offers exist
+        if (!existingOffers.data.length) {
+          const offer = await offerAdapter.create(db, requestBody)
+          if (offer.ok) {
+            ctx.status = 201
+            ctx.body = { content: offer.data, ...metadata }
+            return
           }
-          return offer
-        })
+          //todo: add error handling
+        }
 
-        ctx.status = 201
-        ctx.body = { content: offer, ...metadata }
+        //check if any of the existing offers are still active
+        if (existingOffers.data.some((o) => o.status === OfferStatus.Active)) {
+          ctx.status = 409
+          ctx.body = {
+            reason: 'Cannot create new offer when an active offer exists',
+            ...metadata,
+          }
+          return
+        }
+
+        //create new offer if no active offers exist
+        const offer = await offerAdapter.create(db, requestBody)
+        if (offer.ok) {
+          ctx.status = 201
+          ctx.body = { content: offer.data, ...metadata }
+          logger.info(
+            `offer # ${existingOffers.data.length + 1} created for listing ${offer.data.listingId}`
+          )
+        }
+
+        //todo: error handling from adapter
       } catch (err) {
         logger.error(err, 'Error creating offer: ')
         ctx.status = 500

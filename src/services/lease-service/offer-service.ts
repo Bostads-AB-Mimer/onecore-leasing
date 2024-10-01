@@ -13,7 +13,11 @@ export const acceptOffer = async (params: {
 }): Promise<
   AdapterResult<
     null,
-    'update-listing' | 'update-applicant' | 'update-offer' | 'unknown'
+    | 'update-listing'
+    | 'update-applicant'
+    | 'update-offer'
+    | 'update-offer-applicant'
+    | 'unknown'
   >
 > => {
   try {
@@ -25,6 +29,13 @@ export const acceptOffer = async (params: {
         trx
       )
       await updateOffer(params.offerId, OfferStatus.Accepted, trx)
+      await updateOfferApplicants(
+        trx,
+        params.offerId,
+        params.listingId,
+        params.applicantId,
+        ApplicantStatus.OfferAccepted
+      )
     })
 
     return { ok: true, data: null }
@@ -38,6 +49,10 @@ export const acceptOffer = async (params: {
     }
 
     if (err === 'update-offer') {
+      return { ok: false, err }
+    }
+
+    if (err === 'update-offer-applicant') {
       return { ok: false, err }
     }
 
@@ -117,5 +132,23 @@ const updateOffer = async (
   )
   if (!updateOffer.ok) {
     throw 'update-offer'
+  }
+}
+
+const updateOfferApplicants = async (
+  trx: Knex,
+  offerId: number,
+  listingId: number,
+  applicantId: number,
+  applicantStatus: ApplicantStatus
+) => {
+  const updatedOfferApplicants = await offerAdapter.updateOfferApplicant(trx, {
+    offerId,
+    listingId,
+    applicantId,
+    applicantStatus,
+  })
+  if (!updatedOfferApplicants.ok) {
+    throw 'update-offer-applicant'
   }
 }

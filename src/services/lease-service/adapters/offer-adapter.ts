@@ -58,6 +58,7 @@ type CreateOfferParams = {
   offerApplicants: Array<CreateOfferApplicantParams>
 }
 
+//todo: will replace current offer
 type NewOffer = Omit<Offer, 'selectedApplicants'> & {
   selectedApplicants: Array<OfferApplicant>
 }
@@ -80,8 +81,14 @@ export async function create(
       return { ok: false, err: 'no-applicant' }
     }
 
+    //todo: implement
+    // if(!params.offerApplicants.length){
+    //   return { ok: false, err: 'no-applicants' }
+    // }
+
     const offer = await db.transaction(async (trx) => {
       const { offerApplicants, ...offerParams } = params
+      console.log(params)
       const [offer] = await trx.raw<Array<DbOffer>>(
         `INSERT INTO offer (
           Status,
@@ -101,26 +108,28 @@ export async function create(
         ]
       )
 
-      const offerApplicantsValues = offerApplicants.map((offerApplicant) => [
-        offer.Id,
-        params.listingId,
-        offerApplicant.applicantId,
-        offerApplicant.applicantStatus,
-        offerApplicant.applicantApplicationType,
-        offerApplicant.applicantQueuePoints,
-        offerApplicant.applicantAddress,
-        offerApplicant.applicantHasParkingSpace,
-        offerApplicant.applicantHousingLeaseStatus,
-        offerApplicant.applicantPriority,
-        offerApplicant.sortOrder,
-      ])
+      //todo: no offeredApplicants should not be allowed
+      if (params.offerApplicants.length) {
+        const offerApplicantsValues = offerApplicants.map((offerApplicant) => [
+          offer.Id,
+          params.listingId,
+          offerApplicant.applicantId,
+          offerApplicant.applicantStatus,
+          offerApplicant.applicantApplicationType,
+          offerApplicant.applicantQueuePoints,
+          offerApplicant.applicantAddress,
+          offerApplicant.applicantHasParkingSpace,
+          offerApplicant.applicantHousingLeaseStatus,
+          offerApplicant.applicantPriority,
+          offerApplicant.sortOrder,
+        ])
 
-      const placeholders = offerApplicants
-        .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .join(', ')
+        const placeholders = offerApplicants
+          .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .join(', ')
 
-      await trx.raw(
-        `INSERT INTO offer_applicant (
+        await trx.raw(
+          `INSERT INTO offer_applicant (
           offerId,
           listingId,
           applicantId,
@@ -134,8 +143,9 @@ export async function create(
           sortOrder
         ) OUTPUT INSERTED.*
         VALUES ${placeholders}`,
-        offerApplicantsValues.flat()
-      )
+          offerApplicantsValues.flat()
+        )
+      }
 
       return offer
     })
@@ -284,6 +294,7 @@ export async function getOfferByContactCodeAndOfferId(
   }
 }
 
+//todo: rewrite this to use the new db structure and to return selectedApplicants / offeredApplicants
 export async function getOfferByOfferId(
   offerId: number
 ): Promise<AdapterResult<DetailedOffer, 'not-found' | 'unknown'>> {
@@ -379,6 +390,35 @@ export async function updateOfferStatus(
     }
     return { ok: true, data: null }
   } catch (_err) {
+    return { ok: false, err: 'unknown' }
+  }
+}
+
+export async function updateOfferApplicant(
+  db: Knex,
+  params: {
+    offerId: number
+    listingId: number
+    applicantId: number
+    applicantStatus: ApplicantStatus
+  }
+): Promise<AdapterResult<null, 'no-update' | 'unknown'>> {
+  try {
+    const query = await db('offer_applicant')
+      .update({ applicantStatus: params.applicantStatus })
+      .where({
+        offerId: params.offerId,
+        listingId: params.listingId,
+        applicantId: params.applicantId,
+      })
+
+    if (!query) {
+      return { ok: false, err: 'no-update' }
+    }
+
+    return { ok: true, data: null }
+  } catch (err) {
+    logger.error(err, 'Error updating offer applicant')
     return { ok: false, err: 'unknown' }
   }
 }

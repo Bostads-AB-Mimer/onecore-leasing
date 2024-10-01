@@ -85,6 +85,7 @@ describe('offer-adapter', () => {
       expect(insertedOffer.data.offeredApplicant.id).toEqual(applicant_one.id)
       const offerApplicants = await db('offer_applicant')
       expect(offerApplicants).toHaveLength(2)
+      //todo: assert offerApplicants
     })
   })
 
