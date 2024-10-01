@@ -428,11 +428,11 @@ type NewDbOffer = DbOffer & {
 }
 
 export async function getOffersByListingId(
-  listingId: number,
-  dbConnection: Knex = db
+  db: Knex,
+  listingId: number
 ): Promise<AdapterResult<Array<NewOffer>, 'unknown'>> {
   try {
-    const rows = await dbConnection.raw<Array<NewDbOffer>>(`
+    const rows = await db.raw<Array<NewDbOffer>>(`
       SELECT 
       offer.Id,
       offer.SentAt,
