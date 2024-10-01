@@ -63,6 +63,8 @@ type NewOffer = Omit<Offer, 'selectedApplicants'> & {
   selectedApplicants: Array<OfferApplicant>
 }
 
+// TODO: Should this function construct the offer applicants partly based on
+// the current state of the applicant in the db?
 export async function create(
   db: Knex,
   params: CreateOfferParams
@@ -149,7 +151,6 @@ export async function create(
 
     return { ok: true, data: transformToOfferFromDbOffer(offer, applicant) }
   } catch (err) {
-    console.log(err)
     logger.error(err, 'Error creating offer')
     return { ok: false, err: 'unknown' }
   }

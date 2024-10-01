@@ -65,11 +65,13 @@ describe('offer-adapter', () => {
             listingId: listing.data.id,
             applicantId: applicant_one.id,
             applicantPriority: 2,
+            sortOrder: 1,
           }),
           factory.dbOfferApplicant.build({
             listingId: listing.data.id,
             applicantId: applicant_two.id,
             applicantPriority: 2,
+            sortOrder: 2,
           }),
         ],
         listingId: listing.data.id,
@@ -79,9 +81,57 @@ describe('offer-adapter', () => {
       assert(insertedOffer.ok)
       expect(insertedOffer.data.listingId).toEqual(insertedOffer.data.listingId)
       expect(insertedOffer.data.offeredApplicant.id).toEqual(applicant_one.id)
-      const offerApplicants = await db('offer_applicant')
-      expect(offerApplicants).toHaveLength(2)
-      //todo: assert offerApplicants
+    })
+
+    it('inserts offer applicants', async () => {
+      const listing = await listingAdapter.createListing(
+        factory.listing.build({ rentalObjectCode: '1' })
+      )
+      assert(listing.ok)
+      const applicant_one = await listingAdapter.createApplication(
+        factory.applicant.build({ listingId: listing.data.id })
+      )
+
+      const offerApplicant = factory.dbOfferApplicant.build({
+        listingId: listing.data.id,
+        applicantId: applicant_one.id,
+        applicantPriority: 2,
+        sortOrder: 1,
+      })
+
+      const insertedOffer = await offerAdapter.create(db, {
+        expiresAt: new Date(),
+        status: OfferStatus.Active,
+        offerApplicants: [offerApplicant],
+        listingId: listing.data.id,
+        applicantId: applicant_one.id,
+      })
+
+      assert(insertedOffer.ok)
+      expect(insertedOffer.data.listingId).toEqual(insertedOffer.data.listingId)
+      expect(insertedOffer.data.offeredApplicant.id).toEqual(applicant_one.id)
+      const offerApplicantsFromDb = await db.raw(
+        'SELECT * FROM offer_applicant ORDER BY sortOrder ASC'
+      )
+
+      expect(offerApplicantsFromDb).toEqual([
+        {
+          id: expect.any(Number),
+          listingId: listing.data.id,
+          offerId: insertedOffer.data.id,
+          applicantId: applicant_one.id,
+          applicantStatus: offerApplicant.applicantStatus,
+          applicantApplicationType: offerApplicant.applicantApplicationType,
+          applicantQueuePoints: offerApplicant.applicantQueuePoints,
+          applicantAddress: offerApplicant.applicantAddress,
+          applicantHasParkingSpace: true,
+          applicantHousingLeaseStatus:
+            offerApplicant.applicantHousingLeaseStatus,
+          applicantPriority: offerApplicant.applicantPriority,
+          createdAt: expect.any(Date),
+          sortOrder: 1,
+        },
+      ])
     })
   })
 
