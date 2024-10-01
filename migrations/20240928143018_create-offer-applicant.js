@@ -26,7 +26,12 @@ exports.up = function (knex) {
       FOREIGN KEY (listingId) REFERENCES listing(id),
       FOREIGN KEY (applicantId) REFERENCES applicant(id),
       FOREIGN KEY (offerId) REFERENCES offer(id)
+
     );
+
+    CREATE UNIQUE INDEX unique_offered_applicant_per_listing 
+    ON offer_applicant (listingId, applicantStatus)
+    WHERE applicantStatus = 6; -- ApplicantStatus.Offered
   `)
 }
 /**
