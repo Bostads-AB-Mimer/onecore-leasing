@@ -6,6 +6,7 @@ import {
   OfferStatus,
   ApplicantStatus,
   LeaseStatus,
+  DetailedApplicant,
 } from 'onecore-types'
 import { logger } from 'onecore-utilities'
 import { Knex } from 'knex'
@@ -58,8 +59,7 @@ type CreateOfferParams = {
   selectedApplicants: Array<CreateOfferApplicantParams>
 }
 
-//todo: will replace current offer
-type NewOffer = Omit<Offer, 'selectedApplicants'> & {
+type OfferWithOfferApplicants = Omit<Offer, 'selectedApplicants'> & {
   selectedApplicants: Array<OfferApplicant>
 }
 
@@ -192,7 +192,6 @@ type GetOffersForContactQueryResult = Array<
   }
 >
 
-// TODO: This function  is not returning complete offer object. Should it?
 export async function getOffersForContact(
   contactCode: string
 ): Promise<Array<OfferWithRentalObjectCode>> {
@@ -214,8 +213,6 @@ export async function getOffersForContact(
     .innerJoin('applicant', 'applicant.Id', 'offer.ApplicantId')
     .where('applicant.ContactCode', contactCode)
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //@ts-expect-error
   return rows.map((row) => {
     const {
       ApplicantApplicantId,
@@ -231,16 +228,26 @@ export async function getOffersForContact(
     } = row
 
     return {
-      ...transformToOfferFromDbOffer(offer, {
-        ApplicationDate: ApplicantApplicationDate,
-        ContactCode: ApplicantContactCode,
-        Id: ApplicantApplicantId,
-        ListingId: ApplicantListingId,
-        Name: ApplicantName,
-        NationalRegistrationNumber: ApplicantNationalRegistrationNumber,
-        Status: ApplicantStatus,
-        ApplicationType: ApplicantApplicationType,
-      }),
+      id: offer.Id,
+      sentAt: offer.SentAt,
+      expiresAt: offer.ExpiresAt,
+      answeredAt: offer.AnsweredAt,
+      status: offer.Status,
+      listingId: offer.ListingId,
+      createdAt: offer.CreatedAt,
+      offeredApplicant: {
+        applicationDate: ApplicantApplicationDate,
+        contactCode: ApplicantContactCode,
+        id: ApplicantApplicantId,
+        listingId: ApplicantListingId,
+        name: ApplicantName,
+        nationalRegistrationNumber: ApplicantNationalRegistrationNumber,
+        status: ApplicantStatus,
+        applicationType: ApplicantApplicationType ?? undefined,
+      },
+      selectedApplicants: JSON.parse(
+        offer.SelectionSnapshot
+      ) as Array<DetailedApplicant>,
       rentalObjectCode: RentalObjectCode,
     }
   })
@@ -453,7 +460,7 @@ type GetOffersByListingIdQueryResult = DbOffer & {
 export async function getOffersWithOfferApplicantsByListingId(
   db: Knex,
   listingId: number
-): Promise<AdapterResult<Array<NewOffer>, 'unknown'>> {
+): Promise<AdapterResult<Array<OfferWithOfferApplicants>, 'unknown'>> {
   try {
     const rows = await db.raw<Array<GetOffersByListingIdQueryResult>>(`
       SELECT 
@@ -513,7 +520,6 @@ export async function getOffersWithOfferApplicantsByListingId(
       data: mappedRows,
     }
   } catch (err) {
-    console.log(err)
     logger.error(err, 'Error getting offers by listing ID')
     return { ok: false, err: 'unknown' }
   }
@@ -523,7 +529,7 @@ const transformOfferByListingIdQueryResult = (
   offer: DbOffer,
   offeredApplicant: DbApplicant,
   offerApplicants: Array<DbOfferApplicant & { applicantApplicationDate: Date }>
-): NewOffer => {
+): OfferWithOfferApplicants => {
   return {
     id: offer.Id,
     sentAt: offer.SentAt,
@@ -568,31 +574,6 @@ const transformToDetailedOfferFromDbOffer = (
   const { applicantId: _applicantId, ...offer } = dbUtils.pascalToCamel(o)
   return {
     ...offer,
-    offeredApplicant: {
-      ...dbUtils.pascalToCamel(a),
-      applicationType: a.ApplicationType || undefined,
-    },
-  }
-}
-
-const transformToOfferFromDbOffer = (o: DbOffer, a: DbApplicant): NewOffer => {
-  const {
-    selectionSnapshot: selectedApplicants,
-    applicantId: _applicantId,
-    ...offer
-  } = dbUtils.pascalToCamel(o)
-
-  return {
-    ...offer,
-    selectedApplicants: (
-      JSON.parse(selectedApplicants) as Array<OfferApplicant>
-    ).map((a) => ({
-      ...a,
-      createdAt: new Date(a.createdAt),
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-expect-error
-      applicantApplicationDate: new Date(a.applicantApplicationDate),
-    })),
     offeredApplicant: {
       ...dbUtils.pascalToCamel(a),
       applicationType: a.ApplicationType || undefined,
