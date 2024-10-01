@@ -7,15 +7,20 @@ import * as offerAdapter from '../adapters/offer-adapter'
 import { db, migrate, teardown } from '../adapters/db'
 import * as service from '../offer-service'
 
-beforeAll(migrate)
+beforeAll(async () => {
+  await migrate()
+})
 
 beforeEach(async () => {
+  await db('offer_applicant').del()
   await db('offer').del()
   await db('applicant').del()
   await db('listing').del()
 })
 
-afterAll(teardown)
+afterAll(async () => {
+  await teardown()
+})
 
 afterEach(jest.restoreAllMocks)
 
@@ -158,7 +163,9 @@ describe('acceptOffer', () => {
       status: OfferStatus.Active,
       listingId: listing.data.id,
       applicantId: applicant.id,
-      offerApplicants: [],
+      offerApplicants: [
+        factory.dbOfferApplicant.build({ applicantId: applicant.id }),
+      ],
       expiresAt: new Date(),
     })
 
@@ -200,6 +207,7 @@ describe('acceptOffer', () => {
     const initialApplicantStatus = ApplicantStatus.Active
     const offeredApplicant = factory.dbOfferApplicant.build({
       applicantStatus: initialApplicantStatus,
+      applicantId: applicant.id,
     })
     const offer = await offerAdapter.create(db, {
       status: OfferStatus.Active,

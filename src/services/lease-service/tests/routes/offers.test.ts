@@ -28,7 +28,7 @@ describe('offers', () => {
         status: 'foo',
         listingId: 1,
         applicantId: 1,
-        selectedApplicants: [],
+        selectedApplicants: [factory.offerApplicant.build({ applicantId: 1 })],
         expiresAt: new Date().toISOString(),
       }
 
@@ -57,7 +57,7 @@ describe('offers', () => {
         status: OfferStatus.Active,
         listingId: 1,
         applicantId: 1,
-        selectedApplicants: [],
+        selectedApplicants: [factory.offerApplicant.build({ applicantId: 1 })],
         expiresAt: new Date().toISOString(),
       }
 
@@ -89,7 +89,7 @@ describe('offers', () => {
         status: OfferStatus.Active,
         listingId: 1,
         applicantId: 1,
-        selectedApplicants: [],
+        selectedApplicants: [factory.offerApplicant.build({ applicantId: 1 })],
         expiresAt: new Date().toISOString(),
       }
       const resSubsequentOffer = await request(app.callback())
@@ -115,7 +115,7 @@ describe('offers', () => {
         status: OfferStatus.Active,
         listingId: 1,
         applicantId: 1,
-        selectedApplicants: [],
+        selectedApplicants: [factory.offerApplicant.build({ applicantId: 1 })],
         expiresAt: new Date().toISOString(),
       }
       const resSubsequentOffer = await request(app.callback())

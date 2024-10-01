@@ -88,7 +88,6 @@ export async function create(
 
     const offer = await db.transaction(async (trx) => {
       const { offerApplicants, ...offerParams } = params
-      console.log(params)
       const [offer] = await trx.raw<Array<DbOffer>>(
         `INSERT INTO offer (
           Status,
@@ -365,7 +364,7 @@ export async function getOfferByOfferId(
       },
     }
   } catch (error) {
-    logger.error(error, 'Error getting waiting list using Xpand SOAP API')
+    logger.error(error, 'Error getting offer by offer id')
     return { ok: false, err: 'unknown' }
   }
 }
