@@ -67,6 +67,8 @@ export const routes = (router: KoaRouter) => {
    *                 data:
    *                   type: object
    *                   description: The created offer
+   *       409:
+   *         description: Conflict - An active offer already exists for this listing.
    *       500:
    *         description: Internal server error
    */
@@ -91,13 +93,11 @@ export const routes = (router: KoaRouter) => {
           const offer = await offerAdapter.create(ctx.request.body)
           ctx.status = 201
           ctx.body = { content: offer, ...metadata }
-          console.log('initial offer created')
           return
         }
 
         //check if any of the existing offers are still active
         if (existingOffers.data.some((o) => o.status === OfferStatus.Active)) {
-          console.log("Can't create new offer when an active offer exists")
           ctx.status = 409
           ctx.body = {
             error: 'Cannot create new offer when an active offer exists',
