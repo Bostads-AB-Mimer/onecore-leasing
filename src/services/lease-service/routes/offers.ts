@@ -80,6 +80,7 @@ export const routes = (router: KoaRouter) => {
       const metadata = generateRouteMetadata(ctx)
       try {
         const existingOffers = await offerAdapter.getOffersByListingId(
+          db,
           ctx.request.body.listingId
         )
 
@@ -396,6 +397,7 @@ export const routes = (router: KoaRouter) => {
   router.get('/offers/listing-id/:listingId', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     const result = await offerAdapter.getOffersByListingId(
+      db,
       Number.parseInt(ctx.params.listingId)
     )
 
