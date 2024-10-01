@@ -229,49 +229,47 @@ describe('offer-adapter', () => {
     })
   })
 
-  // describe(offerAdapter.getOfferByOfferId, () => {
-  // it('gets an offer by id', async () => {
-  // const listingRes = await listingAdapter.createListing(
-  // factory.listing.build({ rentalObjectCode: '1' })
-  // )
-  // if (!listingRes.ok) fail('Setup failed. Listing could not be completed')
+  describe(offerAdapter.getOfferByOfferId, () => {
+    it('gets an offer by id', async () => {
+      const listingRes = await listingAdapter.createListing(
+        factory.listing.build({ rentalObjectCode: '1' })
+      )
 
-  // const applicant = await listingAdapter.createApplication(
-  // factory.applicant.build({ listingId: listingRes.data.id })
-  // )
+      assert(listingRes.ok)
+      const applicant = await listingAdapter.createApplication(
+        factory.applicant.build({ listingId: listingRes.data.id })
+      )
 
-  // const offer = await offerAdapter.create(db, {
-  // expiresAt: new Date(),
-  // status: OfferStatus.Active,
-  // selectedApplicants: [
-  // factory.detailedApplicant.build({
-  // id: applicant.id,
-  // contactCode: applicant.contactCode,
-  // nationalRegistrationNumber: applicant.nationalRegistrationNumber,
-  // }),
-  // ],
-  // listingId: listingRes.data.id,
-  // applicantId: applicant.id,
-  // })
+      const offer = await offerAdapter.create(db, {
+        expiresAt: new Date(),
+        status: OfferStatus.Active,
+        offerApplicants: [
+          factory.dbOfferApplicant.build({
+            applicantId: applicant.id,
+          }),
+        ],
+        listingId: listingRes.data.id,
+        applicantId: applicant.id,
+      })
 
-  // assert(offer.ok)
-  // const res = await offerAdapter.getOfferByOfferId(offer.data.id)
+      assert(offer.ok)
+      const res = await offerAdapter.getOfferByOfferId(offer.data.id)
 
-  // expect(res.ok).toBeTruthy()
-  // if (res.ok) {
-  // expect(res.data.id).toEqual(offer.data.id)
-  // expect(res.data.offeredApplicant.contactCode).toEqual(
-  // applicant.contactCode
-  // )
-  // }
-  // })
+      expect(res.ok).toBeTruthy()
+      if (res.ok) {
+        expect(res.data.id).toEqual(offer.data.id)
+        expect(res.data.offeredApplicant.contactCode).toEqual(
+          applicant.contactCode
+        )
+      }
+    })
 
-  // it('returns empty object if offer does not exist', async () => {
-  // const res = await offerAdapter.getOfferByOfferId(123456)
-  // expect(res.ok).toBeFalsy()
-  // if (!res.ok) expect(res.err).toBe('not-found')
-  // })
-  // })
+    it('returns empty object if offer does not exist', async () => {
+      const res = await offerAdapter.getOfferByOfferId(123456)
+      expect(res.ok).toBeFalsy()
+      if (!res.ok) expect(res.err).toBe('not-found')
+    })
+  })
 
   describe(offerAdapter.getOffersByListingId, () => {
     it('fails correctly', async () => {
