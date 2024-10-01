@@ -108,28 +108,26 @@ export async function create(
         ]
       )
 
-      //todo: no offeredApplicants should not be allowed
-      if (params.offerApplicants.length) {
-        const offerApplicantsValues = offerApplicants.map((offerApplicant) => [
-          offer.Id,
-          params.listingId,
-          offerApplicant.applicantId,
-          offerApplicant.applicantStatus,
-          offerApplicant.applicantApplicationType,
-          offerApplicant.applicantQueuePoints,
-          offerApplicant.applicantAddress,
-          offerApplicant.applicantHasParkingSpace,
-          offerApplicant.applicantHousingLeaseStatus,
-          offerApplicant.applicantPriority,
-          offerApplicant.sortOrder,
-        ])
+      const offerApplicantsValues = offerApplicants.map((offerApplicant) => [
+        offer.Id,
+        params.listingId,
+        offerApplicant.applicantId,
+        offerApplicant.applicantStatus,
+        offerApplicant.applicantApplicationType,
+        offerApplicant.applicantQueuePoints,
+        offerApplicant.applicantAddress,
+        offerApplicant.applicantHasParkingSpace,
+        offerApplicant.applicantHousingLeaseStatus,
+        offerApplicant.applicantPriority,
+        offerApplicant.sortOrder,
+      ])
 
-        const placeholders = offerApplicants
-          .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-          .join(', ')
+      const placeholders = offerApplicants
+        .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .join(', ')
 
-        await trx.raw(
-          `INSERT INTO offer_applicant (
+      await trx.raw(
+        `INSERT INTO offer_applicant (
           offerId,
           listingId,
           applicantId,
@@ -143,9 +141,8 @@ export async function create(
           sortOrder
         ) OUTPUT INSERTED.*
         VALUES ${placeholders}`,
-          offerApplicantsValues.flat()
-        )
-      }
+        offerApplicantsValues.flat()
+      )
 
       return offer
     })

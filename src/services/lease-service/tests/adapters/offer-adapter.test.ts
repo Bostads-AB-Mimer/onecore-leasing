@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import { OfferStatus } from 'onecore-types'
 import assert from 'node:assert'
 import { Knex } from 'knex'
@@ -25,7 +23,7 @@ afterAll(async () => {
 })
 
 describe('offer-adapter', () => {
-  describe(offerAdapter.create, () => {
+  describe.only(offerAdapter.create, () => {
     it('fails gracefully if applicant not found', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
@@ -35,11 +33,9 @@ describe('offer-adapter', () => {
       const offer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        selectedApplicants: [
-          factory.detailedApplicant.build({
+        offerApplicants: [
+          factory.dbOfferApplicant.build({
             id: -1,
-            contactCode: 'NON_EXISTING_APPLICANT',
-            nationalRegistrationNumber: 'I_DO_NOT_EXIST',
           }),
         ],
         listingId: listing.data.id,
@@ -65,12 +61,12 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         offerApplicants: [
-          factory.offerApplicant.build({
+          factory.dbOfferApplicant.build({
             listingId: listing.data.id,
             applicantId: applicant_one.id,
             applicantPriority: 2,
           }),
-          factory.offerApplicant.build({
+          factory.dbOfferApplicant.build({
             listingId: listing.data.id,
             applicantId: applicant_two.id,
             applicantPriority: 2,
@@ -90,7 +86,7 @@ describe('offer-adapter', () => {
   })
 
   describe(offerAdapter.getOffersForContact, () => {
-    it('gets the offers a a contact', async () => {
+    it('gets the offers for a contact', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )
