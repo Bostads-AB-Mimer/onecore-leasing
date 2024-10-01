@@ -91,14 +91,9 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        const requestBody = {
-          ...ctx.request.body,
-          offerApplicants: ctx.request.body.selectedApplicants,
-        }
-
         //create initial offers if no previous offers exist
         if (!existingOffers.data.length) {
-          const offer = await offerAdapter.create(db, requestBody)
+          const offer = await offerAdapter.create(db, ctx.request.body)
           if (!offer.ok) {
             ctx.status = 500
             ctx.body = { error: 'Internal server error', ...metadata }
@@ -120,7 +115,7 @@ export const routes = (router: KoaRouter) => {
         }
 
         //create new offer if no active offers exist
-        const offer = await offerAdapter.create(db, requestBody)
+        const offer = await offerAdapter.create(db, ctx.request.body)
         if (offer.ok) {
           ctx.status = 201
           ctx.body = { content: offer.data, ...metadata }
