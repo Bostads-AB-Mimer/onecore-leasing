@@ -103,7 +103,7 @@ export const routes = (router: KoaRouter) => {
             ctx.body = { error: 'Internal server error', ...metadata }
             return
           }
-          ctx.status = 500
+          ctx.status = 201
           ctx.body = { content: offer.data, ...metadata }
           return
         }

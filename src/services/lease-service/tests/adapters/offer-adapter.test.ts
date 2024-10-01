@@ -33,7 +33,7 @@ describe('offer-adapter', () => {
       const offer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        offerApplicants: [
+        selectedApplicants: [
           factory.dbOfferApplicant.build({
             id: -1,
           }),
@@ -60,7 +60,7 @@ describe('offer-adapter', () => {
       const insertedOffer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        offerApplicants: [
+        selectedApplicants: [
           factory.dbOfferApplicant.build({
             listingId: listing.data.id,
             applicantId: applicant_one.id,
@@ -102,7 +102,7 @@ describe('offer-adapter', () => {
       const insertedOffer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        offerApplicants: [offerApplicant],
+        selectedApplicants: [offerApplicant],
         listingId: listing.data.id,
         applicantId: applicant_one.id,
       })
@@ -110,11 +110,11 @@ describe('offer-adapter', () => {
       assert(insertedOffer.ok)
       expect(insertedOffer.data.listingId).toEqual(insertedOffer.data.listingId)
       expect(insertedOffer.data.offeredApplicant.id).toEqual(applicant_one.id)
-      const offerApplicantsFromDb = await db.raw(
+      const selectedApplicantsFromDb = await db.raw(
         'SELECT * FROM offer_applicant ORDER BY sortOrder ASC'
       )
 
-      expect(offerApplicantsFromDb).toEqual([
+      expect(selectedApplicantsFromDb).toEqual([
         {
           id: expect.any(Number),
           listingId: listing.data.id,
@@ -148,7 +148,7 @@ describe('offer-adapter', () => {
       const insertOffer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        offerApplicants: [
+        selectedApplicants: [
           factory.dbOfferApplicant.build({
             applicantId: applicant.id,
           }),
@@ -180,7 +180,7 @@ describe('offer-adapter', () => {
       const insertOffer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        offerApplicants: [
+        selectedApplicants: [
           factory.dbOfferApplicant.build({
             applicantId: applicant.id,
           }),
@@ -212,7 +212,7 @@ describe('offer-adapter', () => {
       const offer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        offerApplicants: [
+        selectedApplicants: [
           factory.dbOfferApplicant.build({
             applicantId: applicant.id,
           }),
@@ -261,7 +261,7 @@ describe('offer-adapter', () => {
       const offer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        offerApplicants: [
+        selectedApplicants: [
           factory.dbOfferApplicant.build({
             applicantId: applicant.id,
           }),
@@ -293,7 +293,7 @@ describe('offer-adapter', () => {
       const offer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        offerApplicants: [
+        selectedApplicants: [
           factory.dbOfferApplicant.build({
             applicantId: applicant.id,
           }),
@@ -351,7 +351,7 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         listingId: listing.data.id,
         applicantId: insertedApplicants[0].id,
-        offerApplicants: [
+        selectedApplicants: [
           factory.dbOfferApplicant.build({
             listingId: listing.data.id,
             applicantId: insertedApplicants[0].id,
@@ -368,7 +368,7 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         listingId: listing.data.id,
         applicantId: insertedApplicants[1].id,
-        offerApplicants: [
+        selectedApplicants: [
           factory.dbOfferApplicant.build({
             listingId: listing.data.id,
             applicantId: insertedApplicants[1].id,

@@ -55,7 +55,7 @@ type CreateOfferParams = {
   expiresAt: Date
   listingId: number
   applicantId: number
-  offerApplicants: Array<CreateOfferApplicantParams>
+  selectedApplicants: Array<CreateOfferApplicantParams>
 }
 
 //todo: will replace current offer
@@ -85,12 +85,12 @@ export async function create(
       return { ok: false, err: 'no-applicant' }
     }
 
-    if (!params.offerApplicants.length) {
+    if (!params.selectedApplicants.length) {
       return { ok: false, err: 'no-offer-applicants' }
     }
 
     const offer = await db.transaction(async (trx) => {
-      const { offerApplicants, ...offerParams } = params
+      const { selectedApplicants, ...offerParams } = params
       const [offer] = await trx.raw<Array<DbOffer>>(
         `INSERT INTO offer (
           Status,
@@ -110,7 +110,7 @@ export async function create(
         ]
       )
 
-      const offerApplicantsValues = offerApplicants.map((offerApplicant) => [
+      const offerApplicantsValues = selectedApplicants.map((offerApplicant) => [
         offer.Id,
         params.listingId,
         offerApplicant.applicantId,
@@ -124,7 +124,7 @@ export async function create(
         offerApplicant.sortOrder,
       ])
 
-      const placeholders = offerApplicants
+      const placeholders = selectedApplicants
         .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .join(', ')
 
@@ -170,6 +170,7 @@ type GetOffersForContactQueryResult = Array<
   }
 >
 
+// TODO: This function  is not returning complete offer object. Should it?
 export async function getOffersForContact(
   contactCode: string
 ): Promise<Array<OfferWithRentalObjectCode>> {
@@ -223,6 +224,7 @@ export async function getOffersForContact(
   })
 }
 
+// TODO: This function  is not returning complete offer object. Should it?
 export async function getOfferByContactCodeAndOfferId(
   contactCode: string,
   offerId: number
@@ -293,6 +295,7 @@ export async function getOfferByContactCodeAndOfferId(
 }
 
 //todo: rewrite this to use the new db structure and to return selectedApplicants / offeredApplicants
+// TODO: This function  is not returning complete offer object. Should it?
 export async function getOfferByOfferId(
   offerId: number
 ): Promise<AdapterResult<DetailedOffer, 'not-found' | 'unknown'>> {
@@ -373,12 +376,9 @@ export async function updateOfferStatus(
     offerId: number
     status: OfferStatus
   },
-  // TODO: What to put as type parameters to knex?
   dbConnection: Knex = db
 ): Promise<AdapterResult<null, 'no-update' | 'unknown'>> {
   try {
-    // TODO: OfferStatus is stored as a string in the db. I think it should be
-    // an integer to correspond to our enum.
     const query = await dbConnection('offer')
       .update({ Status: params.status })
       .where({ Id: params.offerId })
