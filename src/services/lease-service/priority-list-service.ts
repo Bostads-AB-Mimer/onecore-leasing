@@ -6,7 +6,6 @@
 
 import { logger } from 'onecore-utilities'
 import {
-  ApplicantStatus,
   DetailedApplicant,
   Lease,
   Listing,
@@ -76,19 +75,6 @@ const assignPriorityToApplicantBasedOnRentalRules = (
   ) {
     //special residential area rental rules apply to this listing
     //applicant is not allowed to rent this object, return priority:undefined
-    return {
-      ...applicant,
-      priority: undefined,
-    }
-  }
-
-  //applicants that have already responded to an offer should not be considered for a new offer
-  //however they should still be included in the result but without a priority
-  //todo: we might need to add more status in this checks, like AssignedToOther
-  if (
-    applicant.status === ApplicantStatus.OfferDeclined ||
-    applicant.status === ApplicantStatus.OfferAccepted
-  ) {
     return {
       ...applicant,
       priority: undefined,

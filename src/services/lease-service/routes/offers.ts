@@ -80,8 +80,6 @@ export const routes = (router: KoaRouter) => {
           ctx.request.body.listingId
         )
 
-        console.log('existing offers: ', existingOffers)
-
         if (!existingOffers.ok) {
           ctx.status = 500
           ctx.body = { error: 'Error getting existing offers', ...metadata }
@@ -112,7 +110,9 @@ export const routes = (router: KoaRouter) => {
         const offer = await offerAdapter.create(ctx.request.body)
         ctx.status = 201
         ctx.body = { content: offer, ...metadata }
-        console.log(`offer # ${existingOffers.data.length + 1} created`)
+        logger.info(
+          `offer # ${existingOffers.data.length + 1} created for listing ${offer.listingId}`
+        )
       } catch (err) {
         logger.error(err, 'Error creating offer: ')
         ctx.status = 500

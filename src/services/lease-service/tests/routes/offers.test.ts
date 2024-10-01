@@ -71,8 +71,47 @@ describe('offers', () => {
       expect(res.body.content.expiresAt).toEqual(expected.expiresAt)
     })
 
+    it('returns error if offer is still active', async () => {
+      const offer = factory.offer.build()
+      jest
+        .spyOn(offerAdapter, 'getOffersByListingId')
+        .mockResolvedValueOnce({ ok: true, data: [offer] })
+      jest.spyOn(offerAdapter, 'create').mockResolvedValueOnce(offer)
+
+      const payloadSubsequentOffer = {
+        status: OfferStatus.Active,
+        listingId: 1,
+        applicantId: 1,
+        selectedApplicants: [],
+        expiresAt: new Date().toISOString(),
+      }
+      const resSubsequentOffer = await request(app.callback())
+        .post('/offer')
+        .send(payloadSubsequentOffer)
+      expect(resSubsequentOffer.status).toBe(409)
+      expect(resSubsequentOffer.body.error).toBe(
+        'Cannot create new offer when an active offer exists'
+      )
+    })
+
     it('creates subsequent offer if existing offer is not active', async () => {
-      console.log('implement me!')
+      const offer = factory.offer.build({ status: OfferStatus.Declined })
+      jest
+        .spyOn(offerAdapter, 'getOffersByListingId')
+        .mockResolvedValueOnce({ ok: true, data: [offer] })
+      jest.spyOn(offerAdapter, 'create').mockResolvedValueOnce(offer)
+
+      const payloadSubsequentOffer = {
+        status: OfferStatus.Active,
+        listingId: 1,
+        applicantId: 1,
+        selectedApplicants: [],
+        expiresAt: new Date().toISOString(),
+      }
+      const resSubsequentOffer = await request(app.callback())
+        .post('/offer')
+        .send(payloadSubsequentOffer)
+      expect(resSubsequentOffer.status).toBe(201)
     })
   })
 
