@@ -25,7 +25,7 @@ afterAll(async () => {
 })
 
 describe('offer-adapter', () => {
-  describe.only(offerAdapter.create, () => {
+  describe(offerAdapter.create, () => {
     it('inserts a new offer in the database', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
@@ -281,7 +281,7 @@ describe('offer-adapter', () => {
     })
   })
 
-  describe(offerAdapter.getOffersByListingId, () => {
+  describe.only(offerAdapter.getOffersByListingId, () => {
     it('fails correctly', async () => {
       const res = await offerAdapter.getOffersByListingId(1, {
         select: jest.fn().mockRejectedValueOnce('boom'),
@@ -304,7 +304,6 @@ describe('offer-adapter', () => {
         applicants.map(listingAdapter.createApplication)
       )
 
-      // TODO: Should be a db constraint on multiple active offers per listing
       await offerAdapter.create(db, {
         status: OfferStatus.Active,
         expiresAt: new Date(),
@@ -327,14 +326,16 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         listingId: listing.data.id,
         applicantId: insertedApplicants[1].id,
-        selectedApplicants: [
-          factory.detailedApplicant.build({ id: insertedApplicants[1].id }),
+        offerApplicants: [
+          factory.offerApplicant.build({
+            listingId: listing.data.id,
+            applicantId: insertedApplicants[1].id,
+          }),
         ],
       })
 
       const res = await offerAdapter.getOffersByListingId(listing.data.id)
       assert(res.ok)
-
       expect(res.data).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -346,6 +347,9 @@ describe('offer-adapter', () => {
             selectedApplicants: [
               expect.objectContaining({
                 applicantId: insertedApplicants[0].id,
+              }),
+              expect.objectContaining({
+                applicantId: insertedApplicants[1].id,
               }),
             ],
           }),

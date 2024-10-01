@@ -365,7 +365,7 @@ export async function updateOfferStatus(
 export async function getOffersByListingId(
   listingId: number,
   dbConnection: Knex = db
-): Promise<AdapterResult<Array<Offer>, 'unknown'>> {
+): Promise<AdapterResult<Array<NewOffer>, 'unknown'>> {
   try {
     const rows = await dbConnection.raw<Array<any>>(`
       SELECT 
@@ -389,8 +389,6 @@ export async function getOffersByListingId(
         FOR JSON PATH
       ) as selectionSnapshot
       FROM offer
-      INNER JOIN applicant ON (offer.ApplicantId = applicant.Id)
-      INNER JOIN offer_applicant ON (offer_applicant.offerId = offer.Id)
       WHERE offer.ListingId = ${listingId}
     `)
 
