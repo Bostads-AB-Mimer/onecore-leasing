@@ -323,9 +323,9 @@ describe('offer-adapter', () => {
     })
   })
 
-  describe(offerAdapter.getOffersByListingId, () => {
+  describe(offerAdapter.getOffersWithOfferApplicantsByListingId, () => {
     it('fails correctly', async () => {
-      const res = await offerAdapter.getOffersByListingId(
+      const res = await offerAdapter.getOffersWithOfferApplicantsByListingId(
         {
           raw: jest.fn().mockRejectedValueOnce('boom'),
         } as unknown as Knex,
@@ -378,7 +378,10 @@ describe('offer-adapter', () => {
         ],
       })
 
-      const res = await offerAdapter.getOffersByListingId(db, listing.data.id)
+      const res = await offerAdapter.getOffersWithOfferApplicantsByListingId(
+        db,
+        listing.data.id
+      )
       assert(res.ok)
       expect(res.data).toEqual(
         expect.arrayContaining([

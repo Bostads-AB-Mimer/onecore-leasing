@@ -47,7 +47,7 @@ describe('offers', () => {
       const offer = { ...tempOffer, selectedApplicants: [] }
 
       jest
-        .spyOn(offerAdapter, 'getOffersByListingId')
+        .spyOn(offerAdapter, 'getOffersWithOfferApplicantsByListingId')
         .mockResolvedValueOnce({ ok: true, data: [] })
       jest
         .spyOn(offerAdapter, 'create')
@@ -78,7 +78,7 @@ describe('offers', () => {
       const tempOffer = factory.offer.build()
       const offer = { ...tempOffer, selectedApplicants: [] }
       jest
-        .spyOn(offerAdapter, 'getOffersByListingId')
+        .spyOn(offerAdapter, 'getOffersWithOfferApplicantsByListingId')
         .mockResolvedValueOnce({ ok: true, data: [offer] })
       jest
         .spyOn(offerAdapter, 'create')
@@ -104,7 +104,7 @@ describe('offers', () => {
       const tempOffer = factory.offer.build({ status: OfferStatus.Declined })
       const offer = { ...tempOffer, selectedApplicants: [] }
       jest
-        .spyOn(offerAdapter, 'getOffersByListingId')
+        .spyOn(offerAdapter, 'getOffersWithOfferApplicantsByListingId')
         .mockResolvedValueOnce({ ok: true, data: [offer] })
       jest
         .spyOn(offerAdapter, 'create')
@@ -336,7 +336,7 @@ describe('offers', () => {
       const offer = { ...tempOffer, selectedApplicants: [] }
 
       jest
-        .spyOn(offerAdapter, 'getOffersByListingId')
+        .spyOn(offerAdapter, 'getOffersWithOfferApplicantsByListingId')
         .mockResolvedValueOnce({ ok: true, data: [offer] })
 
       const res = await request(app.callback()).get(`/offers/listing-id/1`)
@@ -351,7 +351,7 @@ describe('offers', () => {
 
     it('should respond with an error if get offers fails', async () => {
       jest
-        .spyOn(offerAdapter, 'getOffersByListingId')
+        .spyOn(offerAdapter, 'getOffersWithOfferApplicantsByListingId')
         .mockResolvedValueOnce({ ok: false, err: 'unknown' })
 
       const res = await request(app.callback()).get(`/offers/listing-id/1`)

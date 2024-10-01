@@ -79,10 +79,11 @@ export const routes = (router: KoaRouter) => {
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
       try {
-        const existingOffers = await offerAdapter.getOffersByListingId(
-          db,
-          ctx.request.body.listingId
-        )
+        const existingOffers =
+          await offerAdapter.getOffersWithOfferApplicantsByListingId(
+            db,
+            ctx.request.body.listingId
+          )
 
         if (!existingOffers.ok) {
           ctx.status = 500
@@ -398,7 +399,7 @@ export const routes = (router: KoaRouter) => {
    */
   router.get('/offers/listing-id/:listingId', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
-    const result = await offerAdapter.getOffersByListingId(
+    const result = await offerAdapter.getOffersWithOfferApplicantsByListingId(
       db,
       Number.parseInt(ctx.params.listingId)
     )

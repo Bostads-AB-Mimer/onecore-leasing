@@ -450,7 +450,7 @@ type GetOffersByListingIdQueryResult = DbOffer & {
   offeredApplicant: DbApplicant
 }
 
-export async function getOffersByListingId(
+export async function getOffersWithOfferApplicantsByListingId(
   db: Knex,
   listingId: number
 ): Promise<AdapterResult<Array<NewOffer>, 'unknown'>> {
