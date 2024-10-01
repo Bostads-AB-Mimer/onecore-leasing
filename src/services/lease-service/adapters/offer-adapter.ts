@@ -15,7 +15,7 @@ import { AdapterResult, DbApplicant, DbDetailedOffer, DbOffer } from './types'
 
 import * as dbUtils from './utils'
 
-export type OfferApplicant = {
+export type DbOfferApplicant = {
   id: number
   listingId: number
   offerId: number
@@ -31,7 +31,11 @@ export type OfferApplicant = {
   createdAt: Date
 }
 
-type CreateOfferApplicantParams = Omit<OfferApplicant, 'id' | 'createdAt'>
+export type OfferApplicant = DbOfferApplicant & {
+  applicantApplicationDate: Date
+}
+
+type CreateOfferApplicantParams = Omit<DbOfferApplicant, 'id' | 'createdAt'>
 
 type CreateOfferParams = {
   status: OfferStatus
@@ -41,7 +45,9 @@ type CreateOfferParams = {
   offerApplicants: Array<CreateOfferApplicantParams>
 }
 
-type NewOffer = Offer & { selectedApplicants: Array<OfferApplicant> }
+type NewOffer = Omit<Offer, 'selectedApplicants'> & {
+  selectedApplicants: Array<OfferApplicant>
+}
 
 export async function create(
   db: Knex,
@@ -164,6 +170,8 @@ export async function getOffersForContact(
     .innerJoin('applicant', 'applicant.Id', 'offer.ApplicantId')
     .where('applicant.ContactCode', contactCode)
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //@ts-expect-error
   return rows.map((row) => {
     const {
       ApplicantApplicantId,
@@ -367,7 +375,14 @@ export async function getOffersByListingId(
   dbConnection: Knex = db
 ): Promise<AdapterResult<Array<NewOffer>, 'unknown'>> {
   try {
-    const rows = await dbConnection.raw<Array<any>>(`
+    const rows = await dbConnection.raw<
+      Array<
+        DbOffer & {
+          selectionSnapshot: Array<DbOfferApplicant>
+          offeredApplicant: Applicant
+        }
+      >
+    >(`
       SELECT 
       offer.Id,
       offer.SentAt,
@@ -383,19 +398,24 @@ export async function getOffersByListingId(
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
       ) as offeredApplicant,
       (
-        SELECT * FROM offer_applicant
+        SELECT 
+          offer_applicant.*, 
+          applicant.applicationDate as applicantApplicationDate
+        FROM offer_applicant
+        INNER JOIN applicant ON offer_applicant.applicantId = applicant.Id
         WHERE offer_applicant.offerId = offer.Id
-        ORDER BY sortOrder ASC
+        ORDER BY offer_applicant.sortOrder ASC
         FOR JSON PATH
       ) as selectionSnapshot
       FROM offer
+      -- TODO: This is a SQL injection vulnerability. Use parameterized queries.
       WHERE offer.ListingId = ${listingId}
     `)
 
     const mappedRows = rows
       .map((row) => ({
         ...row,
-        offeredApplicant: JSON.parse(row.offeredApplicant),
+        offeredApplicant: JSON.parse(row.offeredApplicant as any),
       }))
       .map((row) => transformToOfferFromDbOffer(row, row.offeredApplicant))
 
@@ -432,7 +452,13 @@ const transformToOfferFromDbOffer = (o: DbOffer, a: DbApplicant): NewOffer => {
 
   return {
     ...offer,
-    selectedApplicants: JSON.parse(selectedApplicants),
+    selectedApplicants: (
+      JSON.parse(selectedApplicants) as Array<OfferApplicant>
+    ).map((a) => ({
+      ...a,
+      createdAt: new Date(a.createdAt),
+      applicantApplicationDate: new Date(a.applicantApplicationDate),
+    })),
     offeredApplicant: {
       ...dbUtils.pascalToCamel(a),
       applicationType: a.ApplicationType || undefined,

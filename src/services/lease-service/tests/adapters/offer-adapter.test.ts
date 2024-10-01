@@ -2,12 +2,12 @@
 // @ts-nocheck
 import { OfferStatus } from 'onecore-types'
 import assert from 'node:assert'
+import { Knex } from 'knex'
 
 import { db, migrate, teardown } from '../../adapters/db'
 import * as offerAdapter from '../../adapters/offer-adapter'
 import * as factory from './../factories'
 import * as listingAdapter from '../../adapters/listing-adapter'
-import { Knex } from 'knex'
 
 beforeAll(async () => {
   await migrate()
@@ -26,6 +26,28 @@ afterAll(async () => {
 
 describe('offer-adapter', () => {
   describe(offerAdapter.create, () => {
+    it('fails gracefully if applicant not found', async () => {
+      const listing = await listingAdapter.createListing(
+        factory.listing.build({ rentalObjectCode: '1' })
+      )
+
+      assert(listing.ok)
+      const offer = await offerAdapter.create(db, {
+        expiresAt: new Date(),
+        status: OfferStatus.Active,
+        selectedApplicants: [
+          factory.detailedApplicant.build({
+            id: -1,
+            contactCode: 'NON_EXISTING_APPLICANT',
+            nationalRegistrationNumber: 'I_DO_NOT_EXIST',
+          }),
+        ],
+        listingId: listing.data.id,
+        applicantId: -1,
+      })
+      expect(offer.ok).toBe(false)
+    })
+
     it('inserts a new offer in the database', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
@@ -63,29 +85,6 @@ describe('offer-adapter', () => {
       expect(insertedOffer.data.offeredApplicant.id).toEqual(applicant_one.id)
       const offerApplicants = await db('offer_applicant')
       expect(offerApplicants).toHaveLength(2)
-    })
-
-    it('fails gracefully if applicant not found', async () => {
-      const listing = await listingAdapter.createListing(
-        factory.listing.build({ rentalObjectCode: '1' })
-      )
-
-      assert(listing.ok)
-      const offer = await offerAdapter.create(db, {
-        expiresAt: new Date(),
-        status: OfferStatus.Active,
-        selectedApplicants: [
-          factory.detailedApplicant.build({
-            id: -1,
-            contactCode: 'NON_EXISTING_APPLICANT',
-            nationalRegistrationNumber: 'I_DO_NOT_EXIST',
-          }),
-        ],
-        listingId: listing.data.id,
-        applicantId: -1,
-      })
-      expect(offer.ok).toBe(false)
-      // .rejects.toThrow('Applicant not found when creating offer')
     })
   })
 
@@ -347,9 +346,11 @@ describe('offer-adapter', () => {
             selectedApplicants: [
               expect.objectContaining({
                 applicantId: insertedApplicants[0].id,
+                applicantApplicationDate: expect.any(Date),
               }),
               expect.objectContaining({
                 applicantId: insertedApplicants[1].id,
+                applicantApplicationDate: expect.any(Date),
               }),
             ],
           }),
@@ -362,6 +363,7 @@ describe('offer-adapter', () => {
             selectedApplicants: [
               expect.objectContaining({
                 applicantId: insertedApplicants[1].id,
+                applicantApplicationDate: expect.any(Date),
               }),
             ],
           }),
