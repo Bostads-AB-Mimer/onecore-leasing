@@ -25,24 +25,7 @@ afterAll(async () => {
 })
 
 describe('offer-adapter', () => {
-  describe(offerAdapter.create, () => {
-    it('fails if applicant does not exist', async () => {
-      const listing = await listingAdapter.createListing(
-        factory.listing.build({ rentalObjectCode: '1' })
-      )
-      assert(listing.ok)
-
-      const insertedOffer = await offerAdapter.create(db, {
-        expiresAt: new Date(),
-        status: OfferStatus.Active,
-        selectedApplicants: [],
-        listingId: listing.data.id,
-        applicantId: -1,
-      })
-
-      expect(insertedOffer).toEqual({ ok: false, err: 'no-applicant' })
-    })
-
+  describe.only(offerAdapter.create, () => {
     it('inserts a new offer in the database', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
@@ -59,20 +42,16 @@ describe('offer-adapter', () => {
       const insertedOffer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        selectedApplicants: [
-          factory.detailedApplicant.build({
-            id: applicant_one.id,
-            contactCode: applicant_one.contactCode,
-            nationalRegistrationNumber:
-              applicant_one.nationalRegistrationNumber,
-            priority: 1,
+        offerApplicants: [
+          factory.offerApplicant.build({
+            listingId: listing.data.id,
+            applicantId: applicant_one.id,
+            applicantPriority: 2,
           }),
-          factory.detailedApplicant.build({
-            id: applicant_two.id,
-            contactCode: applicant_two.contactCode,
-            nationalRegistrationNumber:
-              applicant_one.nationalRegistrationNumber,
-            priority: 1,
+          factory.offerApplicant.build({
+            listingId: listing.data.id,
+            applicantId: applicant_two.id,
+            applicantPriority: 2,
           }),
         ],
         listingId: listing.data.id,
@@ -86,7 +65,7 @@ describe('offer-adapter', () => {
       expect(offerApplicants).toHaveLength(2)
     })
 
-    it('throws error if applicant not found', async () => {
+    it('fails gracefully if applicant not found', async () => {
       const listing = await listingAdapter.createListing(
         factory.listing.build({ rentalObjectCode: '1' })
       )

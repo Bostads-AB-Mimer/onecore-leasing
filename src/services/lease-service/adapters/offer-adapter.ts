@@ -41,10 +41,12 @@ type CreateOfferParams = {
   offerApplicants: Array<CreateOfferApplicantParams>
 }
 
+type NewOffer = Offer & { selectedApplicants: Array<OfferApplicant> }
+
 export async function create(
   db: Knex,
   params: CreateOfferParams
-): Promise<AdapterResult<Offer, 'no-applicant' | 'unknown'>> {
+): Promise<AdapterResult<NewOffer, 'no-applicant' | 'unknown'>> {
   try {
     const applicant = await db<DbApplicant>('applicant')
       .select('*')
@@ -61,17 +63,67 @@ export async function create(
 
     const offer = await db.transaction(async (trx) => {
       const { offerApplicants, ...offerParams } = params
-      const [offer] = await trx<DbOffer>('offer')
-        .insert(dbUtils.camelToPascal(offerParams))
-        .returning('*')
+      const [offer] = await trx.raw<Array<DbOffer>>(
+        `INSERT INTO offer (
+          Status,
+          ExpiresAt,
+          ListingId,
+          ApplicantId,
+          SelectionSnapshot
+        ) OUTPUT INSERTED.*
+        VALUES (?, ?, ?, ?, ?) 
+        `,
+        [
+          offerParams.status,
+          offerParams.expiresAt,
+          offerParams.listingId,
+          offerParams.applicantId,
+          '[]',
+        ]
+      )
 
-      await trx<OfferApplicant>('offer_applicant').insert(offerApplicants)
+      const offerApplicantsValues = offerApplicants.map((offerApplicant) => [
+        offer.Id,
+        params.listingId,
+        offerApplicant.applicantId,
+        offerApplicant.applicantStatus,
+        offerApplicant.applicantApplicationType,
+        offerApplicant.applicantQueuePoints,
+        offerApplicant.applicantAddress,
+        offerApplicant.applicantHasParkingSpace,
+        offerApplicant.applicantHousingLeaseStatus,
+        offerApplicant.applicantPriority,
+        offerApplicant.sortOrder,
+      ])
+
+      const placeholders = offerApplicants
+        .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .join(', ')
+
+      await trx.raw(
+        `INSERT INTO offer_applicant (
+          offerId,
+          listingId,
+          applicantId,
+          applicantStatus,
+          applicantApplicationType,
+          applicantQueuePoints,
+          applicantAddress,
+          applicantHasParkingSpace,
+          applicantHousingLeaseStatus,
+          applicantPriority,
+          sortOrder
+        ) OUTPUT INSERTED.*
+        VALUES ${placeholders}`,
+        offerApplicantsValues.flat()
+      )
 
       return offer
     })
 
     return { ok: true, data: transformToOfferFromDbOffer(offer, applicant) }
   } catch (err) {
+    console.log(err)
     logger.error(err, 'Error creating offer')
     return { ok: false, err: 'unknown' }
   }
@@ -373,7 +425,7 @@ const transformToDetailedOfferFromDbOffer = (
   }
 }
 
-const transformToOfferFromDbOffer = (o: DbOffer, a: DbApplicant): Offer => {
+const transformToOfferFromDbOffer = (o: DbOffer, a: DbApplicant): NewOffer => {
   const {
     selectionSnapshot: selectedApplicants,
     applicantId: _applicantId,
