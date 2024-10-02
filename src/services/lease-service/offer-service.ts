@@ -24,12 +24,12 @@ export const acceptOffer = async (params: {
     await db.transaction(async (trx) => {
       await updateListing(params.listingId, trx)
       await updateApplicant(
+        trx,
         params.applicantId,
-        ApplicantStatus.OfferAccepted,
-        trx
+        ApplicantStatus.OfferAccepted
       )
-      await updateOffer(params.offerId, OfferStatus.Accepted, trx)
-      await updateOfferApplicants(
+      await updateOffer(trx, params.offerId, OfferStatus.Accepted)
+      await updateOfferApplicant(
         trx,
         params.offerId,
         params.listingId,
@@ -73,12 +73,12 @@ export const denyOffer = async (params: {
   try {
     await db.transaction(async (trx) => {
       await updateApplicant(
+        trx,
         params.applicantId,
-        ApplicantStatus.OfferDeclined,
-        trx
+        ApplicantStatus.OfferDeclined
       )
-      await updateOffer(params.offerId, OfferStatus.Declined, trx)
-      await updateOfferApplicants(
+      await updateOffer(trx, params.offerId, OfferStatus.Declined)
+      await updateOfferApplicant(
         trx,
         params.offerId,
         params.listingId,
@@ -118,9 +118,9 @@ const updateListing = async (listingId: number, trx: Knex) => {
 }
 
 const updateApplicant = async (
+  trx: Knex,
   applicantId: number,
-  applicantStatus: ApplicantStatus,
-  trx: Knex
+  applicantStatus: ApplicantStatus
 ) => {
   const updateApplicant = await listingAdapter.updateApplicantStatus(
     applicantId,
@@ -134,9 +134,9 @@ const updateApplicant = async (
 }
 
 const updateOffer = async (
+  trx: Knex,
   offerId: number,
-  offerStatus: OfferStatus,
-  trx: Knex
+  offerStatus: OfferStatus
 ) => {
   const updateOffer = await offerAdapter.updateOfferStatus(
     {
@@ -150,7 +150,7 @@ const updateOffer = async (
   }
 }
 
-const updateOfferApplicants = async (
+const updateOfferApplicant = async (
   trx: Knex,
   offerId: number,
   listingId: number,
