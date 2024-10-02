@@ -43,10 +43,13 @@ export type OfferApplicant = {
   address: string
   hasParkingSpace: boolean
   housingLeaseStatus: LeaseStatus
-  applicationDate: Date
   priority: number | null
   sortOrder: number
   createdAt: Date
+
+  // Below properties comes from applicant table
+  applicationDate: Date
+  name: string
 }
 
 type OfferWithOfferApplicants = Omit<Offer, 'selectedApplicants'> & {
@@ -323,8 +326,6 @@ export async function getOfferByContactCodeAndOfferId(
   }
 }
 
-//todo: rewrite this to use the new db structure and to return selectedApplicants / offeredApplicants
-// TODO: This function  is not returning complete offer object. Should it?
 export async function getOfferByOfferId(
   offerId: number
 ): Promise<AdapterResult<DetailedOffer, 'not-found' | 'unknown'>> {
@@ -453,7 +454,10 @@ export async function updateOfferApplicant(
 
 type GetOffersByListingIdQueryResult = DbOffer & {
   offerApplicants: Array<
-    DbOfferApplicant & { applicantApplicationDate: string }
+    DbOfferApplicant & {
+      applicantApplicationDate: string
+      applicantName: string
+    }
   >
   offeredApplicant: DbApplicant
 }
@@ -493,7 +497,8 @@ export async function getOffersWithOfferApplicantsByListingId(
           offer_applicant.applicantPriority,
           offer_applicant.sortOrder,
           offer_applicant.createdAt,
-          applicant.applicationDate as applicantApplicationDate
+          applicant.applicationDate as applicantApplicationDate,
+          applicant.name as applicantName
         FROM offer_applicant
         INNER JOIN applicant ON offer_applicant.applicantId = applicant.Id
         WHERE offer_applicant.offerId = offer.Id
@@ -503,6 +508,7 @@ export async function getOffersWithOfferApplicantsByListingId(
       FROM offer
       -- TODO: This is a SQL injection vulnerability. Use parameterized queries.
       WHERE offer.ListingId = ${listingId}
+      ORDER BY offer.CreatedAt ASC
     `)
 
     const mappedRows = rows.map((row) => {
@@ -529,7 +535,9 @@ export async function getOffersWithOfferApplicantsByListingId(
 const transformOfferByListingIdQueryResult = (
   offer: DbOffer,
   offeredApplicant: DbApplicant,
-  offerApplicants: Array<DbOfferApplicant & { applicantApplicationDate: Date }>
+  offerApplicants: Array<
+    DbOfferApplicant & { applicantApplicationDate: Date; applicantName: string }
+  >
 ): OfferWithOfferApplicants => {
   return {
     id: offer.Id,
@@ -564,6 +572,7 @@ const transformOfferByListingIdQueryResult = (
       sortOrder: a.sortOrder,
       createdAt: new Date(a.createdAt),
       applicationDate: new Date(a.applicantApplicationDate),
+      name: a.applicantName,
     })),
   }
 }

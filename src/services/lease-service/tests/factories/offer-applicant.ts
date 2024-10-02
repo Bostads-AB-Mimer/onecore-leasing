@@ -17,8 +17,10 @@ export const OfferApplicantFactory = Factory.define<OfferApplicant>(
     hasParkingSpace: true,
     housingLeaseStatus: LeaseStatus.Current,
     createdAt: new Date(),
-    applicationDate: new Date(),
     sortOrder: sequence,
+
+    applicationDate: new Date(),
+    name: 'Test Testsson',
   })
 )
 

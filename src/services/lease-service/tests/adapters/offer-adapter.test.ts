@@ -346,7 +346,7 @@ describe('offer-adapter', () => {
         applicants.map(listingAdapter.createApplication)
       )
 
-      await offerAdapter.create(db, {
+      const insertedOffer_1 = await offerAdapter.create(db, {
         status: OfferStatus.Active,
         expiresAt: new Date(),
         listingId: listing.data.id,
@@ -363,7 +363,7 @@ describe('offer-adapter', () => {
         ],
       })
 
-      await offerAdapter.create(db, {
+      const insertedOffer_2 = await offerAdapter.create(db, {
         status: OfferStatus.Expired,
         expiresAt: new Date(),
         listingId: listing.data.id,
@@ -376,58 +376,63 @@ describe('offer-adapter', () => {
         ],
       })
 
+      assert(insertedOffer_1.ok)
+      assert(insertedOffer_2.ok)
+
       const res = await offerAdapter.getOffersWithOfferApplicantsByListingId(
         db,
         listing.data.id
       )
       assert(res.ok)
-      expect(res.data).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: expect.any(Number),
-            sentAt: null,
-            expiresAt: expect.any(Date),
-            answeredAt: null,
-            status: OfferStatus.Active,
+      expect(res.data).toEqual([
+        expect.objectContaining({
+          id: insertedOffer_1.data.id,
+          sentAt: null,
+          expiresAt: expect.any(Date),
+          answeredAt: null,
+          status: OfferStatus.Active,
+          listingId: listing.data.id,
+          createdAt: expect.any(Date),
+          offeredApplicant: expect.objectContaining({
+            id: insertedApplicants[0].id,
+            name: insertedApplicants[0].name,
+            contactCode: insertedApplicants[0].contactCode,
+            applicationDate: expect.any(Date),
+            applicationType: insertedApplicants[0].applicationType,
+            status: insertedApplicants[0].status,
             listingId: listing.data.id,
-            createdAt: expect.any(Date),
-            offeredApplicant: expect.objectContaining({
-              id: insertedApplicants[0].id,
-              name: insertedApplicants[0].name,
-              contactCode: insertedApplicants[0].contactCode,
+            nationalRegistrationNumber:
+              insertedApplicants[0].nationalRegistrationNumber,
+          }),
+          selectedApplicants: [
+            expect.objectContaining({
+              applicantId: insertedApplicants[0].id,
               applicationDate: expect.any(Date),
-              applicationType: insertedApplicants[0].applicationType,
-              status: insertedApplicants[0].status,
-              listingId: listing.data.id,
-              nationalRegistrationNumber:
-                insertedApplicants[0].nationalRegistrationNumber,
+              name: insertedApplicants[0].name,
             }),
-            selectedApplicants: [
-              expect.objectContaining({
-                applicantId: insertedApplicants[0].id,
-                applicationDate: expect.any(Date),
-              }),
-              expect.objectContaining({
-                applicantId: insertedApplicants[1].id,
-                applicationDate: expect.any(Date),
-              }),
-            ],
-          }),
-          expect.objectContaining({
-            status: OfferStatus.Expired,
-            listingId: listing.data.id,
-            offeredApplicant: expect.objectContaining({
-              id: insertedApplicants[1].id,
+            expect.objectContaining({
+              applicantId: insertedApplicants[1].id,
+              applicationDate: expect.any(Date),
+              name: insertedApplicants[1].name,
             }),
-            selectedApplicants: [
-              expect.objectContaining({
-                applicantId: insertedApplicants[1].id,
-                applicationDate: expect.any(Date),
-              }),
-            ],
+          ],
+        }),
+        expect.objectContaining({
+          id: insertedOffer_2.data.id,
+          status: OfferStatus.Expired,
+          listingId: listing.data.id,
+          offeredApplicant: expect.objectContaining({
+            id: insertedApplicants[1].id,
           }),
-        ])
-      )
+          selectedApplicants: [
+            expect.objectContaining({
+              applicantId: insertedApplicants[1].id,
+              applicationDate: expect.any(Date),
+              name: insertedApplicants[1].name,
+            }),
+          ],
+        }),
+      ])
     })
   })
 })
