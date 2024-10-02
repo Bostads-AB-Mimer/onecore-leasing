@@ -65,8 +65,6 @@ type CreateOfferParams = {
   selectedApplicants: Array<CreateOfferApplicantParams>
 }
 
-// TODO: Should this function construct the offer applicants partly based on
-// the current state of the applicant in the db?
 export async function create(
   db: Knex,
   params: CreateOfferParams
