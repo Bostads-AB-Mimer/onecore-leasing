@@ -69,10 +69,7 @@ export async function create(
   db: Knex,
   params: CreateOfferParams
 ): Promise<
-  AdapterResult<
-    Omit<Offer, 'selectedApplicants'>,
-    'no-applicant' | 'no-offer-applicants' | 'unknown'
-  >
+  AdapterResult<Offer, 'no-applicant' | 'no-offer-applicants' | 'unknown'>
 > {
   try {
     const applicant = await db<DbApplicant>('applicant')
