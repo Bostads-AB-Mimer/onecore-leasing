@@ -6,7 +6,6 @@ import {
   OfferStatus,
   ApplicantStatus,
   LeaseStatus,
-  DetailedApplicant,
 } from 'onecore-types'
 import { logger } from 'onecore-utilities'
 import { Knex } from 'knex'
@@ -103,17 +102,15 @@ export async function create(
           Status,
           ExpiresAt,
           ListingId,
-          ApplicantId,
-          SelectionSnapshot
+          ApplicantId
         ) OUTPUT INSERTED.*
-        VALUES (?, ?, ?, ?, ?) 
+        VALUES (?, ?, ?, ?) 
         `,
         [
           offerParams.status,
           offerParams.expiresAt,
           offerParams.listingId,
           offerParams.applicantId,
-          '[]',
         ]
       )
 
@@ -164,7 +161,6 @@ export async function create(
         status: offer.Status,
         expiresAt: offer.ExpiresAt,
         sentAt: offer.CreatedAt,
-        // selectedApplicants: [],
         offeredApplicant: {
           id: applicant.Id,
           name: applicant.Name,
@@ -252,9 +248,6 @@ export async function getOffersForContact(
         status: ApplicantStatus,
         applicationType: ApplicantApplicationType ?? undefined,
       },
-      selectedApplicants: JSON.parse(
-        offer.SelectionSnapshot
-      ) as Array<DetailedApplicant>,
       rentalObjectCode: RentalObjectCode,
     }
   })
@@ -452,6 +445,7 @@ export async function updateOfferApplicant(
 
     return { ok: true, data: null }
   } catch (err) {
+    console.log(err)
     logger.error(err, 'Error updating offer applicant')
     return { ok: false, err: 'unknown' }
   }

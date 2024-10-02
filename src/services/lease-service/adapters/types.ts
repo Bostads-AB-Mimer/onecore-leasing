@@ -5,7 +5,6 @@ export type DbOffer = {
   SentAt: Date | null
   ExpiresAt: Date
   AnsweredAt: Date | null
-  SelectionSnapshot: string
   Status: OfferStatus
   ListingId: number
   ApplicantId: number

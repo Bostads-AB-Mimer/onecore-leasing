@@ -79,6 +79,8 @@ export const routes = (router: KoaRouter) => {
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
       try {
+        // TODO: Maye offer adapter can handle this logic. Checking existing
+        // offers etc.
         const existingOffers =
           await offerAdapter.getOffersWithOfferApplicantsByListingId(
             db,
