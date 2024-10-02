@@ -447,7 +447,7 @@ export async function updateOfferApplicant(
   }
 }
 
-type GetOffersByListingIdQueryResult = DbOffer & {
+type OffersWithOfferApplicantsQueryResult = DbOffer & {
   offerApplicants: string
   offeredApplicant: string
 }
@@ -457,7 +457,8 @@ export async function getOffersWithOfferApplicantsByListingId(
   listingId: number
 ): Promise<AdapterResult<Array<OfferWithOfferApplicants>, 'unknown'>> {
   try {
-    const rows = await db.raw<Array<GetOffersByListingIdQueryResult>>(`
+    const rows = await db.raw<Array<OffersWithOfferApplicantsQueryResult>>(
+      `
       SELECT 
       offer.Id,
       offer.SentAt,
@@ -496,12 +497,13 @@ export async function getOffersWithOfferApplicantsByListingId(
         FOR JSON PATH
       ) as offerApplicants
       FROM offer
-      -- TODO: This is a SQL injection vulnerability. Use parameterized queries.
-      WHERE offer.ListingId = ${listingId}
+      WHERE offer.ListingId = ?
       ORDER BY offer.CreatedAt ASC
-    `)
+    `,
+      [listingId]
+    )
 
-    const mappedRows = rows.map(transformOfferByListingIdQueryResult)
+    const mappedRows = rows.map(transformOfferWithOfferApplicantsQueryResult)
 
     return {
       ok: true,
@@ -513,8 +515,8 @@ export async function getOffersWithOfferApplicantsByListingId(
   }
 }
 
-const transformOfferByListingIdQueryResult = (
-  result: GetOffersByListingIdQueryResult
+const transformOfferWithOfferApplicantsQueryResult = (
+  result: OffersWithOfferApplicantsQueryResult
 ): OfferWithOfferApplicants => {
   const offeredApplicant = JSON.parse(result.offeredApplicant) as DbApplicant
   const offerApplicants = JSON.parse(result.offerApplicants) as Array<
