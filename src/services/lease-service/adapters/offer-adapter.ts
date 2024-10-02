@@ -32,6 +32,7 @@ export type DbOfferApplicant = {
   createdAt: Date
 }
 
+// TODO: Maybe exposed id should be applicantId to avoid confusion.
 export type OfferApplicant = {
   id: number
   listingId: number
@@ -116,21 +117,19 @@ export async function create(
         ]
       )
 
-      const offerApplicantsValues = selectedApplicants.map(
-        (offerApplicant, i) => [
-          offer.Id,
-          params.listingId,
-          offerApplicant.applicantId,
-          offerApplicant.status,
-          offerApplicant.applicationType,
-          offerApplicant.queuePoints,
-          offerApplicant.address,
-          offerApplicant.hasParkingSpace,
-          offerApplicant.housingLeaseStatus,
-          offerApplicant.priority,
-          i + 1,
-        ]
-      )
+      const offerApplicantsValues = selectedApplicants.map((a, i) => [
+        offer.Id,
+        params.listingId,
+        a.applicantId,
+        a.status,
+        a.applicationType,
+        a.queuePoints,
+        a.address,
+        a.hasParkingSpace,
+        a.housingLeaseStatus,
+        a.priority,
+        i + 1,
+      ])
 
       const placeholders = selectedApplicants
         .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
