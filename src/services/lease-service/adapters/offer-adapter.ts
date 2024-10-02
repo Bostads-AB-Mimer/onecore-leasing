@@ -45,10 +45,17 @@ type OfferWithOfferApplicants = Offer & {
   selectedApplicants: Array<OfferApplicant>
 }
 
-type CreateOfferApplicantParams = Omit<
-  OfferApplicant,
-  'id' | 'createdAt' | 'offerId' | 'sortOrder'
->
+type CreateOfferApplicantParams = {
+  listingId: number
+  applicantId: number
+  status: ApplicantStatus
+  applicationType: 'Replace' | 'Additional'
+  queuePoints: number
+  address: string
+  hasParkingSpace: boolean
+  housingLeaseStatus: LeaseStatus
+  priority: number
+}
 
 type CreateOfferParams = {
   status: OfferStatus
