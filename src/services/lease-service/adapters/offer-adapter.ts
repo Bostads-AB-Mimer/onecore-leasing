@@ -11,25 +11,15 @@ import { logger } from 'onecore-utilities'
 import { Knex } from 'knex'
 
 import { db } from './db'
-import { AdapterResult, DbApplicant, DbDetailedOffer, DbOffer } from './types'
+import {
+  AdapterResult,
+  DbApplicant,
+  DbDetailedOffer,
+  DbOffer,
+  DbOfferApplicant,
+} from './types'
 
 import * as dbUtils from './utils'
-
-export type DbOfferApplicant = {
-  id: number
-  listingId: number
-  offerId: number
-  applicantId: number
-  applicantStatus: ApplicantStatus
-  applicantApplicationType: 'Replace' | 'Additional'
-  applicantQueuePoints: number
-  applicantAddress: string
-  applicantHasParkingSpace: boolean
-  applicantHousingLeaseStatus: LeaseStatus
-  applicantPriority: number | null
-  sortOrder: number
-  createdAt: Date
-}
 
 // TODO: Maybe exposed id should be applicantId to avoid confusion.
 export type OfferApplicant = {
@@ -52,7 +42,7 @@ export type OfferApplicant = {
   name: string
 }
 
-type OfferWithOfferApplicants = Omit<Offer, 'selectedApplicants'> & {
+type OfferWithOfferApplicants = Offer & {
   selectedApplicants: Array<OfferApplicant>
 }
 
@@ -256,7 +246,6 @@ export async function getOffersForContact(
   })
 }
 
-// TODO: This function  is not returning complete offer object. Should it?
 export async function getOfferByContactCodeAndOfferId(
   contactCode: string,
   offerId: number
@@ -417,7 +406,8 @@ export async function updateOfferStatus(
       return { ok: false, err: 'no-update' }
     }
     return { ok: true, data: null }
-  } catch (_err) {
+  } catch (err) {
+    logger.error(err, 'Error updating offer status')
     return { ok: false, err: 'unknown' }
   }
 }
@@ -446,20 +436,14 @@ export async function updateOfferApplicant(
 
     return { ok: true, data: null }
   } catch (err) {
-    console.log(err)
     logger.error(err, 'Error updating offer applicant')
     return { ok: false, err: 'unknown' }
   }
 }
 
 type GetOffersByListingIdQueryResult = DbOffer & {
-  offerApplicants: Array<
-    DbOfferApplicant & {
-      applicantApplicationDate: string
-      applicantName: string
-    }
-  >
-  offeredApplicant: DbApplicant
+  offerApplicants: string
+  offeredApplicant: string
 }
 
 export async function getOffersWithOfferApplicantsByListingId(
@@ -511,16 +495,7 @@ export async function getOffersWithOfferApplicantsByListingId(
       ORDER BY offer.CreatedAt ASC
     `)
 
-    const mappedRows = rows.map((row) => {
-      const offeredApplicant = JSON.parse(row.offeredApplicant as any)
-      const offerApplicants = JSON.parse(row.offerApplicants as any)
-
-      return transformOfferByListingIdQueryResult(
-        row,
-        offeredApplicant,
-        offerApplicants
-      )
-    })
+    const mappedRows = rows.map(transformOfferByListingIdQueryResult)
 
     return {
       ok: true,
@@ -533,20 +508,24 @@ export async function getOffersWithOfferApplicantsByListingId(
 }
 
 const transformOfferByListingIdQueryResult = (
-  offer: DbOffer,
-  offeredApplicant: DbApplicant,
-  offerApplicants: Array<
-    DbOfferApplicant & { applicantApplicationDate: Date; applicantName: string }
-  >
+  result: GetOffersByListingIdQueryResult
 ): OfferWithOfferApplicants => {
+  const offeredApplicant = JSON.parse(result.offeredApplicant) as DbApplicant
+  const offerApplicants = JSON.parse(result.offerApplicants) as Array<
+    DbOfferApplicant & {
+      applicantName: string
+      applicantApplicationDate: string
+    }
+  >
+
   return {
-    id: offer.Id,
-    sentAt: offer.SentAt,
-    expiresAt: offer.ExpiresAt,
-    answeredAt: offer.AnsweredAt,
-    status: offer.Status,
-    listingId: offer.ListingId,
-    createdAt: offer.CreatedAt,
+    id: result.Id,
+    sentAt: result.SentAt,
+    expiresAt: result.ExpiresAt,
+    answeredAt: result.AnsweredAt,
+    status: result.Status,
+    listingId: result.ListingId,
+    createdAt: result.CreatedAt,
     offeredApplicant: {
       id: offeredApplicant.Id,
       name: offeredApplicant.Name,

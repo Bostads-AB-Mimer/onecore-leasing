@@ -1,7 +1,8 @@
 import { Factory } from 'fishery'
 import { ApplicantStatus, LeaseStatus } from 'onecore-types'
 // TODO: import from onecore-types
-import { DbOfferApplicant, OfferApplicant } from '../../adapters/offer-adapter'
+import { OfferApplicant } from '../../adapters/offer-adapter'
+import { DbOfferApplicant } from '../../adapters/types'
 
 export const OfferApplicantFactory = Factory.define<OfferApplicant>(
   ({ sequence }) => ({
