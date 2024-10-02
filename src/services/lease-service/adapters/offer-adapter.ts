@@ -21,7 +21,6 @@ import {
 
 import * as dbUtils from './utils'
 
-// TODO: Maybe exposed id should be applicantId to avoid confusion.
 export type OfferApplicant = {
   id: number
   listingId: number
@@ -33,7 +32,7 @@ export type OfferApplicant = {
   address: string
   hasParkingSpace: boolean
   housingLeaseStatus: LeaseStatus
-  priority: number | null
+  priority: number
   sortOrder: number
   createdAt: Date
 

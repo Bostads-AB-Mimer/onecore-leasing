@@ -27,7 +27,7 @@ export type DbOfferApplicant = {
   applicantAddress: string
   applicantHasParkingSpace: boolean
   applicantHousingLeaseStatus: LeaseStatus
-  applicantPriority: number | null
+  applicantPriority: number
   sortOrder: number
   createdAt: Date
 }

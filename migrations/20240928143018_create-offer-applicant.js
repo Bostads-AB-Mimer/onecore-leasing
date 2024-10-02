@@ -10,7 +10,6 @@ exports.up = function (knex) {
     `)
 
     await trx.raw(`
-      -- TODO: Migrate existing data?
       CREATE TABLE offer_applicant (
         id int NOT NULL PRIMARY KEY IDENTITY(1,1),
         listingId int NOT NULL,
@@ -22,10 +21,7 @@ exports.up = function (knex) {
         applicantAddress text NOT NULL,
         applicantHasParkingSpace bit NOT NULL,
         applicantHousingLeaseStatus int NOT NULL,
-
-        -- TODO: Does this need to be nullable?
-        applicantPriority int,
-
+        applicantPriority int NOT NULL,
         sortOrder int NOT NULL,
         createdAt datetime NOT NULL DEFAULT GETUTCDATE(),
         FOREIGN KEY (listingId) REFERENCES listing(id),
