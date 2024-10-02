@@ -34,7 +34,7 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             id: -1,
           }),
         ],
@@ -61,16 +61,15 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             listingId: listing.data.id,
             applicantId: applicant_one.id,
-            applicantPriority: 2,
-            sortOrder: 1,
+            priority: 2,
           }),
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             listingId: listing.data.id,
             applicantId: applicant_two.id,
-            applicantPriority: 2,
+            priority: 2,
             sortOrder: 2,
           }),
         ],
@@ -96,10 +95,10 @@ describe('offer-adapter', () => {
         factory.applicant.build({ listingId: listing.data.id })
       )
 
-      const offerApplicant = factory.dbOfferApplicant.build({
+      const offerApplicant = factory.offerApplicant.build({
         listingId: listing.data.id,
         applicantId: applicant_one.id,
-        applicantPriority: 2,
+        priority: 2,
         sortOrder: 1,
       })
 
@@ -122,14 +121,13 @@ describe('offer-adapter', () => {
           listingId: listing.data.id,
           offerId: insertedOffer.data.id,
           applicantId: applicant_one.id,
-          applicantStatus: offerApplicant.applicantStatus,
-          applicantApplicationType: offerApplicant.applicantApplicationType,
-          applicantQueuePoints: offerApplicant.applicantQueuePoints,
-          applicantAddress: offerApplicant.applicantAddress,
+          applicantStatus: offerApplicant.status,
+          applicantApplicationType: offerApplicant.applicationType,
+          applicantQueuePoints: offerApplicant.queuePoints,
+          applicantAddress: offerApplicant.address,
           applicantHasParkingSpace: true,
-          applicantHousingLeaseStatus:
-            offerApplicant.applicantHousingLeaseStatus,
-          applicantPriority: offerApplicant.applicantPriority,
+          applicantHousingLeaseStatus: offerApplicant.housingLeaseStatus,
+          applicantPriority: offerApplicant.priority,
           createdAt: expect.any(Date),
           sortOrder: 1,
         },
@@ -151,7 +149,7 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             applicantId: applicant.id,
           }),
         ],
@@ -183,7 +181,7 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             applicantId: applicant.id,
           }),
         ],
@@ -215,7 +213,7 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             applicantId: applicant.id,
           }),
         ],
@@ -264,7 +262,7 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             applicantId: applicant.id,
           }),
         ],
@@ -296,7 +294,7 @@ describe('offer-adapter', () => {
         expiresAt: new Date(),
         status: OfferStatus.Active,
         selectedApplicants: [
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             applicantId: applicant.id,
           }),
         ],
@@ -354,11 +352,11 @@ describe('offer-adapter', () => {
         listingId: listing.data.id,
         applicantId: insertedApplicants[0].id,
         selectedApplicants: [
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             listingId: listing.data.id,
             applicantId: insertedApplicants[0].id,
           }),
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             listingId: listing.data.id,
             applicantId: insertedApplicants[1].id,
           }),
@@ -371,7 +369,7 @@ describe('offer-adapter', () => {
         listingId: listing.data.id,
         applicantId: insertedApplicants[1].id,
         selectedApplicants: [
-          factory.dbOfferApplicant.build({
+          factory.offerApplicant.build({
             listingId: listing.data.id,
             applicantId: insertedApplicants[1].id,
           }),

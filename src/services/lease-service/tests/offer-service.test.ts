@@ -45,7 +45,7 @@ describe('acceptOffer', () => {
       listingId: listing.data.id,
       applicantId: applicant.id,
       selectedApplicants: [
-        factory.dbOfferApplicant.build({ applicantId: applicant.id }),
+        factory.offerApplicant.build({ applicantId: applicant.id }),
       ],
       expiresAt: new Date(),
     })
@@ -81,7 +81,7 @@ describe('acceptOffer', () => {
       listingId: listing.data.id,
       applicantId: applicant.id,
       selectedApplicants: [
-        factory.dbOfferApplicant.build({ applicantId: applicant.id }),
+        factory.offerApplicant.build({ applicantId: applicant.id }),
       ],
       expiresAt: new Date(),
     })
@@ -121,7 +121,7 @@ describe('acceptOffer', () => {
       listingId: listing.data.id,
       applicantId: applicant.id,
       selectedApplicants: [
-        factory.dbOfferApplicant.build({ applicantId: applicant.id }),
+        factory.offerApplicant.build({ applicantId: applicant.id }),
       ],
       expiresAt: new Date(),
     })
@@ -170,7 +170,7 @@ describe('acceptOffer', () => {
       listingId: listing.data.id,
       applicantId: applicant.id,
       selectedApplicants: [
-        factory.dbOfferApplicant.build({ applicantId: applicant.id }),
+        factory.offerApplicant.build({ applicantId: applicant.id }),
       ],
       expiresAt: new Date(),
     })
@@ -211,8 +211,8 @@ describe('acceptOffer', () => {
     )
 
     const initialApplicantStatus = ApplicantStatus.Active
-    const offeredApplicant = factory.dbOfferApplicant.build({
-      applicantStatus: initialApplicantStatus,
+    const offeredApplicant = factory.offerApplicant.build({
+      status: initialApplicantStatus,
       applicantId: applicant.id,
     })
     const offer = await offerAdapter.create(db, {
@@ -265,7 +265,7 @@ describe('denyOffer', () => {
       listingId: listing.data.id,
       applicantId: applicant.id,
       selectedApplicants: [
-        factory.dbOfferApplicant.build({ applicantId: applicant.id }),
+        factory.offerApplicant.build({ applicantId: applicant.id }),
       ],
       expiresAt: new Date(),
     })
@@ -297,7 +297,7 @@ describe('denyOffer', () => {
       listingId: listing.data.id,
       applicantId: applicant.id,
       selectedApplicants: [
-        factory.dbOfferApplicant.build({ applicantId: applicant.id }),
+        factory.offerApplicant.build({ applicantId: applicant.id }),
       ],
       expiresAt: new Date(),
     })
@@ -339,7 +339,7 @@ describe('denyOffer', () => {
       listingId: listing.data.id,
       applicantId: applicant.id,
       selectedApplicants: [
-        factory.dbOfferApplicant.build({ applicantId: applicant.id }),
+        factory.offerApplicant.build({ applicantId: applicant.id }),
       ],
       expiresAt: new Date(),
     })
@@ -360,9 +360,8 @@ describe('denyOffer', () => {
     const updatedOffer = await offerAdapter.getOfferByOfferId(offer.data.id)
     assert(updatedOffer.ok)
 
-    expect(updatedApplicant?.status).toBe(ApplicantStatus.WithdrawnByUser)
-    // TODO: Offer status is incorrectly a string because of db column type!!
-    expect(Number(updatedOffer.data.status)).toBe(OfferStatus.Declined)
+    expect(updatedApplicant?.status).toBe(ApplicantStatus.OfferDeclined)
+    expect(updatedOffer.data.status).toBe(OfferStatus.Declined)
   })
 
   it('updates offer_applicant', async () => {
@@ -375,8 +374,8 @@ describe('denyOffer', () => {
     )
 
     const initialApplicantStatus = ApplicantStatus.Active
-    const offeredApplicant = factory.dbOfferApplicant.build({
-      applicantStatus: initialApplicantStatus,
+    const offeredApplicant = factory.offerApplicant.build({
+      status: initialApplicantStatus,
       applicantId: applicant.id,
     })
     const offer = await offerAdapter.create(db, {

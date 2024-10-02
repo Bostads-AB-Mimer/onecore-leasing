@@ -54,7 +54,7 @@ type OfferWithOfferApplicants = Omit<Offer, 'selectedApplicants'> & {
 }
 
 type CreateOfferApplicantParams = Omit<
-  DbOfferApplicant,
+  OfferApplicant,
   'id' | 'createdAt' | 'offerId' | 'sortOrder'
 >
 
@@ -121,13 +121,13 @@ export async function create(
           offer.Id,
           params.listingId,
           offerApplicant.applicantId,
-          offerApplicant.applicantStatus,
-          offerApplicant.applicantApplicationType,
-          offerApplicant.applicantQueuePoints,
-          offerApplicant.applicantAddress,
-          offerApplicant.applicantHasParkingSpace,
-          offerApplicant.applicantHousingLeaseStatus,
-          offerApplicant.applicantPriority,
+          offerApplicant.status,
+          offerApplicant.applicationType,
+          offerApplicant.queuePoints,
+          offerApplicant.address,
+          offerApplicant.hasParkingSpace,
+          offerApplicant.housingLeaseStatus,
+          offerApplicant.priority,
           i + 1,
         ]
       )
