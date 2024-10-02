@@ -201,7 +201,7 @@ describe('acceptOffer', () => {
     expect(Number(updatedOffer.data.status)).toBe(OfferStatus.Accepted)
   })
 
-  it('updates selectedApplicants', async () => {
+  it('updates offer applicant', async () => {
     const listing = await listingAdapter.createListing(
       factory.listing.build({ status: ListingStatus.Expired })
     )
@@ -225,9 +225,9 @@ describe('acceptOffer', () => {
 
     assert(offer.ok)
 
-    const offeredApplicantInDbBeforeAccept = await db('offer_applicant')
+    const [offerApplicantInDbBeforeAccept] = await db('offer_applicant')
 
-    expect(offeredApplicantInDbBeforeAccept[0].applicantStatus).toEqual(
+    expect(offerApplicantInDbBeforeAccept.applicantStatus).toEqual(
       initialApplicantStatus
     )
 
@@ -238,9 +238,9 @@ describe('acceptOffer', () => {
     })
 
     expect(res.ok).toBe(true)
-    const offeredApplicantInDbAfterAccept = await db('offer_applicant')
+    const [offerApplicantInDbAfterAccept] = await db('offer_applicant')
 
-    expect(offeredApplicantInDbAfterAccept[0].applicantStatus).toEqual(
+    expect(offerApplicantInDbAfterAccept.applicantStatus).toEqual(
       ApplicantStatus.OfferAccepted
     )
   })
@@ -364,7 +364,7 @@ describe('denyOffer', () => {
     expect(updatedOffer.data.status).toBe(OfferStatus.Declined)
   })
 
-  it('updates offer_applicant', async () => {
+  it('updates offer applicant', async () => {
     const listing = await listingAdapter.createListing(
       factory.listing.build({ status: ListingStatus.Expired })
     )
@@ -388,9 +388,9 @@ describe('denyOffer', () => {
 
     assert(offer.ok)
 
-    const offeredApplicantInDbBeforeAccept = await db('offer_applicant')
+    const [offerApplicantInDbBeforeAccept] = await db('offer_applicant')
 
-    expect(offeredApplicantInDbBeforeAccept[0].applicantStatus).toEqual(
+    expect(offerApplicantInDbBeforeAccept.applicantStatus).toEqual(
       initialApplicantStatus
     )
 
@@ -401,9 +401,9 @@ describe('denyOffer', () => {
     })
 
     expect(res.ok).toBe(true)
-    const offeredApplicantInDbAfterAccept = await db('offer_applicant')
+    const [offerApplicantInDbAfterAccept] = await db('offer_applicant')
 
-    expect(offeredApplicantInDbAfterAccept[0].applicantStatus).toEqual(
+    expect(offerApplicantInDbAfterAccept.applicantStatus).toEqual(
       ApplicantStatus.OfferDeclined
     )
   })
