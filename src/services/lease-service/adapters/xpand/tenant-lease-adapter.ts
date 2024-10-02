@@ -380,7 +380,7 @@ const getContactQuery = () => {
       'cmobj.keycmobj as keycmobj',
       'cmctc.keycmctc as contactKey'
     )
-    .innerJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
+    .leftJoin('cmobj', 'cmobj.keycmobj', 'cmctc.keycmobj')
     .leftJoin('cmadr', 'cmadr.keycode', 'cmobj.keycmobj')
     .leftJoin('cmeml', 'cmeml.keycmobj', 'cmobj.keycmobj')
 }
