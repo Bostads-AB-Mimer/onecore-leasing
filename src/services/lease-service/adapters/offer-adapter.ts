@@ -514,7 +514,7 @@ const transformOfferWithOfferApplicantsQueryResult = (
   result: OffersWithOfferApplicantsQueryResult
 ): OfferWithOfferApplicants => {
   const offeredApplicant = JSON.parse(result.offeredApplicant) as DbApplicant
-  const offerApplicants = JSON.parse(result.offerApplicants) as Array<
+  const offerApplicants = (JSON.parse(result.offerApplicants) ?? []) as Array<
     DbOfferApplicant & {
       applicantName: string
       applicantApplicationDate: string
