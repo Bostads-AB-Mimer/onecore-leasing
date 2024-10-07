@@ -454,46 +454,27 @@ export async function getOffersWithOfferApplicantsByListingId(
   try {
     const rows = await db.raw<Array<OffersWithOfferApplicantsQueryResult>>(
       `
-      SELECT 
-      offer.Id,
-      offer.SentAt,
-      offer.ExpiresAt,
-      offer.AnsweredAt,
-      offer.Status,
-      offer.ListingId,
-      offer.ApplicantId,
-      offer.CreatedAt,
-      (
-        SELECT * FROM applicant
-        WHERE applicant.Id = offer.ApplicantId
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-      ) as offeredApplicant,
-      (
-        SELECT 
-          offer_applicant.id,
-          offer_applicant.listingId,
-          offer_applicant.offerId,
-          offer_applicant.applicantId,
-          offer_applicant.applicantStatus,
-          offer_applicant.applicantApplicationType,
-          offer_applicant.applicantQueuePoints,
-          offer_applicant.applicantAddress,
-          offer_applicant.applicantHasParkingSpace,
-          offer_applicant.applicantHousingLeaseStatus,
-          offer_applicant.applicantPriority,
-          offer_applicant.sortOrder,
-          offer_applicant.createdAt,
-          applicant.applicationDate as applicantApplicationDate,
-          applicant.name as applicantName
-        FROM offer_applicant
-        INNER JOIN applicant ON offer_applicant.applicantId = applicant.Id
-        WHERE offer_applicant.offerId = offer.Id
-        ORDER BY offer_applicant.sortOrder ASC
-        FOR JSON PATH
-      ) as offerApplicants
-      FROM offer
-      WHERE offer.ListingId = ?
-      ORDER BY offer.CreatedAt ASC
+      SELECT DISTINCT
+        o.*,
+        (
+          SELECT a.*
+          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        ) AS offeredApplicant,
+        (
+          SELECT 
+            oa.*,
+            a.ApplicationDate AS applicantApplicationDate,
+            a.Name AS applicantName
+          FROM offer_applicant oa
+          WHERE oa.offerId = o.Id
+          ORDER BY oa.sortOrder ASC
+          FOR JSON PATH
+        ) AS offerApplicants
+      FROM offer o
+      INNER JOIN applicant a ON o.ApplicantId = a.Id
+      INNER JOIN offer_applicant oa ON o.Id = oa.offerId
+      WHERE o.ListingId = ?
+      ORDER BY o.CreatedAt ASC
     `,
       [listingId]
     )
