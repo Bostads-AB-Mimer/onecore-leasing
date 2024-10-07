@@ -1,8 +1,5 @@
 import { Factory } from 'fishery'
-import { ApplicantStatus, LeaseStatus } from 'onecore-types'
-// TODO: import from onecore-types
-import { OfferApplicant } from '../../adapters/offer-adapter'
-import { DbOfferApplicant } from '../../adapters/types'
+import { ApplicantStatus, LeaseStatus, OfferApplicant } from 'onecore-types'
 
 export const OfferApplicantFactory = Factory.define<OfferApplicant>(
   ({ sequence }) => ({
@@ -22,24 +19,5 @@ export const OfferApplicantFactory = Factory.define<OfferApplicant>(
 
     applicationDate: new Date(),
     name: 'Test Testsson',
-  })
-)
-
-export const DbOfferApplicantFactory = Factory.define<DbOfferApplicant>(
-  ({ sequence }) => ({
-    id: sequence,
-    listingId: 1,
-    offerId: 1,
-    applicantId: 1,
-    applicantPriority: 1,
-    applicantQueuePoints: 1,
-    applicantStatus: ApplicantStatus.Active,
-    applicantAddress: 'Testgatan 14',
-    applicantApplicationType: 'Additional',
-    applicantHasParkingSpace: true,
-    applicantHousingLeaseStatus: LeaseStatus.Current,
-    createdAt: new Date(),
-    applicantApplicationDate: new Date(),
-    sortOrder: sequence,
   })
 )

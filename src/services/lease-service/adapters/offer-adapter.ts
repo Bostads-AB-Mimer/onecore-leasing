@@ -5,7 +5,8 @@ import {
   DetailedOffer,
   OfferStatus,
   ApplicantStatus,
-  LeaseStatus,
+  OfferWithOfferApplicants,
+  CreateOfferParams,
 } from 'onecore-types'
 import { logger } from 'onecore-utilities'
 import { Knex } from 'knex'
@@ -20,50 +21,6 @@ import {
 } from './types'
 
 import * as dbUtils from './utils'
-
-export type OfferApplicant = {
-  id: number
-  listingId: number
-  offerId: number
-  applicantId: number
-  status: ApplicantStatus
-  applicationType: 'Replace' | 'Additional'
-  queuePoints: number
-  address: string
-  hasParkingSpace: boolean
-  housingLeaseStatus: LeaseStatus
-  priority: number
-  sortOrder: number
-  createdAt: Date
-
-  // Below properties comes from applicant table
-  applicationDate: Date
-  name: string
-}
-
-type OfferWithOfferApplicants = Offer & {
-  selectedApplicants: Array<OfferApplicant>
-}
-
-type CreateOfferApplicantParams = {
-  listingId: number
-  applicantId: number
-  status: ApplicantStatus
-  applicationType: 'Replace' | 'Additional'
-  queuePoints: number
-  address: string
-  hasParkingSpace: boolean
-  housingLeaseStatus: LeaseStatus
-  priority: number
-}
-
-type CreateOfferParams = {
-  status: OfferStatus
-  expiresAt: Date
-  listingId: number
-  applicantId: number
-  selectedApplicants: Array<CreateOfferApplicantParams>
-}
 
 export async function create(
   db: Knex,
