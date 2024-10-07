@@ -420,9 +420,10 @@ export async function getOffersWithOfferApplicantsByListingId(
         (
           SELECT 
             oa.*,
-            a.ApplicationDate AS applicantApplicationDate,
-            a.Name AS applicantName
+            app.ApplicationDate AS applicantApplicationDate,
+            app.Name AS applicantName
           FROM offer_applicant oa
+          INNER JOIN applicant app ON oa.applicantId = app.Id
           WHERE oa.offerId = o.Id
           ORDER BY oa.sortOrder ASC
           FOR JSON PATH

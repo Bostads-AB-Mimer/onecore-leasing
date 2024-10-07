@@ -338,9 +338,10 @@ describe('offer-adapter', () => {
       )
       assert(listing.ok)
 
-      const applicants = factory.applicant.buildList(2, {
-        listingId: listing.data.id,
-      })
+      const applicants = [
+        factory.applicant.build({ listingId: listing.data.id, name: 'A' }),
+        factory.applicant.build({ listingId: listing.data.id, name: 'B' }),
+      ]
 
       const insertedApplicants = await Promise.all(
         applicants.map(listingAdapter.createApplication)
