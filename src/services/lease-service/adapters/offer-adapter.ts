@@ -254,22 +254,19 @@ export async function getOfferByOfferId(
   }
 }
 
-export async function updateOfferStatus(
+export async function updateOfferAnsweredStatus(
   params: {
     offerId: number
     status: OfferStatus
+    answeredAt: Date
   },
   // TODO: What to put as type parameters to knex?
   dbConnection: Knex = db
 ): Promise<AdapterResult<null, 'no-update' | 'unknown'>> {
   try {
     let fieldsToUpdate
-    if (
-      params.status == OfferStatus.Accepted ||
-      params.status == OfferStatus.Declined
-    )
-      fieldsToUpdate = { Status: params.status, AnsweredAt: new Date() }
-    else fieldsToUpdate = { Status: params.status }
+
+    fieldsToUpdate = { Status: params.status, AnsweredAt: params.answeredAt }
 
     // TODO: OfferStatus is stored as a string in the db. I think it should be
     // an integer to correspond to our enum.

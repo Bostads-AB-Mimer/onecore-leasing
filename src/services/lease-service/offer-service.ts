@@ -24,7 +24,12 @@ export const acceptOffer = async (params: {
         ApplicantStatus.OfferAccepted,
         trx
       )
-      await updateOffer(params.offerId, OfferStatus.Accepted, trx)
+      await updateOfferAnsweredStatus(
+        params.offerId,
+        OfferStatus.Accepted,
+        new Date(),
+        trx
+      )
     })
 
     return { ok: true, data: null }
@@ -58,7 +63,12 @@ export const denyOffer = async (params: {
         ApplicantStatus.WithdrawnByUser,
         trx
       )
-      await updateOffer(params.offerId, OfferStatus.Declined, trx)
+      await updateOfferAnsweredStatus(
+        params.offerId,
+        OfferStatus.Declined,
+        new Date(),
+        trx
+      )
     })
 
     return { ok: true, data: null }
@@ -103,15 +113,17 @@ const updateApplicant = async (
   }
 }
 
-const updateOffer = async (
+const updateOfferAnsweredStatus = async (
   offerId: number,
   offerStatus: OfferStatus,
+  answeredAt: Date,
   trx: Knex
 ) => {
-  const updateOffer = await offerAdapter.updateOfferStatus(
+  const updateOffer = await offerAdapter.updateOfferAnsweredStatus(
     {
       offerId,
       status: offerStatus,
+      answeredAt: answeredAt,
     },
     trx
   )
