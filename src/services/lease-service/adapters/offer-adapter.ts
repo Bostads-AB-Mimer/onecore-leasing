@@ -8,7 +8,7 @@ import {
   OfferWithOfferApplicants,
   CreateOfferParams,
 } from 'onecore-types'
-import { logger } from 'onecore-utilities'
+import { loggedAxios, logger } from 'onecore-utilities'
 import { Knex } from 'knex'
 
 import { db } from './db'
@@ -82,6 +82,16 @@ export async function create(
       const placeholders = selectedApplicants
         .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .join(', ')
+
+      logger.info(
+        placeholders,
+        'Create offer ' + JSON.stringify(placeholders, null, 2)
+      )
+
+      logger.info(
+        offerApplicantsValues,
+        'Create offer ' + JSON.stringify(offerApplicantsValues.flat(), null, 2)
+      )
 
       await trx.raw<Array<DbOfferApplicant>>(
         `INSERT INTO offer_applicant (
@@ -446,6 +456,49 @@ export async function getOffersWithOfferApplicantsByListingId(
     }
   } catch (err) {
     logger.error(err, 'Error getting offers by listing ID')
+    return { ok: false, err: 'unknown' }
+  }
+}
+
+export const handleExpiredOffers = async (): Promise<
+  AdapterResult<number[] | null, 'unknown'>
+> => {
+  try {
+    const dbOffers = await db
+      .select(
+        'offer.Id',
+        'offer.SentAt',
+        'offer.ExpiresAt',
+        'offer.AnsweredAt',
+        'offer.Status',
+        'offer.ListingId',
+        'offer.ApplicantId',
+        'offer.CreatedAt'
+      )
+      .from('offer')
+      .where('offer.AnsweredAt', null)
+      .andWhere('offer.ExpiresAt', '<', new Date())
+      .andWhere('offer.Status', OfferStatus.Active)
+
+    for (const dbOffer of dbOffers) {
+      logger.info(null, 'Handling offer ' + dbOffer.Id)
+      await db('offer')
+        .update({ Status: OfferStatus.Expired })
+        .where('offer.Id', dbOffer.Id)
+
+      await db('offer_applicant')
+        .update({
+          ApplicantStatus: ApplicantStatus.OfferDeclined,
+        })
+        .where('offer_applicant.applicantId', dbOffer.ApplicantId) // Todo: Add OfferExpired status?
+    }
+
+    return {
+      ok: true,
+      data: dbOffers.map((dbOffer) => dbOffer.ListingId),
+    }
+  } catch (error) {
+    logger.error(error, 'Error getting expired offers')
     return { ok: false, err: 'unknown' }
   }
 }
