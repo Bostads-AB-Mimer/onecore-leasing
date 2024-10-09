@@ -13,22 +13,33 @@ export const acceptOffer = async (params: {
 }): Promise<
   AdapterResult<
     null,
-    'update-listing' | 'update-applicant' | 'update-offer' | 'unknown'
+    | 'update-listing'
+    | 'update-applicant'
+    | 'update-offer'
+    | 'update-offer-applicant'
+    | 'unknown'
   >
 > => {
   try {
     await db.transaction(async (trx) => {
       await updateListing(params.listingId, trx)
       await updateApplicant(
+        trx,
         params.applicantId,
-        ApplicantStatus.OfferAccepted,
-        trx
+        ApplicantStatus.OfferAccepted
       )
       await updateOfferAnsweredStatus(
+        trx,
         params.offerId,
         OfferStatus.Accepted,
-        new Date(),
-        trx
+        new Date()
+      )
+      await updateOfferApplicant(
+        trx,
+        params.offerId,
+        params.listingId,
+        params.applicantId,
+        ApplicantStatus.OfferAccepted
       )
     })
 
@@ -46,6 +57,10 @@ export const acceptOffer = async (params: {
       return { ok: false, err }
     }
 
+    if (err === 'update-offer-applicant') {
+      return { ok: false, err }
+    }
+
     return { ok: false, err: 'unknown' }
   }
 }
@@ -53,21 +68,34 @@ export const acceptOffer = async (params: {
 export const denyOffer = async (params: {
   applicantId: number
   offerId: number
+  listingId: number
 }): Promise<
-  AdapterResult<null, 'update-applicant' | 'update-offer' | 'unknown'>
+  AdapterResult<
+    null,
+    'update-applicant' | 'update-offer' | 'update-offer-applicant' | 'unknown'
+  >
 > => {
   try {
     await db.transaction(async (trx) => {
       await updateApplicant(
+        trx,
         params.applicantId,
-        ApplicantStatus.WithdrawnByUser,
-        trx
+        ApplicantStatus.OfferDeclined
       )
+
       await updateOfferAnsweredStatus(
+        trx,
         params.offerId,
         OfferStatus.Declined,
-        new Date(),
-        trx
+        new Date()
+      )
+
+      await updateOfferApplicant(
+        trx,
+        params.offerId,
+        params.listingId,
+        params.applicantId,
+        ApplicantStatus.OfferDeclined
       )
     })
 
@@ -78,6 +106,10 @@ export const denyOffer = async (params: {
     }
 
     if (err === 'update-offer') {
+      return { ok: false, err }
+    }
+
+    if (err === 'update-offer-applicant') {
       return { ok: false, err }
     }
 
@@ -98,9 +130,9 @@ const updateListing = async (listingId: number, trx: Knex) => {
 }
 
 const updateApplicant = async (
+  trx: Knex,
   applicantId: number,
-  applicantStatus: ApplicantStatus,
-  trx: Knex
+  applicantStatus: ApplicantStatus
 ) => {
   const updateApplicant = await listingAdapter.updateApplicantStatus(
     applicantId,
@@ -114,10 +146,10 @@ const updateApplicant = async (
 }
 
 const updateOfferAnsweredStatus = async (
+  trx: Knex,
   offerId: number,
   offerStatus: OfferStatus,
-  answeredAt: Date,
-  trx: Knex
+  answeredAt: Date
 ) => {
   const updateOffer = await offerAdapter.updateOfferAnsweredStatus(
     {
@@ -129,5 +161,23 @@ const updateOfferAnsweredStatus = async (
   )
   if (!updateOffer.ok) {
     throw 'update-offer'
+  }
+}
+
+const updateOfferApplicant = async (
+  trx: Knex,
+  offerId: number,
+  listingId: number,
+  applicantId: number,
+  applicantStatus: ApplicantStatus
+) => {
+  const updatedOfferApplicants = await offerAdapter.updateOfferApplicant(trx, {
+    offerId,
+    listingId,
+    applicantId,
+    applicantStatus,
+  })
+  if (!updatedOfferApplicants.ok) {
+    throw 'update-offer-applicant'
   }
 }
