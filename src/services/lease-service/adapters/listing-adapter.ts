@@ -250,14 +250,14 @@ const updateApplicantStatus = async (
 }
 
 type GetListingsWithApplicantsFilter = {
-  type: 'published' | 'ready-for-offer' | 'offered' | 'historical'
+  by?: { type?: 'published' | 'ready-for-offer' | 'offered' | 'historical' }
 }
 
 const getListingsWithApplicants = async (
-  filter?: GetListingsWithApplicantsFilter
+  opts?: GetListingsWithApplicantsFilter
 ): Promise<AdapterResult<Array<Listing>, 'unknown'>> => {
   try {
-    const whereClause = match(filter)
+    const whereClause = match(opts?.by)
       .with({ type: 'published' }, () =>
         db.raw('WHERE l.Status = ?', [ListingStatus.Active])
       )

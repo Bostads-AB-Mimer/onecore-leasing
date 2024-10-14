@@ -66,7 +66,7 @@ describe(listingAdapter.getListingsWithApplicants, () => {
 
       assert(publishedListing.ok)
       const listings = await listingAdapter.getListingsWithApplicants({
-        type: 'published',
+        by: { type: 'published' },
       })
       assert(listings.ok)
 
@@ -112,7 +112,7 @@ describe(listingAdapter.getListingsWithApplicants, () => {
       assert(expiredListingOffer.ok)
 
       const listings = await listingAdapter.getListingsWithApplicants({
-        type: 'ready-for-offer',
+        by: { type: 'ready-for-offer' },
       })
       assert(listings.ok)
 
@@ -158,7 +158,7 @@ describe(listingAdapter.getListingsWithApplicants, () => {
       assert(expiredListingOffer.ok)
 
       const listings = await listingAdapter.getListingsWithApplicants({
-        type: 'offered',
+        by: { type: 'offered' },
       })
       assert(listings.ok)
 
@@ -186,7 +186,7 @@ describe(listingAdapter.getListingsWithApplicants, () => {
       assert(historicalListing.ok)
 
       const listings = await listingAdapter.getListingsWithApplicants({
-        type: 'historical',
+        by: { type: 'historical' },
       })
       assert(listings.ok)
 
