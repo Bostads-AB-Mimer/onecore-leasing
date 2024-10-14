@@ -436,7 +436,7 @@ export const routes = (router: KoaRouter) => {
     }
 
     ctx.status = 200
-    ctx.body = { content: listingsWithApplicants, ...metadata }
+    ctx.body = { content: listingsWithApplicants.data, ...metadata }
   })
 
   router.post('/listings/sync-internal-from-xpand', async (ctx) => {
