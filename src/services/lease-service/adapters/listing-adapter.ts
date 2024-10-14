@@ -5,11 +5,11 @@ import {
   ApplicantStatus,
   ListingStatus,
 } from 'onecore-types'
+import { RequestError } from 'tedious'
+import { Knex } from 'knex'
 
 import { db } from './db'
 import { AdapterResult, DbApplicant, DbListing } from './types'
-import { RequestError } from 'tedious'
-import { Knex } from 'knex'
 
 function transformFromDbListing(row: DbListing): Listing {
   return {
@@ -248,12 +248,15 @@ const updateApplicantStatus = async (
   }
 }
 
-const getAllListingsWithApplicants = async (): Promise<Array<Listing>> => {
-  const query = db
-    .from('listing AS l')
-    .select<Array<DbListing & { applicants: string | null }>>(
-      'l.*',
-      db.raw(`
+const getListingsWithApplicants = async (): Promise<
+  AdapterResult<Array<Listing>, 'unknown'>
+> => {
+  try {
+    const query = db
+      .from('listing AS l')
+      .select<Array<DbListing & { applicants: string | null }>>(
+        'l.*',
+        db.raw(`
       (
         SELECT a.*
         FROM applicant a
@@ -261,35 +264,41 @@ const getAllListingsWithApplicants = async (): Promise<Array<Listing>> => {
         FOR JSON PATH
       ) as applicants
     `)
+      )
+
+    const parseApplicantsJson = (applicants: string | null) =>
+      applicants ? JSON.parse(applicants) : []
+
+    const parseApplicantsApplicationDate = (
+      applicant: Applicant
+    ): Applicant => ({
+      ...applicant,
+      applicationDate: new Date(applicant.applicationDate),
+    })
+
+    const transformListing = (
+      row: DbListing & { applicants: Array<DbApplicant> }
+    ): Listing => ({
+      ...transformFromDbListing(row),
+      applicants: row.applicants
+        .map(transformDbApplicant)
+        .map(parseApplicantsApplicationDate),
+    })
+
+    const result = await query.then((rows) =>
+      rows.map((row) => {
+        return transformListing({
+          ...row,
+          applicants: parseApplicantsJson(row.applicants),
+        })
+      })
     )
 
-  const parseApplicantsJson = (applicants: string | null) =>
-    applicants ? JSON.parse(applicants) : []
-
-  const parseApplicantsApplicationDate = (applicant: Applicant): Applicant => ({
-    ...applicant,
-    applicationDate: new Date(applicant.applicationDate),
-  })
-
-  const transformListing = (
-    row: DbListing & { applicants: Array<DbApplicant> }
-  ): Listing => ({
-    ...transformFromDbListing(row),
-    applicants: row.applicants
-      .map(transformDbApplicant)
-      .map(parseApplicantsApplicationDate),
-  })
-
-  const result = await query.then((rows) =>
-    rows.map((row) => {
-      return transformListing({
-        ...row,
-        applicants: parseApplicantsJson(row.applicants),
-      })
-    })
-  )
-
-  return result
+    return { ok: true, data: result }
+  } catch (err) {
+    logger.error(err, 'listingAdapter.getListingsWithApplicants')
+    return { ok: false, err: 'unknown' }
+  }
 }
 
 /**
@@ -403,7 +412,7 @@ export {
   createApplication,
   getListingById,
   getListingByRentalObjectCode,
-  getAllListingsWithApplicants,
+  getListingsWithApplicants,
   getApplicantById,
   getApplicantsByContactCode,
   getApplicantByContactCodeAndListingId,

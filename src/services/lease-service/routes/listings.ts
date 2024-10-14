@@ -405,7 +405,7 @@ export const routes = (router: KoaRouter) => {
     const metadata = generateRouteMetadata(ctx)
     try {
       const listingsWithApplicants =
-        await listingAdapter.getAllListingsWithApplicants()
+        await listingAdapter.getListingsWithApplicants()
       ctx.status = 200
       ctx.body = { content: listingsWithApplicants, ...metadata }
     } catch (error) {
