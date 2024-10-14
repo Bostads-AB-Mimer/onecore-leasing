@@ -83,16 +83,6 @@ export async function create(
         .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .join(', ')
 
-      logger.info(
-        placeholders,
-        'Create offer ' + JSON.stringify(placeholders, null, 2)
-      )
-
-      logger.info(
-        offerApplicantsValues,
-        'Create offer ' + JSON.stringify(offerApplicantsValues.flat(), null, 2)
-      )
-
       await trx.raw<Array<DbOfferApplicant>>(
         `INSERT INTO offer_applicant (
           offerId,
@@ -483,12 +473,12 @@ export const handleExpiredOffers = async (): Promise<
     for (const dbOffer of dbOffers) {
       logger.info(null, 'Handling offer ' + dbOffer.Id)
       await db('offer')
-        .update({ Status: OfferStatus.Expired })
+        .update({ Status: OfferStatus.Expired, AnsweredAt: new Date() })
         .where('offer.Id', dbOffer.Id)
 
       await db('offer_applicant')
         .update({
-          ApplicantStatus: ApplicantStatus.OfferDeclined,
+          ApplicantStatus: ApplicantStatus.OfferExpired,
         })
         .where('offer_applicant.applicantId', dbOffer.ApplicantId) // Todo: Add OfferExpired status?
     }
