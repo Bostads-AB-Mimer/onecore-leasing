@@ -18,6 +18,7 @@ import {
   isListingInAreaWithSpecificRentalRules,
 } from '../residential-area-rental-rules-validator'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
+import { match } from 'ts-pattern'
 
 /**
  * @swagger
@@ -433,9 +434,9 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        const contact = await getTenant({ contactCode })
+        const tenant = await getTenant({ contactCode })
 
-        if (!contact.ok) {
+        if (!tenant.ok) {
           ctx.status = 500
           ctx.body = {
             error: 'Internal Error',
@@ -444,18 +445,12 @@ export const routes = (router: KoaRouter) => {
           return
         }
 
-        const validatableLease =
-          contact.data.currentHousingContract ||
-          contact.data.upcomingHousingContract
-
-        if (!validatableLease) {
-          ctx.status = 403
-          ctx.body = {
-            reason: 'User is not a current or coming tenant in the property',
-            ...metadata,
-          }
-          return
-        }
+        const validatableLease = match(tenant.data)
+          .with(
+            { type: 'current' },
+            (t) => t.upcomingHousingContract ?? t.currentHousingContract
+          )
+          .otherwise((t) => t.upcomingHousingContract)
 
         const isRentableForTenant =
           await propertyRentalRulesValidator.isParkingSpaceRentableForTenant(
@@ -473,7 +468,7 @@ export const routes = (router: KoaRouter) => {
         }
 
         //if subject has no parking space contracts but is a tenant in the property
-        if (!contact.data.parkingSpaceContracts?.length) {
+        if (!tenant.data.parkingSpaceContracts?.length) {
           //subject is eligible for parking space, applicationType for application should be 'additonal'
           ctx.status = 200
           ctx.body = {
@@ -486,7 +481,7 @@ export const routes = (router: KoaRouter) => {
         }
 
         const getParkingSpacePropertyInfo =
-          contact.data.parkingSpaceContracts.map((lease) =>
+          tenant.data.parkingSpaceContracts.map((lease) =>
             getEstateCodeFromXpandByRentalObjectCode(lease.rentalPropertyId)
           )
 

@@ -1,4 +1,5 @@
-import { Lease, Tenant } from 'onecore-types'
+import { Address, Lease, Tenant } from 'onecore-types'
+import { logger } from 'onecore-utilities'
 
 import { AdapterResult } from './adapters/types'
 import * as estateCodeAdapter from './adapters/xpand/estate-code-adapter'
@@ -20,9 +21,33 @@ type GetTenantError =
 
 type NonEmptyArray<T> = [T, ...T[]]
 
+export type TenantHousingContractInfo =
+  | {
+      type: 'current'
+      currentHousingContract: Lease
+      upcomingHousingContract?: Lease
+    }
+  | { type: 'upcoming'; upcomingHousingContract: Lease }
+
+export type NewTenant = {
+  contactCode: string
+  contactKey: string
+  firstName: string
+  lastName: string
+  fullName: string
+  nationalRegistrationNumber: string
+  birthDate: Date
+  address?: Address
+  phoneNumbers: Tenant['phoneNumbers'] // This should just be PhoneNumber[] and pls remove optional. Rather empty list
+  emailAddress?: string
+  queuePoints: number
+  parkingSpaceContracts: Lease[]
+  housingContracts: NonEmptyArray<Lease>
+} & TenantHousingContractInfo
+
 export async function getTenant(params: {
   contactCode: string
-}): Promise<AdapterResult<Tenant, GetTenantError>> {
+}): Promise<AdapterResult<NewTenant, GetTenantError>> {
   const contact = await tenantLeaseAdapter.getContactByContactCode(
     params.contactCode,
     'false'
@@ -117,10 +142,6 @@ export async function getTenant(params: {
 
   const [currentHousingContract, upcomingHousingContract] = housingContracts
 
-  if (!currentHousingContract && !upcomingHousingContract) {
-    return { ok: false, err: 'housing-contracts-not-found' }
-  }
-
   const leasesWithPropertyType = await Promise.all(
     leasesWithResidentialArea.data.map(async (l) => {
       const type = await estateCodeAdapter
@@ -141,19 +162,56 @@ export async function getTenant(params: {
     leasesWithPropertyType.data
   )
 
-  return {
-    ok: true,
-    data: {
-      ...contact.data,
-      queuePoints: waitingListForInternalParkingSpace.queuePoints,
-      address: contact.data.address,
-      currentHousingContract,
-      upcomingHousingContract,
-      parkingSpaceContracts,
-      housingContracts: [
-        currentHousingContract,
-        upcomingHousingContract,
-      ].filter(Boolean) as NonEmptyArray<Lease>,
-    },
+  try {
+    return {
+      ok: true,
+      data: {
+        contactCode: contact.data.contactCode,
+        contactKey: contact.data.contactKey,
+        birthDate: contact.data.birthDate,
+        firstName: contact.data.firstName,
+        lastName: contact.data.lastName,
+        fullName: contact.data.fullName,
+        emailAddress: contact.data.emailAddress,
+        nationalRegistrationNumber: contact.data.nationalRegistrationNumber,
+        phoneNumbers: contact.data.phoneNumbers,
+        queuePoints: waitingListForInternalParkingSpace.queuePoints,
+        address: contact.data.address,
+        parkingSpaceContracts,
+        housingContracts: [
+          currentHousingContract,
+          upcomingHousingContract,
+        ].filter(Boolean) as NonEmptyArray<Lease>,
+        ...mapHousingContractsToContractInfo({
+          currentHousingContract,
+          upcomingHousingContract,
+        }),
+      },
+    }
+  } catch (err) {
+    logger.error(err, 'Error getting tenant')
+    return { ok: false, err: 'housing-contracts-not-found' }
+  }
+}
+
+const mapHousingContractsToContractInfo = (params: {
+  currentHousingContract?: Lease
+  upcomingHousingContract?: Lease
+}): TenantHousingContractInfo => {
+  if (params.currentHousingContract) {
+    return {
+      type: 'current',
+      currentHousingContract: params.currentHousingContract,
+      upcomingHousingContract: params.upcomingHousingContract,
+    }
+  } else if (params.upcomingHousingContract) {
+    return {
+      type: 'upcoming',
+      upcomingHousingContract: params.upcomingHousingContract,
+    }
+  } else {
+    throw new Error(
+      'No housing contract found when mapping contracts to tenant compatible type'
+    )
   }
 }

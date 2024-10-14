@@ -1,8 +1,11 @@
 import KoaRouter from '@koa/router'
 import {
+  Address,
+  Applicant,
   ApplicantStatus,
   DetailedApplicant,
   InternalParkingSpaceSyncSuccessResponse,
+  Lease,
   Listing,
 } from 'onecore-types'
 import { z } from 'zod'
@@ -12,7 +15,7 @@ import { parseRequestBody } from '../../../middlewares/parse-request-body'
 import * as priorityListService from '../priority-list-service'
 import * as syncParkingSpacesFromXpandService from '../sync-internal-parking-space-listings-from-xpand'
 import * as listingAdapter from '../adapters/listing-adapter'
-import { getTenant } from '../get-tenant'
+import { getTenant, NewTenant, TenantHousingContractInfo } from '../get-tenant'
 
 /**
  * @swagger
@@ -520,6 +523,14 @@ export const routes = (router: KoaRouter) => {
    *                   type: string
    *                   description: The error message.
    */
+
+  type DetailedApplicant3 = Applicant & {
+    queuePoints: number
+    address?: Address
+    parkingSpaceContracts?: Lease[]
+    priority?: number
+  } & TenantHousingContractInfo
+
   router.get('(.*)/listing/:listingId/applicants/details', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     try {
@@ -535,10 +546,18 @@ export const routes = (router: KoaRouter) => {
         return
       }
 
-      const applicants: DetailedApplicant[] = []
+      if (!listing.applicants) {
+        ctx.status = 200
+        ctx.body = {
+          content: [],
+          ...metadata,
+        }
 
-      if (listing.applicants) {
-        for (const applicant of listing.applicants) {
+        return
+      }
+
+      const applicants = await Promise.all(
+        listing.applicants.map(async (applicant) => {
           const tenant = await getTenant({
             contactCode: applicant.contactCode,
           })
@@ -549,18 +568,9 @@ export const routes = (router: KoaRouter) => {
             )
           }
 
-          applicants.push({
-            ...applicant,
-            contactCode: tenant.data.contactCode,
-            nationalRegistrationNumber: tenant.data.nationalRegistrationNumber,
-            queuePoints: tenant.data.queuePoints,
-            address: tenant.data.address,
-            currentHousingContract: tenant.data.currentHousingContract,
-            upcomingHousingContract: tenant.data.upcomingHousingContract,
-            parkingSpaceContracts: tenant.data.parkingSpaceContracts,
-          })
-        }
-      }
+          return mapTenantToDetailedApplicant(tenant.data, applicant)
+        })
+      )
 
       const applicantsWithPriority =
         priorityListService.addPriorityToApplicantsBasedOnRentalRules(
@@ -575,7 +585,7 @@ export const routes = (router: KoaRouter) => {
         ),
         ...metadata,
       }
-    } catch (error: unknown) {
+    } catch (error) {
       logger.error(error, 'Error getting applicants for waiting list')
       ctx.status = 500
 
@@ -587,6 +597,36 @@ export const routes = (router: KoaRouter) => {
       }
     }
   })
+
+  const mapTenantToDetailedApplicant = (
+    tenant: NewTenant,
+    applicant: Applicant
+  ): DetailedApplicant3 => {
+    if (tenant.type === 'current') {
+      return {
+        ...applicant,
+        type: 'current',
+        contactCode: tenant.contactCode,
+        nationalRegistrationNumber: tenant.nationalRegistrationNumber,
+        queuePoints: tenant.queuePoints,
+        address: tenant.address,
+        currentHousingContract: tenant.currentHousingContract,
+        upcomingHousingContract: tenant.upcomingHousingContract,
+        parkingSpaceContracts: tenant.parkingSpaceContracts,
+      }
+    } else {
+      return {
+        ...applicant,
+        type: 'upcoming',
+        contactCode: tenant.contactCode,
+        nationalRegistrationNumber: tenant.nationalRegistrationNumber,
+        queuePoints: tenant.queuePoints,
+        address: tenant.address,
+        upcomingHousingContract: tenant.upcomingHousingContract,
+        parkingSpaceContracts: tenant.parkingSpaceContracts,
+      }
+    }
+  }
 
   /**
    * @swagger

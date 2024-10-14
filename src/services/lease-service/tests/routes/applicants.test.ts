@@ -76,7 +76,9 @@ describe('GET applicants/validatePropertyRentalRules/:contactCode/:rentalObjectC
     )
   })
 
-  it('responds with 403 if applicant does not have a current or upcoming housing contract in same area as listing', async () => {
+  // TODO: This test should be removed or remade because tenant by definition
+  // has at least one of these.
+  it.skip('responds with 403 if applicant does not have a current or upcoming housing contract in same area as listing', async () => {
     const listing = factory.listing.build()
     const applicant = factory.applicant
       .params({
