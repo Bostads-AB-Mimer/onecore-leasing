@@ -7,6 +7,7 @@ import {
 } from 'onecore-types'
 import { RequestError } from 'tedious'
 import { Knex } from 'knex'
+import { match } from 'ts-pattern'
 
 import { db } from './db'
 import { AdapterResult, DbApplicant, DbListing } from './types'
@@ -248,23 +249,58 @@ const updateApplicantStatus = async (
   }
 }
 
-const getListingsWithApplicants = async (): Promise<
-  AdapterResult<Array<Listing>, 'unknown'>
-> => {
+type GetListingsWithApplicantsFilter = {
+  type: 'published' | 'ready-for-offer' | 'offered' | 'historical'
+}
+
+const getListingsWithApplicants = async (
+  filter?: GetListingsWithApplicantsFilter
+): Promise<AdapterResult<Array<Listing>, 'unknown'>> => {
   try {
-    const query = db
-      .from('listing AS l')
-      .select<Array<DbListing & { applicants: string | null }>>(
-        'l.*',
-        db.raw(`
-      (
-        SELECT a.*
-        FROM applicant a
-        WHERE a.ListingId = l.Id
-        FOR JSON PATH
-      ) as applicants
-    `)
+    const whereClause = match(filter)
+      .with({ type: 'published' }, () =>
+        db.raw('WHERE l.Status = ?', [ListingStatus.Active])
       )
+      .with({ type: 'historical' }, () =>
+        db.raw('WHERE l.Status = ?', [ListingStatus.Assigned])
+      )
+      .with({ type: 'ready-for-offer' }, () =>
+        db.raw(
+          `WHERE l.Status = ? 
+          AND NOT EXISTS (
+            SELECT 1
+            FROM offer o
+            WHERE o.ListingId = l.Id
+          )`,
+          [ListingStatus.Expired]
+        )
+      )
+      .with({ type: 'offered' }, () =>
+        db.raw(
+          `WHERE l.Status = ? 
+          AND EXISTS (
+            SELECT 1
+            FROM offer o
+            WHERE o.ListingId = l.Id
+          )`,
+          [ListingStatus.Expired]
+        )
+      )
+      .otherwise(() => db.raw('WHERE 1=1'))
+
+    const listings = db.raw<Array<DbListing & { applicants: string | null }>>(
+      `
+        SELECT l.*,
+        (
+          SELECT a.*
+          FROM applicant a
+          WHERE a.ListingId = l.Id
+          FOR JSON PATH
+        ) as applicants
+        FROM listing l
+        ${whereClause}
+      `
+    )
 
     const parseApplicantsJson = (applicants: string | null) =>
       applicants ? JSON.parse(applicants) : []
@@ -285,7 +321,7 @@ const getListingsWithApplicants = async (): Promise<
         .map(parseApplicantsApplicationDate),
     })
 
-    const result = await query.then((rows) =>
+    const result = await listings.then((rows) =>
       rows.map((row) => {
         return transformListing({
           ...row,
@@ -296,6 +332,7 @@ const getListingsWithApplicants = async (): Promise<
 
     return { ok: true, data: result }
   } catch (err) {
+    console.log(err)
     logger.error(err, 'listingAdapter.getListingsWithApplicants')
     return { ok: false, err: 'unknown' }
   }
