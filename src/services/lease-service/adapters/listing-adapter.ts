@@ -4,6 +4,7 @@ import {
   Listing,
   ApplicantStatus,
   ListingStatus,
+  GetListingsWithApplicantsFilterParams,
 } from 'onecore-types'
 import { RequestError } from 'tedious'
 import { Knex } from 'knex'
@@ -249,12 +250,8 @@ const updateApplicantStatus = async (
   }
 }
 
-type GetListingsWithApplicantsFilter = {
-  by?: { type?: 'published' | 'ready-for-offer' | 'offered' | 'historical' }
-}
-
 const getListingsWithApplicants = async (
-  opts?: GetListingsWithApplicantsFilter
+  opts?: GetListingsWithApplicantsFilterParams
 ): Promise<AdapterResult<Array<Listing>, 'unknown'>> => {
   try {
     const whereClause = match(opts?.by)
