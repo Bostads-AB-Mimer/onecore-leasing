@@ -319,17 +319,16 @@ const getListingsWithApplicants = async (
     })
 
     const result = await listings.then((rows) =>
-      rows.map((row) => {
-        return transformListing({
+      rows.map((row) =>
+        transformListing({
           ...row,
           applicants: parseApplicantsJson(row.applicants),
         })
-      })
+      )
     )
 
     return { ok: true, data: result }
   } catch (err) {
-    console.log(err)
     logger.error(err, 'listingAdapter.getListingsWithApplicants')
     return { ok: false, err: 'unknown' }
   }
