@@ -360,6 +360,15 @@ const getExpiredListings = async () => {
   return listings
 }
 
+const getExpiredListingsWithNoOffers = async () => {
+  const listings = await db('listing')
+    .leftJoin('offer', 'offer.ListingId', 'listing.Id')
+    .whereNull('offer.ListingId')
+    .where('Status', '=', ListingStatus.Expired)
+
+  return listings
+}
+
 const updateListingStatuses = async (
   listingIds: number[],
   status: ListingStatus,
@@ -403,6 +412,7 @@ export {
   createApplication,
   getListingById,
   getListingByRentalObjectCode,
+  getExpiredListingsWithNoOffers,
   getAllListingsWithApplicants,
   getApplicantById,
   getApplicantsByContactCode,
