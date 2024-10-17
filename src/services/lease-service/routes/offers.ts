@@ -419,4 +419,21 @@ export const routes = (router: KoaRouter) => {
     ctx.status = 200
     ctx.body = { content: result.data, ...metadata }
   })
+
+  router.get('/offers/listing-id/:listingId/active', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+    const result = await offerAdapter.getActiveOfferByListingId(
+      db,
+      Number.parseInt(ctx.params.listingId)
+    )
+
+    if (!result.ok) {
+      ctx.status = 500
+      ctx.body = { error: 'Internal server error', ...metadata }
+      return
+    }
+
+    ctx.status = 200
+    ctx.body = { content: result.data, ...metadata }
+  })
 }
