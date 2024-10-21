@@ -167,7 +167,7 @@ describe(listingAdapter.getListingsWithApplicants, () => {
       ])
     })
 
-    it.only('offered listings has active offer', async () => {
+    it('offered listings has active offer', async () => {
       const listingWithExpiredOffer = await listingAdapter.createListing(
         factory.listing.build({
           rentalObjectCode: '1',
