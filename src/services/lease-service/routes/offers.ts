@@ -457,6 +457,12 @@ export const routes = (router: KoaRouter) => {
       return
     }
 
+    if (!result.data) {
+      ctx.status = 404
+      ctx.body = { ...metadata }
+      return
+    }
+
     ctx.status = 200
     ctx.body = { content: result.data, ...metadata }
   })
