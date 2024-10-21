@@ -420,6 +420,30 @@ export const routes = (router: KoaRouter) => {
     ctx.body = { content: result.data, ...metadata }
   })
 
+  /**
+   * @swagger
+   * /offers/listing-id/{listingId}/active:
+   *   get:
+   *     summary: Get active offer for a specific listing
+   *     description: Get offer for a listing.
+   *     tags: [Offer]
+   *     parameters:
+   *       - in: path
+   *         name: listingId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: The unique ID of the listing.
+   *     responses:
+   *       200:
+   *         description: Offer or null.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *       500:
+   *         description: Internal server error.
+   */
   router.get('/offers/listing-id/:listingId/active', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     const result = await offerAdapter.getActiveOfferByListingId(
