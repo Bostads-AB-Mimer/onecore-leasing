@@ -1,5 +1,5 @@
 import KoaRouter from '@koa/router'
-import { OfferStatus } from 'onecore-types'
+import { GetActiveOfferByListingIdErrorCodes, OfferStatus } from 'onecore-types'
 import { logger, generateRouteMetadata } from 'onecore-utilities'
 import { HttpStatusCode } from 'axios'
 import { z } from 'zod'
@@ -453,13 +453,19 @@ export const routes = (router: KoaRouter) => {
 
     if (!result.ok) {
       ctx.status = 500
-      ctx.body = { error: 'Internal server error', ...metadata }
+      ctx.body = {
+        error: GetActiveOfferByListingIdErrorCodes.Unknown,
+        ...metadata,
+      }
       return
     }
 
     if (!result.data) {
       ctx.status = 404
-      ctx.body = { ...metadata }
+      ctx.body = {
+        error: GetActiveOfferByListingIdErrorCodes.NotFound,
+        ...metadata,
+      }
       return
     }
 
