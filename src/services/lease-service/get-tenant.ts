@@ -52,13 +52,6 @@ export async function getTenant(params: {
       waitingList.data
     )
 
-  if (!waitingListForInternalParkingSpace) {
-    return {
-      ok: false,
-      err: 'waiting-list-internal-parking-space-not-found',
-    }
-  }
-
   const leases = await tenantLeaseAdapter.getLeasesForContactCode(
     contact.data.contactCode,
     'true',
@@ -145,7 +138,9 @@ export async function getTenant(params: {
     ok: true,
     data: {
       ...contact.data,
-      queuePoints: waitingListForInternalParkingSpace.queuePoints,
+      queuePoints: waitingListForInternalParkingSpace
+        ? waitingListForInternalParkingSpace.queuePoints
+        : 0,
       address: contact.data.address,
       currentHousingContract,
       upcomingHousingContract,
