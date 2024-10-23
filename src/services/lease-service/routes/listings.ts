@@ -45,38 +45,39 @@ export const routes = (router: KoaRouter) => {
    *               items:
    *                 type: object
    *       409:
-   *         description: Conflict. Listing with the same rentalObjectCode already exists.
+   *         description: Conflict. Active listing with the same rentalObjectCode already exists.
    *       500:
    *         description: Internal server error. Failed to create listing.
    */
-  //todo: test cases to write:
-  //can add listing
-  //cannot add duplicate listing
   router.post('(.*)/listings', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     try {
       const listingData = <Listing>ctx.request.body
-      const existingListing = await listingAdapter.getListingByRentalObjectCode(
-        listingData.rentalObjectCode
-      )
-      if (
-        existingListing != null &&
-        existingListing.rentalObjectCode === listingData.rentalObjectCode
-      ) {
-        ctx.status = 409
+      const listing = await listingAdapter.createListing(listingData)
+
+      if (!listing.ok) {
+        if (listing.err === 'conflict-active-listing') {
+          ctx.status = 409
+          ctx.body = {
+            reason: 'Active listing already exists for this rentalObjectCode',
+            ...metadata,
+          }
+          return
+        }
+
+        ctx.status = 500
         ctx.body = {
-          error: 'Listing with the same rentalObjectCode already exists.',
+          error: 'Internal server error',
           ...metadata,
         }
+
         return
       }
 
-      const listing = await listingAdapter.createListing(listingData)
-
-      ctx.status = 201 // HTTP status code for Created
-      ctx.body = { content: listing, ...metadata }
+      ctx.status = 201
+      ctx.body = { content: listing.data, ...metadata }
     } catch (error) {
-      ctx.status = 500 // Internal Server Error
+      ctx.status = 500
 
       if (error instanceof Error) {
         ctx.body = { error: error.message, ...metadata }
