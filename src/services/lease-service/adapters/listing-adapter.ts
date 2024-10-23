@@ -126,7 +126,7 @@ const getListingByRentalObjectCode = async (
 const getListingById = async (
   listingId: number
 ): Promise<Listing | undefined> => {
-  logger.info({ listingId }, 'Getting listing from leasing DB')
+  logger.info({ listingId }, `Getting listing ${listingId} from leasing DB`)
   const result = await db
     .from('listing AS l')
     .select<DbListing & { applicants: string | null }>(
@@ -418,9 +418,14 @@ const getExpiredListingsWithNoOffers = async (): Promise<
     .whereNull('offer.ListingId')
     .where('listing.Status', '=', ListingStatus.Expired)
 
-  const listings = dbListings.map((dbListing) =>
-    transformFromDbListing(dbListing)
-  )
+  const listings = dbListings.map((dbListing) => {
+    const listing = transformFromDbListing(dbListing)
+    // Manual transformations because colliding column names due to left join
+    listing.id = dbListing.Id[0]
+    listing.status = dbListing.Status[0]
+
+    return listing
+  })
 
   return { ok: true, data: listings }
 }
