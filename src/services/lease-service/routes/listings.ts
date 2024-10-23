@@ -618,7 +618,7 @@ export const routes = (router: KoaRouter) => {
         ...metadata,
       }
     } catch (error: unknown) {
-      logger.error(error, 'Error getting applicants for waiting list')
+      logger.error(error, 'Error getting applicants for listing')
       ctx.status = 500
 
       if (error instanceof Error) {
