@@ -402,13 +402,19 @@ const getExpiredListings = async () => {
   return listings
 }
 
-const getExpiredListingsWithNoOffers = async () => {
-  const listings = await db('listing')
+const getExpiredListingsWithNoOffers = async (): Promise<
+  AdapterResult<Array<Listing>, 'unknown'>
+> => {
+  const dbListings = await db('listing')
     .leftJoin('offer', 'offer.ListingId', 'listing.Id')
     .whereNull('offer.ListingId')
-    .where('Status', '=', ListingStatus.Expired)
+    .where('listing.Status', '=', ListingStatus.Expired)
 
-  return listings
+  const listings = dbListings.map((dbListing) =>
+    transformFromDbListing(dbListing)
+  )
+
+  return { ok: true, data: listings }
 }
 
 const updateListingStatuses = async (
@@ -455,7 +461,6 @@ export {
   getListingById,
   getListingByRentalObjectCode,
   getExpiredListingsWithNoOffers,
-  getAllListingsWithApplicants,
   getListingsWithApplicants,
   getApplicantById,
   getApplicantsByContactCode,
