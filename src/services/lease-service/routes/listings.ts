@@ -5,6 +5,7 @@ import {
   InternalParkingSpaceSyncSuccessResponse,
   Listing,
   ListingStatus,
+  UpdateListingStatusErrorCodes,
 } from 'onecore-types'
 import { z } from 'zod'
 import { generateRouteMetadata, logger } from 'onecore-utilities'
@@ -741,11 +742,17 @@ export const routes = (router: KoaRouter) => {
       if (!result.ok) {
         if (result.err === 'no-update') {
           ctx.status = 404
-          ctx.body = { reason: 'Listing not found', ...metadata }
+          ctx.body = {
+            error: UpdateListingStatusErrorCodes.NotFound,
+            ...metadata,
+          }
           return
         } else {
           ctx.status = 500
-          ctx.body = { error: 'Internal server error', ...metadata }
+          ctx.body = {
+            error: UpdateListingStatusErrorCodes.Unknown,
+            ...metadata,
+          }
           return
         }
       }
