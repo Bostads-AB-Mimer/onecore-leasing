@@ -39,19 +39,6 @@ export async function getTenant(params: {
     return { ok: false, err: 'contact-not-tenant' }
   }
 
-  const waitingList = await xpandSoapAdapter.getWaitingList(
-    contact.data.nationalRegistrationNumber
-  )
-
-  if (!waitingList.ok) {
-    return { ok: false, err: 'get-waiting-lists' }
-  }
-
-  const waitingListForInternalParkingSpace =
-    priorityListService.parseWaitingListForInternalParkingSpace(
-      waitingList.data
-    )
-
   const leases = await tenantLeaseAdapter.getLeasesForContactCode(
     contact.data.contactCode,
     'true',
@@ -138,9 +125,6 @@ export async function getTenant(params: {
     ok: true,
     data: {
       ...contact.data,
-      queuePoints: waitingListForInternalParkingSpace
-        ? waitingListForInternalParkingSpace.queuePoints
-        : 0,
       address: contact.data.address,
       currentHousingContract,
       upcomingHousingContract,

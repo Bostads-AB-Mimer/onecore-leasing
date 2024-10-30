@@ -1,4 +1,4 @@
-import { Lease, Contact } from 'onecore-types'
+import { Lease, Contact, WaitingList, WaitingListType } from 'onecore-types'
 import transformFromXPandDb from './../../helpers/transformFromXPandDb'
 
 import knex from 'knex'
@@ -26,15 +26,44 @@ function trimRow(obj: any): any {
     ])
   )
 }
+const calculateQueuePoints = (queueTime: Date): number => {
+  const stripDate = (date: Date): Date => {
+    return new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+    )
+  }
+
+  return (
+    (stripDate(new Date()).getTime() - stripDate(queueTime).getTime()) /
+    (1000 * 3600 * 24)
+  )
+}
+
+const getParkingSpaceWailingList = (
+  rows: Array<any>
+): WaitingList | undefined => {
+  const parkingSpaceQueueTime =
+    rows
+      .filter((r) => r.queueName == 'Bilplats (intern)')
+      .map((r) => r.queueTime)
+      .shift() ?? undefined
+
+  if (parkingSpaceQueueTime)
+    return {
+      queueTime: parkingSpaceQueueTime,
+      queuePoints: calculateQueuePoints(parkingSpaceQueueTime),
+      type: WaitingListType.ParkingSpace,
+    }
+}
 
 const transformFromDbContact = (
-  row: any,
+  rows: Array<any>,
   phoneNumbers: any,
   leases: any
 ): Contact => {
-  row = trimRow(row)
+  const row = trimRow(rows[0])
 
-  const contact = {
+  let contact = {
     contactCode: row.contactCode,
     contactKey: row.contactKey,
     firstName: row.firstName,
@@ -57,6 +86,7 @@ const transformFromDbContact = (
           : row.emailAddress
         : 'redacted',
     isTenant: leases.length > 0,
+    parkingSpaceWaitingList: getParkingSpaceWailingList(rows),
   }
 
   return contact
@@ -277,16 +307,17 @@ const getContactByNationalRegistrationNumber = async (
   nationalRegistrationNumber: string,
   includeTerminatedLeases: string | string[] | undefined
 ) => {
-  const rows = await getContactQuery()
-    .where({ persorgnr: nationalRegistrationNumber })
-    .limit(1)
+  const rows = await getContactQuery().where({
+    persorgnr: nationalRegistrationNumber,
+  })
+
   if (rows && rows.length > 0) {
     const phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
     const leases = await getLeaseIds(
       rows[0].contactKey,
       includeTerminatedLeases
     )
-    return transformFromDbContact(rows[0], phoneNumbers, leases)
+    return transformFromDbContact(rows, phoneNumbers, leases)
   }
 
   return null
@@ -297,10 +328,8 @@ const getContactByContactCode = async (
   includeTerminatedLeases: string | string[] | undefined
 ): Promise<AdapterResult<Contact | null, unknown>> => {
   try {
-    const rows = await getContactQuery()
-      .where({ cmctckod: contactKey })
-      .limit(1)
-
+    const rows = await getContactQuery().where({ cmctckod: contactKey })
+    console.log('rows', rows)
     if (!rows?.length) {
       return { ok: true, data: null }
     }
@@ -311,9 +340,11 @@ const getContactByContactCode = async (
       includeTerminatedLeases
     )
 
+    const contact = transformFromDbContact(rows, phoneNumbers, leases)
+
     return {
       ok: true,
-      data: transformFromDbContact(rows[0], phoneNumbers, leases),
+      data: contact,
     }
   } catch (err) {
     logger.error(err, 'tenantLeaseAdapter.getContactByContactCode')
@@ -327,16 +358,17 @@ const getContactByPhoneNumber = async (
 ) => {
   const keycmobj = await getContactForPhoneNumber(phoneNumber)
   if (keycmobj && keycmobj.length > 0) {
-    const rows = await getContactQuery()
-      .where({ 'cmobj.keycmobj': keycmobj[0].keycmobj })
-      .limit(1)
+    const rows = await getContactQuery().where({
+      'cmobj.keycmobj': keycmobj[0].keycmobj,
+    })
+
     if (rows && rows.length > 0) {
       const phoneNumbers = await getPhoneNumbersForContact(rows[0].keycmobj)
       const leases = await getLeaseIds(
         rows[0].contactKey,
         includeTerminatedLeases
       )
-      return transformFromDbContact(rows[0], phoneNumbers, leases)
+      return transformFromDbContact(rows, phoneNumbers, leases)
     }
   }
 }
@@ -350,13 +382,11 @@ const getContactsByLeaseId = async (leaseId: string) => {
     .where({ hyobjben: leaseId })
 
   for (let row of rows) {
-    row = await getContactQuery()
-      .where({ 'cmctc.keycmctc': row.contactKey })
-      .limit(1)
+    row = await getContactQuery().where({ 'cmctc.keycmctc': row.contactKey })
 
     if (row && row.length > 0) {
       const phoneNumbers = await getPhoneNumbersForContact(row[0].keycmobj)
-      contacts.push(transformFromDbContact(row[0], phoneNumbers, []))
+      contacts.push(transformFromDbContact(row, phoneNumbers, []))
     }
   }
 
@@ -378,10 +408,14 @@ const getContactQuery = () => {
       'cmadr.adress4 as city',
       'cmeml.cmemlben as emailAddress',
       'cmctc.keycmobj as keycmobj',
-      'cmctc.keycmctc as contactKey'
+      'cmctc.keycmctc as contactKey',
+      'bkkty.bkktyben as queueName',
+      'bkqte.quetime as queueTime'
     )
     .leftJoin('cmadr', 'cmadr.keycode', 'cmctc.keycmobj')
     .leftJoin('cmeml', 'cmeml.keycmobj', 'cmctc.keycmobj')
+    .leftJoin('bkqte', 'bkqte.keycmctc', 'cmctc.keycmctc')
+    .leftJoin('bkkty', 'bkkty.keybkkty', 'bkqte.keybkkty')
 }
 
 const getPhoneNumbersForContact = async (keycmobj: string) => {
