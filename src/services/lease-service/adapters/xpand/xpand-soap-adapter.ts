@@ -90,7 +90,6 @@ const addApplicantToToWaitingList = async (
   contactCode: string,
   waitingListType: WaitingListType.ParkingSpace
 ) => {
-  console.log('waiting list type', waitingListType)
   if (waitingListType == WaitingListType.ParkingSpace) {
     await addToWaitingList(
       nationalRegistrationNumber,
