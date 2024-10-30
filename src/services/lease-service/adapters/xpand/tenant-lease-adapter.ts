@@ -39,7 +39,7 @@ const calculateQueuePoints = (queueTime: Date): number => {
   )
 }
 
-const getParkingSpaceWailingList = (
+const getParkingSpaceWaitingList = (
   rows: Array<any>
 ): WaitingList | undefined => {
   const parkingSpaceQueueTime =
