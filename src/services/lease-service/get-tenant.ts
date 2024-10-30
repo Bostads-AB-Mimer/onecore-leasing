@@ -11,8 +11,6 @@ type GetTenantError =
   | 'get-contact'
   | 'contact-not-found'
   | 'contact-not-tenant'
-  | 'get-waiting-lists'
-  | 'waiting-list-internal-parking-space-not-found'
   | 'get-contact-leases'
   | 'contact-leases-not-found'
   | 'get-residential-area'
