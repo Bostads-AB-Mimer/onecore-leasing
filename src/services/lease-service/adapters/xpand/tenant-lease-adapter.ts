@@ -86,7 +86,7 @@ const transformFromDbContact = (
           : row.emailAddress
         : 'redacted',
     isTenant: leases.length > 0,
-    parkingSpaceWaitingList: getParkingSpaceWailingList(rows),
+    parkingSpaceWaitingList: getParkingSpaceWaitingList(rows),
   }
 
   return contact
