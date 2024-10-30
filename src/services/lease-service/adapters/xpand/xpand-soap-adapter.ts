@@ -174,7 +174,6 @@ const removeApplicantFromWaitingList = async (
   contactCode: string,
   waitingListType: WaitingListType
 ): Promise<AdapterResult<undefined, 'not-in-waiting-list' | 'unknown'>> => {
-  console.log('waiting list type', waitingListType)
   if (waitingListType == WaitingListType.ParkingSpace) {
     await removeFromWaitingList(
       nationalRegistrationNumber,
