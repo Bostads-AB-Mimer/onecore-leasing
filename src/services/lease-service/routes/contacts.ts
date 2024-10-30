@@ -387,12 +387,6 @@ export const routes = (router: KoaRouter) => {
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
       const request = <CreateWaitingListRequest>ctx.request.body
-      console.log('request.waitingListType', request.waitingListType)
-      console.log(
-        'request.waitingListType',
-        request.waitingListType as WaitingListType
-      )
-      console.log(WaitingListType.ParkingSpace)
       try {
         //remove from waitinglist
         const res = await removeApplicantFromWaitingList(
