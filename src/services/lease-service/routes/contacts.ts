@@ -327,7 +327,7 @@ export const routes = (router: KoaRouter) => {
         await addApplicantToToWaitingList(
           ctx.params.nationalRegistrationNumber,
           request.contactCode,
-          request.waitingListType as WaitingListType
+          request.waitingListType
         )
 
         ctx.status = 201
@@ -392,7 +392,7 @@ export const routes = (router: KoaRouter) => {
         const res = await removeApplicantFromWaitingList(
           ctx.params.nationalRegistrationNumber,
           request.contactCode,
-          request.waitingListType as WaitingListType
+          request.waitingListType
         )
 
         if (!res.ok) {
