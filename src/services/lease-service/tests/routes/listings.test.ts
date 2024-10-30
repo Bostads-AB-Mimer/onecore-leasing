@@ -8,6 +8,7 @@ import * as factory from './../factories'
 import * as getTenantService from '../../get-tenant'
 
 import { routes } from '../../routes/listings'
+import { ListingStatus } from 'onecore-types'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -120,5 +121,71 @@ describe('GET /listings-with-applicants', () => {
     expect(res.body).toEqual({
       content: [expect.objectContaining({ id: expect.any(Number) })],
     })
+  })
+})
+
+describe('POST /listings', () => {
+  it('responds with 409 if active listing already exists', async () => {
+    jest
+      .spyOn(listingAdapter, 'createListing')
+      .mockResolvedValueOnce({ ok: false, err: 'conflict-active-listing' })
+
+    const res = await request(app.callback()).post('/listings')
+
+    expect(res.status).toBe(409)
+  })
+
+  it('responds with 200 on success', async () => {
+    jest
+      .spyOn(listingAdapter, 'createListing')
+      .mockResolvedValueOnce({ ok: true, data: factory.listing.build() })
+
+    const res = await request(app.callback()).post('/listings')
+    expect(res.status).toBe(201)
+    expect(res.body).toEqual({
+      content: expect.objectContaining({ id: expect.any(Number) }),
+    })
+  })
+})
+
+describe('PUT /listings/:listingId/status', () => {
+  it('responds with 400 if invalid request params', async () => {
+    const invalid_prop = await request(app.callback())
+      .put('/listings/1/status')
+      .send({ foo: 'bar' })
+
+    expect(invalid_prop.status).toBe(400)
+
+    const invalid_value = await request(app.callback())
+      .put('/listings/1/status')
+      .send({ status: -1 })
+
+    expect(invalid_value.status).toBe(400)
+  })
+
+  it('responds with 404 if listing was not found', async () => {
+    const updateListingStatuses = jest
+      .spyOn(listingAdapter, 'updateListingStatuses')
+      .mockResolvedValueOnce({ ok: false, err: 'no-update' })
+
+    const res = await request(app.callback())
+      .put('/listings/1/status')
+      .send({ status: ListingStatus.Expired })
+
+    expect(res.status).toBe(404)
+    expect(updateListingStatuses).toHaveBeenCalledTimes(1)
+  })
+
+  it('responds with 200 on success', async () => {
+    const updateListingStatuses = jest
+      .spyOn(listingAdapter, 'updateListingStatuses')
+      .mockResolvedValueOnce({ ok: true, data: null })
+
+    const res = await request(app.callback())
+      .put('/listings/1/status')
+      .send({ status: ListingStatus.Expired })
+
+    expect(res.status).toBe(200)
+    expect(updateListingStatuses).toHaveBeenCalledTimes(1)
   })
 })

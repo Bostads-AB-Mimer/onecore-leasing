@@ -4,6 +4,8 @@ import {
   DetailedApplicant,
   InternalParkingSpaceSyncSuccessResponse,
   Listing,
+  ListingStatus,
+  UpdateListingStatusErrorCodes,
 } from 'onecore-types'
 import { z } from 'zod'
 import { generateRouteMetadata, logger } from 'onecore-utilities'
@@ -45,38 +47,39 @@ export const routes = (router: KoaRouter) => {
    *               items:
    *                 type: object
    *       409:
-   *         description: Conflict. Listing with the same rentalObjectCode already exists.
+   *         description: Conflict. Active listing with the same rentalObjectCode already exists.
    *       500:
    *         description: Internal server error. Failed to create listing.
    */
-  //todo: test cases to write:
-  //can add listing
-  //cannot add duplicate listing
   router.post('(.*)/listings', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     try {
       const listingData = <Listing>ctx.request.body
-      const existingListing = await listingAdapter.getListingByRentalObjectCode(
-        listingData.rentalObjectCode
-      )
-      if (
-        existingListing != null &&
-        existingListing.rentalObjectCode === listingData.rentalObjectCode
-      ) {
-        ctx.status = 409
+      const listing = await listingAdapter.createListing(listingData)
+
+      if (!listing.ok) {
+        if (listing.err === 'conflict-active-listing') {
+          ctx.status = 409
+          ctx.body = {
+            reason: 'Active listing already exists for this rentalObjectCode',
+            ...metadata,
+          }
+          return
+        }
+
+        ctx.status = 500
         ctx.body = {
-          error: 'Listing with the same rentalObjectCode already exists.',
+          error: 'Internal server error',
           ...metadata,
         }
+
         return
       }
 
-      const listing = await listingAdapter.createListing(listingData)
-
-      ctx.status = 201 // HTTP status code for Created
-      ctx.body = { content: listing, ...metadata }
+      ctx.status = 201
+      ctx.body = { content: listing.data, ...metadata }
     } catch (error) {
-      ctx.status = 500 // Internal Server Error
+      ctx.status = 500
 
       if (error instanceof Error) {
         ctx.body = { error: error.message, ...metadata }
@@ -370,7 +373,7 @@ export const routes = (router: KoaRouter) => {
    *         required: false
    *         schema:
    *           type: string
-   *           enum: [published, ready-for-offer, offered, historical]
+   *           enum: [published, ready-for-offer, offered, historical, needs-republish]
    *         description: Filters listings by one of the above types. Must be one of the specified values.
    *     responses:
    *       '200':
@@ -414,7 +417,13 @@ export const routes = (router: KoaRouter) => {
     const metadata = generateRouteMetadata(ctx)
     const opts = match(ctx.query.type)
       .with(
-        P.union('published', 'ready-for-offer', 'offered', 'historical'),
+        P.union(
+          'published',
+          'ready-for-offer',
+          'offered',
+          'historical',
+          'needs-republish'
+        ),
         (type) => ({ by: { type } })
       )
       .otherwise(() => undefined)
@@ -437,6 +446,26 @@ export const routes = (router: KoaRouter) => {
 
     ctx.status = 200
     ctx.body = { content: listingsWithApplicants.data, ...metadata }
+  })
+
+  router.get('/listings/readyforoffers', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+    const listings = await listingAdapter.getExpiredListingsWithNoOffers()
+
+    if (!listings.ok) {
+      ctx.status = 500
+      ctx.body = {
+        err: 'Could not retrieve listings ready for offers',
+        ...metadata,
+      }
+      return
+    }
+
+    ctx.status = 200
+    ctx.body = {
+      content: listings.data,
+      ...metadata,
+    }
   })
 
   router.post('/listings/sync-internal-from-xpand', async (ctx) => {
@@ -599,7 +628,7 @@ export const routes = (router: KoaRouter) => {
         ...metadata,
       }
     } catch (error: unknown) {
-      logger.error(error, 'Error getting applicants for waiting list')
+      logger.error(error, 'Error getting applicants for listing')
       ctx.status = 500
 
       if (error instanceof Error) {
@@ -662,4 +691,82 @@ export const routes = (router: KoaRouter) => {
     ctx.status = 200
     ctx.body = { ...metadata }
   })
+
+  /**
+   * @swagger
+   * /listings/{listingId}/status:
+   *   put:
+   *     summary: Update a listings status by ID
+   *     description: Updates a listing status by it's ID.
+   *     tags:
+   *       - Listings
+   *     parameters:
+   *       - in: path
+   *         name: listingId
+   *         required: true
+   *         schema:
+   *           type: number
+   *         description: ID of the listing to delete.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *          application/json:
+   *             schema:
+   *               type: object
+   *       properties:
+   *         status:
+   *           type: number
+   *           description: The listing status.
+   *     responses:
+   *       '200':
+   *         description: Successfully updated listing.
+   *       '404':
+   *         description: Listing not found.
+   *       '500':
+   *         description: Internal server error.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 error:
+   *                   type: string
+   *                   description: The error message.
+   */
+  const UpdateListingStatusRequestParamsSchema = z.object({
+    status: z.nativeEnum(ListingStatus),
+  })
+
+  router.put(
+    '(.*)/listings/:listingId/status',
+    parseRequestBody(UpdateListingStatusRequestParamsSchema),
+    async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
+      const result = await listingAdapter.updateListingStatuses(
+        [Number(ctx.params.listingId)],
+        ctx.request.body.status
+      )
+
+      if (!result.ok) {
+        if (result.err === 'no-update') {
+          ctx.status = 404
+          ctx.body = {
+            error: UpdateListingStatusErrorCodes.NotFound,
+            ...metadata,
+          }
+          return
+        } else {
+          ctx.status = 500
+          ctx.body = {
+            error: UpdateListingStatusErrorCodes.Unknown,
+            ...metadata,
+          }
+          return
+        }
+      }
+
+      ctx.status = 200
+      ctx.body = { ...metadata }
+    }
+  )
 }
