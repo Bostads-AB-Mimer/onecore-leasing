@@ -329,7 +329,6 @@ const getContactByContactCode = async (
 ): Promise<AdapterResult<Contact | null, unknown>> => {
   try {
     const rows = await getContactQuery().where({ cmctckod: contactKey })
-    console.log('rows', rows)
     if (!rows?.length) {
       return { ok: true, data: null }
     }
