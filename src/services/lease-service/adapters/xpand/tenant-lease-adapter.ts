@@ -63,7 +63,7 @@ const transformFromDbContact = (
 ): Contact => {
   const row = trimRow(rows[0])
 
-  let contact = {
+  const contact = {
     contactCode: row.contactCode,
     contactKey: row.contactKey,
     firstName: row.firstName,
