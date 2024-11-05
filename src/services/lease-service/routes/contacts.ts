@@ -1,5 +1,6 @@
 import KoaRouter from '@koa/router'
-import { generateRouteMetadata } from 'onecore-utilities'
+import { generateRouteMetadata, logger } from 'onecore-utilities'
+import { WaitingListType } from 'onecore-types'
 
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 import {
@@ -7,13 +8,11 @@ import {
   getContactByNationalRegistrationNumber,
   getContactByPhoneNumber,
 } from '../adapters/xpand/tenant-lease-adapter'
-import { logger } from 'onecore-utilities'
 import {
   addApplicantToToWaitingList,
   removeApplicantFromWaitingList,
 } from '../adapters/xpand/xpand-soap-adapter'
 import { getTenant } from '../get-tenant'
-import { WaitingListType } from 'onecore-types'
 
 /**
  * @swagger
