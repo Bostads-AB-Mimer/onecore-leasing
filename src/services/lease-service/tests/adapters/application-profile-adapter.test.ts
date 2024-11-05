@@ -32,10 +32,6 @@ describe('application-profile-adapter', () => {
         profile.data.contactCode
       )
 
-      expect(() =>
-        applicationProfileAdapter.ApplicationProfileSchema.parse(profile.data)
-      ).not.toThrow()
-
       assert(inserted.ok)
       expect(inserted).toMatchObject({ ok: true, data: profile.data })
     })
@@ -86,10 +82,17 @@ describe('application-profile-adapter', () => {
         '1234'
       )
 
-      assert(result.ok)
-      expect(() =>
-        applicationProfileAdapter.ApplicationProfileSchema.parse(result.data)
-      ).not.toThrow()
+      expect(result).toMatchObject({
+        ok: true,
+        data: {
+          id: expect.any(Number),
+          contactCode: '1234',
+          numAdults: 1,
+          numChildren: 1,
+          expiresAt: expect.any(Date),
+          createdAt: expect.any(Date),
+        },
+      })
     })
   })
 })

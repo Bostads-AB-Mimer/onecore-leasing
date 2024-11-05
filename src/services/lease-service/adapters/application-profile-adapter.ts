@@ -1,19 +1,8 @@
 import { Knex } from 'knex'
-import z from 'zod'
 import { AdapterResult } from './types'
 import { logger } from 'onecore-utilities'
 import { RequestError } from 'tedious'
-
-export const ApplicationProfileSchema = z.object({
-  id: z.number(),
-  contactCode: z.string(),
-  numAdults: z.number(),
-  numChildren: z.number(),
-  expiresAt: z.coerce.date().nullable(),
-  createdAt: z.coerce.date(),
-})
-
-type ApplicationProfile = z.infer<typeof ApplicationProfileSchema>
+import { ApplicationProfile } from 'onecore-types'
 
 type CreateParams = {
   contactCode: string
