@@ -2,7 +2,7 @@ import request from 'supertest'
 import Koa from 'koa'
 import KoaRouter from '@koa/router'
 import bodyParser from 'koa-bodyparser'
-import { WaitingListType } from 'onecore-types'
+import { leasing, WaitingListType } from 'onecore-types'
 
 import { routes } from '../../routes/contacts'
 import * as tenantLeaseAdapter from '../../adapters/xpand/tenant-lease-adapter'
@@ -177,6 +177,9 @@ describe('GET /contacts/:contactCode/application-profile', () => {
     )
 
     expect(res.status).toBe(200)
+    expect(() =>
+      leasing.GetApplicationProfileResponseDataSchema.parse(res.body.content)
+    ).not.toThrow()
     expect(res.body.content).toEqual(expect.objectContaining({ id: 1 }))
   })
 })

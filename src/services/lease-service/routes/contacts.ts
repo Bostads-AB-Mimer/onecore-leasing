@@ -1,6 +1,6 @@
 import KoaRouter from '@koa/router'
 import { generateRouteMetadata, logger } from 'onecore-utilities'
-import { core, WaitingListType } from 'onecore-types'
+import { leasing, WaitingListType } from 'onecore-types'
 import { z } from 'zod'
 
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
@@ -469,7 +469,7 @@ export const routes = (router: KoaRouter) => {
    */
 
   type GetApplicationProfileResponseData = z.infer<
-    typeof core.GetApplicationProfileResponseDataSchema
+    typeof leasing.GetApplicationProfileResponseDataSchema
   >
 
   router.get('(.*)/contacts/:contactCode/application-profile', async (ctx) => {
