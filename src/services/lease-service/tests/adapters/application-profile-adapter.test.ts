@@ -2,18 +2,14 @@ import assert from 'node:assert'
 
 import { db, migrate, teardown } from '../../adapters/db'
 import * as applicationProfileAdapter from '../../adapters/application-profile-adapter'
+import { clearDb } from '../testUtils'
 
 beforeAll(async () => {
   await migrate()
 })
 
 afterEach(async () => {
-  // TODO: share this by all db tests
-  await db('offer_applicant').del()
-  await db('offer').del()
-  await db('applicant').del()
-  await db('listing').del()
-  await db('application_profile').del()
+  await clearDb(db)
 })
 
 afterAll(async () => {
