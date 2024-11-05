@@ -8,6 +8,7 @@ beforeAll(async () => {
 })
 
 afterEach(async () => {
+  // TODO: share this by all db tests
   await db('offer_applicant').del()
   await db('offer').del()
   await db('applicant').del()
@@ -35,6 +36,11 @@ describe('application-profile-adapter', () => {
         profile.data.contactCode
       )
 
+      expect(() =>
+        applicationProfileAdapter.ApplicationProfileSchema.parse(profile.data)
+      ).not.toThrow()
+
+      assert(inserted.ok)
       expect(inserted).toMatchObject({ ok: true, data: profile.data })
     })
 
@@ -45,6 +51,7 @@ describe('application-profile-adapter', () => {
         numAdults: 1,
         numChildren: 1,
       })
+
       assert(profile.ok)
 
       const duplicate = await applicationProfileAdapter.create(db, {
@@ -58,6 +65,35 @@ describe('application-profile-adapter', () => {
         ok: false,
         err: 'conflict-contact-code',
       })
+    })
+  })
+
+  describe(applicationProfileAdapter.getByContactCode, () => {
+    it('returns err if not found', async () => {
+      const result = await applicationProfileAdapter.getByContactCode(
+        db,
+        '1234'
+      )
+      expect(result).toMatchObject({ ok: false, err: 'not-found' })
+    })
+
+    it('gets application profile', async () => {
+      await applicationProfileAdapter.create(db, {
+        contactCode: '1234',
+        expiresAt: new Date(),
+        numAdults: 1,
+        numChildren: 1,
+      })
+
+      const result = await applicationProfileAdapter.getByContactCode(
+        db,
+        '1234'
+      )
+
+      assert(result.ok)
+      expect(() =>
+        applicationProfileAdapter.ApplicationProfileSchema.parse(result.data)
+      ).not.toThrow()
     })
   })
 })

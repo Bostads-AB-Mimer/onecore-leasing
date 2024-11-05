@@ -4,7 +4,7 @@ import { AdapterResult } from './types'
 import { logger } from 'onecore-utilities'
 import { RequestError } from 'tedious'
 
-const _ApplicationProfileSchema = z.object({
+export const ApplicationProfileSchema = z.object({
   id: z.number(),
   contactCode: z.string(),
   numAdults: z.number(),
@@ -13,7 +13,7 @@ const _ApplicationProfileSchema = z.object({
   createdAt: z.coerce.date(),
 })
 
-type ApplicationProfile = z.infer<typeof _ApplicationProfileSchema>
+type ApplicationProfile = z.infer<typeof ApplicationProfileSchema>
 
 type CreateParams = {
   contactCode: string
