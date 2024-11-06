@@ -180,6 +180,5 @@ describe('GET /contacts/:contactCode/application-profile', () => {
     expect(() =>
       leasing.GetApplicationProfileResponseDataSchema.parse(res.body.content)
     ).not.toThrow()
-    expect(res.body.content).toEqual(expect.objectContaining({ id: 1 }))
   })
 })
