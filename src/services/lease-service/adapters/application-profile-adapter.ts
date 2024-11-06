@@ -61,3 +61,29 @@ export async function getByContactCode(
     return { ok: false, err: 'unknown' }
   }
 }
+
+export async function update(
+  db: Knex,
+  id: number,
+  params: {
+    numChildren: number
+    numAdults: number
+    expiresAt: Date | null
+  }
+): Promise<AdapterResult<ApplicationProfile, 'no-update' | 'unknown'>> {
+  try {
+    const [profile] = await db('application_profile')
+      .update(params)
+      .where('id', id)
+      .returning('*')
+
+    if (!profile) {
+      return { ok: false, err: 'no-update' }
+    }
+
+    return { ok: true, data: profile }
+  } catch (err) {
+    logger.error(err, 'applicationProfileAdapter.update')
+    return { ok: false, err: 'unknown' }
+  }
+}
