@@ -512,8 +512,7 @@ export const routes = (router: KoaRouter) => {
    *         required: true
    *         schema:
    *           type: string
-   *         description: The contact code associated with the application
-   *         profile.
+   *         description: The contact code associated with the application profile.
    *     requestBody:
    *       required: true
    *       content:
