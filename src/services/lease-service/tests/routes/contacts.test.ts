@@ -181,4 +181,68 @@ describe('GET /contacts/:contactCode/application-profile', () => {
       leasing.GetApplicationProfileResponseDataSchema.parse(res.body.content)
     ).not.toThrow()
   })
+
+  describe('PUT /contacts/:contactCode/application-profile', () => {
+    it('responds with 400 if bad params', async () => {
+      const res = await request(app.callback()).put(
+        '/contacts/1234/application-profile'
+      )
+
+      expect(res.status).toBe(400)
+    })
+
+    it('responds with 404 if not found', async () => {
+      jest
+        .spyOn(applicationProfileAdapter, 'getByContactCode')
+        .mockResolvedValueOnce({ ok: false, err: 'not-found' })
+
+      const res = await request(app.callback())
+        .put('/contacts/1234/application-profile')
+        .send({ expiresAt: null, numAdults: 0, numChildren: 0 })
+
+      expect(res.status).toBe(404)
+      expect(res.body).toEqual({
+        error: 'not-found',
+      })
+    })
+
+    it('responds with 200 and updated application profile', async () => {
+      jest
+        .spyOn(applicationProfileAdapter, 'getByContactCode')
+        .mockResolvedValueOnce({
+          ok: true,
+          data: {
+            contactCode: '1234',
+            createdAt: new Date(),
+            expiresAt: null,
+            id: 1,
+            numAdults: 0,
+            numChildren: 0,
+          },
+        })
+
+      jest.spyOn(applicationProfileAdapter, 'update').mockResolvedValueOnce({
+        ok: true,
+        data: {
+          contactCode: '1234',
+          createdAt: new Date(),
+          expiresAt: null,
+          id: 1,
+          numAdults: 0,
+          numChildren: 0,
+        },
+      })
+
+      const res = await request(app.callback())
+        .put('/contacts/1234/application-profile')
+        .send({ expiresAt: null, numAdults: 0, numChildren: 0 })
+
+      expect(res.status).toBe(200)
+      expect(() =>
+        leasing.UpdateApplicationProfileResponseDataSchema.parse(
+          res.body.content
+        )
+      ).not.toThrow()
+    })
+  })
 })
