@@ -92,6 +92,9 @@ describe('offer-adapter', () => {
       const applicant_one = await listingAdapter.createApplication(
         factory.applicant.build({ listingId: listing.data.id })
       )
+      const applicant_two = await listingAdapter.createApplication(
+        factory.applicant.build({ listingId: listing.data.id })
+      )
 
       const offerApplicant = factory.offerApplicant.build({
         listingId: listing.data.id,
@@ -100,10 +103,20 @@ describe('offer-adapter', () => {
         sortOrder: 1,
       })
 
+      const offerApplicantWithNullPriorityNull = factory.offerApplicant.build({
+        listingId: listing.data.id,
+        applicantId: applicant_two.id,
+        priority: null,
+        sortOrder: 1,
+      })
+
       const insertedOffer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        selectedApplicants: [offerApplicant],
+        selectedApplicants: [
+          offerApplicant,
+          offerApplicantWithNullPriorityNull,
+        ],
         listingId: listing.data.id,
         applicantId: applicant_one.id,
       })
@@ -113,6 +126,7 @@ describe('offer-adapter', () => {
         'SELECT * FROM offer_applicant ORDER BY sortOrder ASC'
       )
 
+      expect(selectedApplicantsFromDb).toHaveLength(2)
       expect(selectedApplicantsFromDb).toEqual([
         {
           id: expect.any(Number),
@@ -128,6 +142,23 @@ describe('offer-adapter', () => {
           applicantPriority: offerApplicant.priority,
           createdAt: expect.any(Date),
           sortOrder: 1,
+        },
+        {
+          id: expect.any(Number),
+          listingId: listing.data.id,
+          offerId: insertedOffer.data.id,
+          applicantId: applicant_two.id,
+          applicantStatus: offerApplicantWithNullPriorityNull.status,
+          applicantApplicationType:
+            offerApplicantWithNullPriorityNull.applicationType,
+          applicantQueuePoints: offerApplicantWithNullPriorityNull.queuePoints,
+          applicantAddress: offerApplicantWithNullPriorityNull.address,
+          applicantHasParkingSpace: true,
+          applicantHousingLeaseStatus:
+            offerApplicantWithNullPriorityNull.housingLeaseStatus,
+          applicantPriority: offerApplicantWithNullPriorityNull.priority,
+          createdAt: expect.any(Date),
+          sortOrder: 2,
         },
       ])
     })
