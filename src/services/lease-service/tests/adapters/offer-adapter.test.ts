@@ -103,7 +103,7 @@ describe('offer-adapter', () => {
         sortOrder: 1,
       })
 
-      const offerApplicantWithNullPriorityNull = factory.offerApplicant.build({
+      const offerApplicantWithPriorityNull = factory.offerApplicant.build({
         listingId: listing.data.id,
         applicantId: applicant_two.id,
         priority: null,
@@ -113,10 +113,7 @@ describe('offer-adapter', () => {
       const insertedOffer = await offerAdapter.create(db, {
         expiresAt: new Date(),
         status: OfferStatus.Active,
-        selectedApplicants: [
-          offerApplicant,
-          offerApplicantWithNullPriorityNull,
-        ],
+        selectedApplicants: [offerApplicant, offerApplicantWithPriorityNull],
         listingId: listing.data.id,
         applicantId: applicant_one.id,
       })
@@ -148,15 +145,15 @@ describe('offer-adapter', () => {
           listingId: listing.data.id,
           offerId: insertedOffer.data.id,
           applicantId: applicant_two.id,
-          applicantStatus: offerApplicantWithNullPriorityNull.status,
+          applicantStatus: offerApplicantWithPriorityNull.status,
           applicantApplicationType:
-            offerApplicantWithNullPriorityNull.applicationType,
-          applicantQueuePoints: offerApplicantWithNullPriorityNull.queuePoints,
-          applicantAddress: offerApplicantWithNullPriorityNull.address,
+            offerApplicantWithPriorityNull.applicationType,
+          applicantQueuePoints: offerApplicantWithPriorityNull.queuePoints,
+          applicantAddress: offerApplicantWithPriorityNull.address,
           applicantHasParkingSpace: true,
           applicantHousingLeaseStatus:
-            offerApplicantWithNullPriorityNull.housingLeaseStatus,
-          applicantPriority: offerApplicantWithNullPriorityNull.priority,
+            offerApplicantWithPriorityNull.housingLeaseStatus,
+          applicantPriority: offerApplicantWithPriorityNull.priority,
           createdAt: expect.any(Date),
           sortOrder: 2,
         },

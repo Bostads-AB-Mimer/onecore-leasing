@@ -32,15 +32,9 @@ const sortApplicantsBasedOnRentalRules = (
   applicants: DetailedApplicant[]
 ): DetailedApplicant[] => {
   return Array.from(applicants).sort((a, b) => {
-    // Nulls and undefineds are the lowest priority
-    const aPriority =
-      a.priority !== undefined && a.priority !== null
-        ? a.priority
-        : Number.MAX_SAFE_INTEGER
-    const bPriority =
-      b.priority !== undefined && b.priority !== null
-        ? b.priority
-        : Number.MAX_SAFE_INTEGER
+    // Nulls are the lowest priority
+    const aPriority = a.priority !== null ? a.priority : Number.MAX_SAFE_INTEGER
+    const bPriority = b.priority !== null ? b.priority : Number.MAX_SAFE_INTEGER
 
     //sort by priority (ascending)
     if (aPriority !== bPriority) {
