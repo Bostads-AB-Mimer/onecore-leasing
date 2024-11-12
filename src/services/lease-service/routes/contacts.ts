@@ -570,27 +570,27 @@ export const routes = (router: KoaRouter) => {
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
 
-      const insert = await applicationProfileAdapter.create(db, {
-        ...ctx.request.body,
-        contactCode: ctx.params.contactCode,
-      })
+      const update = await applicationProfileAdapter.update(
+        db,
+        ctx.params.contactCode,
+        ctx.request.body
+      )
 
-      if (!insert.ok) {
-        if (insert.err === 'conflict-contact-code') {
-          const update = await applicationProfileAdapter.update(
-            db,
-            ctx.params.contactCode,
-            ctx.request.body
-          )
+      if (!update.ok) {
+        if (update.err === 'no-update') {
+          const insert = await applicationProfileAdapter.create(db, {
+            ...ctx.request.body,
+            contactCode: ctx.params.contactCode,
+          })
 
-          if (!update.ok) {
+          if (!insert.ok) {
             ctx.status = 500
             ctx.body = { error: 'Internal server error', ...metadata }
           } else {
-            ctx.status = 200
+            ctx.status = 201
             ctx.body = {
               content:
-                update.data satisfies CreateOrUpdateApplicationProfileResponseData,
+                insert.data satisfies CreateOrUpdateApplicationProfileResponseData,
               ...metadata,
             }
           }
@@ -599,10 +599,10 @@ export const routes = (router: KoaRouter) => {
         return
       }
 
-      ctx.status = 201
+      ctx.status = 200
       ctx.body = {
         content:
-          insert.data satisfies CreateOrUpdateApplicationProfileResponseData,
+          update.data satisfies CreateOrUpdateApplicationProfileResponseData,
         ...metadata,
       }
     }
