@@ -502,9 +502,9 @@ export const routes = (router: KoaRouter) => {
   /**
    * @swagger
    * /contacts/{contactCode}/application-profile:
-   *   put:
-   *     summary: Updates an application profile by contact code
-   *     description: Update application profile information by contact code.
+   *   post:
+   *     summary: Creates or updates an application profile by contact code
+   *     description: Create or update application profile information by contact code.
    *     tags: [Contacts]
    *     parameters:
    *       - in: path
@@ -542,59 +542,67 @@ export const routes = (router: KoaRouter) => {
    *                 data:
    *                   type: object
    *                   description: The application profile data.
+   *       201:
+   *         description: Successfully created application profile.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   description: The application profile data.
    *       404:
    *         description: Not found.
    *       500:
    *         description: Internal server error. Failed to update application profile information.
    */
 
-  type UpdateApplicationProfileResponseData = z.infer<
-    typeof leasing.UpdateApplicationProfileResponseDataSchema
+  type CreateOrUpdateApplicationProfileResponseData = z.infer<
+    typeof leasing.CreateOrUpdateApplicationProfileResponseDataSchema
   >
 
-  router.put(
+  router.post(
     '(.*)/contacts/:contactCode/application-profile',
-    parseRequestBody(leasing.UpdateApplicationProfileRequestParamsSchema),
+    parseRequestBody(
+      leasing.CreateOrUpdateApplicationProfileRequestParamsSchema
+    ),
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
-      const profile = await applicationProfileAdapter.getByContactCode(
-        db,
-        ctx.params.contactCode
-      )
 
-      if (!profile.ok) {
-        if (profile.err === 'not-found') {
-          ctx.status = 404
-          ctx.body = { error: 'not-found', ...metadata }
-          return
-        } else {
-          ctx.status = 500
-          ctx.body = { error: 'unknown', ...metadata }
-          return
-        }
-      }
+      const insert = await applicationProfileAdapter.create(db, {
+        ...ctx.request.body,
+        contactCode: ctx.params.contactCode,
+      })
 
-      const update = await applicationProfileAdapter.update(
-        db,
-        profile.data.id,
-        ctx.request.body
-      )
+      if (!insert.ok) {
+        if (insert.err === 'conflict-contact-code') {
+          const update = await applicationProfileAdapter.update(
+            db,
+            ctx.params.contactCode,
+            ctx.request.body
+          )
 
-      if (!update.ok) {
-        if (update.err === 'no-update') {
-          ctx.status = 404
-          ctx.body = { error: 'not-found', ...metadata }
-          return
+          if (!update.ok) {
+            ctx.status = 500
+            ctx.body = { error: 'Internal server error', ...metadata }
+          } else {
+            ctx.status = 200
+            ctx.body = {
+              content:
+                update.data satisfies CreateOrUpdateApplicationProfileResponseData,
+              ...metadata,
+            }
+          }
         }
 
-        ctx.status = 500
-        ctx.body = { error: 'unknown', ...metadata }
         return
       }
 
-      ctx.status = 200
+      ctx.status = 201
       ctx.body = {
-        content: update.data satisfies UpdateApplicationProfileResponseData,
+        content:
+          insert.data satisfies CreateOrUpdateApplicationProfileResponseData,
         ...metadata,
       }
     }

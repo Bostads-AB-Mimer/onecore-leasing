@@ -98,11 +98,15 @@ describe('application-profile-adapter', () => {
 
   describe(applicationProfileAdapter.update, () => {
     it('returns err if no update', async () => {
-      const result = await applicationProfileAdapter.update(db, 1, {
-        expiresAt: new Date(),
-        numAdults: 1,
-        numChildren: 1,
-      })
+      const result = await applicationProfileAdapter.update(
+        db,
+        'contact-code',
+        {
+          expiresAt: new Date(),
+          numAdults: 1,
+          numChildren: 1,
+        }
+      )
 
       expect(result).toMatchObject({ ok: false, err: 'no-update' })
     })
@@ -116,7 +120,7 @@ describe('application-profile-adapter', () => {
       })
 
       assert(profile.ok)
-      await applicationProfileAdapter.update(db, profile.data.id, {
+      await applicationProfileAdapter.update(db, profile.data.contactCode, {
         expiresAt: new Date(),
         numAdults: 2,
         numChildren: 2,

@@ -182,44 +182,45 @@ describe('GET /contacts/:contactCode/application-profile', () => {
     ).not.toThrow()
   })
 
-  describe('PUT /contacts/:contactCode/application-profile', () => {
+  describe('POST /contacts/:contactCode/application-profile', () => {
     it('responds with 400 if bad params', async () => {
-      const res = await request(app.callback()).put(
+      const res = await request(app.callback()).post(
         '/contacts/1234/application-profile'
       )
 
       expect(res.status).toBe(400)
     })
 
-    it('responds with 404 if not found', async () => {
-      jest
-        .spyOn(applicationProfileAdapter, 'getByContactCode')
-        .mockResolvedValueOnce({ ok: false, err: 'not-found' })
+    it('creates application profile', async () => {
+      jest.spyOn(applicationProfileAdapter, 'create').mockResolvedValueOnce({
+        ok: true,
+        data: {
+          contactCode: '1234',
+          createdAt: new Date(),
+          expiresAt: null,
+          id: 1,
+          numAdults: 0,
+          numChildren: 0,
+        },
+      })
 
       const res = await request(app.callback())
-        .put('/contacts/1234/application-profile')
+        .post('/contacts/1234/application-profile')
         .send({ expiresAt: null, numAdults: 0, numChildren: 0 })
 
-      expect(res.status).toBe(404)
-      expect(res.body).toEqual({
-        error: 'not-found',
-      })
+      expect(res.status).toBe(201)
+      expect(() =>
+        leasing.CreateOrUpdateApplicationProfileResponseDataSchema.parse(
+          res.body.content
+        )
+      ).not.toThrow()
     })
 
-    it('responds with 200 and updated application profile', async () => {
-      jest
-        .spyOn(applicationProfileAdapter, 'getByContactCode')
-        .mockResolvedValueOnce({
-          ok: true,
-          data: {
-            contactCode: '1234',
-            createdAt: new Date(),
-            expiresAt: null,
-            id: 1,
-            numAdults: 0,
-            numChildren: 0,
-          },
-        })
+    it('updates if exists already', async () => {
+      jest.spyOn(applicationProfileAdapter, 'create').mockResolvedValueOnce({
+        ok: false,
+        err: 'conflict-contact-code',
+      })
 
       jest.spyOn(applicationProfileAdapter, 'update').mockResolvedValueOnce({
         ok: true,
@@ -234,12 +235,12 @@ describe('GET /contacts/:contactCode/application-profile', () => {
       })
 
       const res = await request(app.callback())
-        .put('/contacts/1234/application-profile')
+        .post('/contacts/1234/application-profile')
         .send({ expiresAt: null, numAdults: 0, numChildren: 0 })
 
       expect(res.status).toBe(200)
       expect(() =>
-        leasing.UpdateApplicationProfileResponseDataSchema.parse(
+        leasing.CreateOrUpdateApplicationProfileResponseDataSchema.parse(
           res.body.content
         )
       ).not.toThrow()

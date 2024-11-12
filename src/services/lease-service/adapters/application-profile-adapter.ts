@@ -64,7 +64,7 @@ export async function getByContactCode(
 
 export async function update(
   db: Knex,
-  id: number,
+  contactCode: string,
   params: {
     numChildren: number
     numAdults: number
@@ -74,7 +74,7 @@ export async function update(
   try {
     const [profile] = await db('application_profile')
       .update(params)
-      .where('id', id)
+      .where('contactCode', contactCode)
       .returning('*')
 
     if (!profile) {
