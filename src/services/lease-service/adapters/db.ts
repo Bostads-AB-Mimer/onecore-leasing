@@ -24,7 +24,11 @@ const getConfigBasedOnEnvironment = () => {
   return environment === 'test' ? getTestConfig() : getStandardConfig()
 }
 
-export const db = knex(getConfigBasedOnEnvironment())
+export const createDbClient = () => {
+  return knex(getConfigBasedOnEnvironment())
+}
+
+export const db = createDbClient()
 
 const migrate = async () => {
   await db.migrate
