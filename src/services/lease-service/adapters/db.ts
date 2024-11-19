@@ -21,7 +21,7 @@ const getTestConfig = () => {
 
 const getConfigBasedOnEnvironment = () => {
   const environment = process.env.NODE_ENV || 'dev'
-  return environment === 'test' ? getTestConfig() : getStandardConfig()
+  return environment.includes('test') ? getTestConfig() : getStandardConfig()
 }
 
 export const createDbClient = () => {
