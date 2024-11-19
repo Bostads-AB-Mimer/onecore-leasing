@@ -9,10 +9,9 @@ module.exports = {
   ].concat(
     process.env.NODE_ENV === 'test-ci'
       ? [
-          '<rootDir>/src/services/lease-service/tests/adapters/',
-          '<rootDir>/src/services/lease-service/tests/sync-internal-parking-space-listings-from-xpand.test.ts',
-          '<rootDir>/src/services/lease-service/tests/offer-service.test.ts',
-          '<rootDir>/src/services/lease-service/tests/update-or-create-application-profile.test.ts',
+          // '<rootDir>/src/services/lease-service/tests/adapters/',
+          // '<rootDir>/src/services/lease-service/tests/sync-internal-parking-space-listings-from-xpand.test.ts',
+          // '<rootDir>/src/services/lease-service/tests/offer-service.test.ts',
         ]
       : []
   ),
