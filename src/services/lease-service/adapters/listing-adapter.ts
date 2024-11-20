@@ -51,10 +51,11 @@ function transformDbApplicant(row: DbApplicant): Applicant {
 }
 
 const createListing = async (
-  listingData: Omit<Listing, 'id'>
+  listingData: Omit<Listing, 'id'>,
+  dbConnection = db
 ): Promise<AdapterResult<Listing, 'conflict-active-listing' | 'unknown'>> => {
   try {
-    const insertedRow = await db<DbListing>('Listing')
+    const insertedRow = await dbConnection<DbListing>('Listing')
       .insert({
         RentalObjectCode: listingData.rentalObjectCode,
         Address: listingData.address,
@@ -206,13 +207,16 @@ const getApplicantById = async (
   return transformDbApplicant(applicant)
 }
 
-const createApplication = async (applicationData: Omit<Applicant, 'id'>) => {
+const createApplication = async (
+  applicationData: Omit<Applicant, 'id'>,
+  dbConnection = db
+) => {
   logger.info(
     { contactCode: applicationData.contactCode },
     'Creating application in listing DB'
   )
 
-  const insertedRow = await db('applicant')
+  const insertedRow = await dbConnection('applicant')
     .insert({
       Name: applicationData.name,
       NationalRegistrationNumber: applicationData.nationalRegistrationNumber,

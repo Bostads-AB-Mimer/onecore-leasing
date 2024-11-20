@@ -17,7 +17,7 @@ module.exports = {
   ),
   //todo: maxWorkers: 1 runs all tests in sequence so that we don't get deadlocks for db tests
   //todo: implement a more elegant solution (run db tests in sequence, all other tests in parallel)
-  maxWorkers: 1,
+  // maxWorkers: 1,
   transformIgnorePatterns: ['node_modules/(?!(onecore-types)/)'],
   extensionsToTreatAsEsm: ['.d.ts, .ts'],
   setupFiles: ['<rootDir>/.jest/common.ts'],
