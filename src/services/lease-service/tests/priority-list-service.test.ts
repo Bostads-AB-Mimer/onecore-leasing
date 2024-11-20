@@ -848,4 +848,253 @@ describe('sortApplicantsBasedOnRentalRules', () => {
     )
     expect(result.priority).toBe(null)
   })
+
+  it('should something 2', () => {
+    const listing = factory.listing.build({
+      id: 1,
+      rentalObjectCode: '307-706-00-0015',
+      address: 'Loftbodsvägen 10-12',
+      monthlyRent: 317.42,
+      districtCaption: 'Vallby',
+      districtCode: 'VAL',
+      objectTypeCaption: 'Parkeringsplats med el',
+      objectTypeCode: 'PPLMEL',
+      rentalObjectTypeCaption: 'Standard hyresobjektstyp',
+      rentalObjectTypeCode: 'STD',
+      publishedFrom: new Date('2024-10-21T07:55:51.000Z'),
+      publishedTo: new Date('2024-10-19T22:59:59.000Z'),
+      vacantFrom: new Date('2022-04-30T22:00:00.000Z'),
+      status: 4,
+      waitingListType: 'Bilplats (intern)',
+    })
+
+    const detailedApplicant1 = factory.detailedApplicant
+      .params({
+        id: 7071,
+        name: 'Johansson Fredrik',
+        nationalRegistrationNumber: '198811247058',
+        contactCode: 'P086786',
+        applicationDate: new Date('2024-11-07T14:44:30.920Z'),
+        applicationType: 'Additional',
+        status: 6,
+        listingId: 1,
+        queuePoints: 16,
+        address: {
+          street: 'Skillsta 2 lgh 1002',
+          number: '',
+          postalCode: '72592',
+          city: 'Västerås',
+        },
+        currentHousingContract: {
+          leaseId: '307-035-02-0302/03',
+          leaseNumber: '03',
+          rentalPropertyId: '307-035-02-0302',
+          type: 'Bostadskontrakt               ',
+          leaseStartDate: new Date('2021-03-01T00:00:00.000Z'),
+          leaseEndDate: undefined,
+          status: 0,
+          tenantContactIds: [],
+          tenants: [],
+          noticeGivenBy: undefined,
+          noticeDate: undefined,
+          noticeTimeTenant: '3',
+          preferredMoveOutDate: undefined,
+          terminationDate: undefined,
+          contractDate: new Date('2020-12-22T00:00:00.000Z'),
+          lastDebitDate: undefined,
+          approvalDate: new Date('2020-12-22T00:00:00.000Z'),
+          residentialArea: {
+            code: 'VAL',
+            caption: 'Vallby',
+          },
+        },
+        parkingSpaceContracts: [
+          {
+            leaseId: '307-903-00-0003/05',
+            leaseNumber: '05',
+            rentalPropertyId: '307-903-00-0003',
+            type: 'Garagekontrakt                ',
+            leaseStartDate: new Date('2021-11-01T00:00:00.000Z'),
+            leaseEndDate: undefined,
+            status: 0,
+            tenantContactIds: [],
+            tenants: [],
+            noticeGivenBy: undefined,
+            noticeDate: undefined,
+            noticeTimeTenant: '3',
+            preferredMoveOutDate: undefined,
+            terminationDate: undefined,
+            contractDate: new Date('2024-10-22T00:00:00.000Z'),
+            lastDebitDate: undefined,
+            approvalDate: undefined,
+            residentialArea: {
+              code: 'VAL',
+              caption: 'Vallby',
+            },
+            rentInfo: undefined,
+            rentalProperty: undefined,
+            address: undefined,
+          },
+          {
+            leaseId: '307-903-00-0006/17',
+            leaseNumber: '17',
+            rentalPropertyId: '307-903-00-0006',
+            type: 'Garagekontrakt                ',
+            leaseStartDate: new Date('2021-02-01T00:00:00.000Z'),
+            leaseEndDate: undefined,
+            status: 0,
+            tenantContactIds: [],
+            tenants: [],
+            noticeGivenBy: undefined,
+            noticeDate: undefined,
+            noticeTimeTenant: '3',
+            preferredMoveOutDate: undefined,
+            terminationDate: undefined,
+            contractDate: new Date('2024-10-24T00:00:00.000Z'),
+            lastDebitDate: undefined,
+            approvalDate: undefined,
+            residentialArea: {
+              code: 'VAL',
+              caption: 'Vallby',
+            },
+            rentInfo: undefined,
+            rentalProperty: undefined,
+            address: undefined,
+          },
+          {
+            leaseId: '307-904-00-0005/10',
+            leaseNumber: '10',
+            rentalPropertyId: '307-904-00-0005',
+            type: 'Garagekontrakt                ',
+            leaseStartDate: new Date('2021-08-01T00:00:00.000Z'),
+            leaseEndDate: undefined,
+            status: 0,
+            tenantContactIds: [],
+            tenants: [],
+            noticeGivenBy: undefined,
+            noticeDate: undefined,
+            noticeTimeTenant: '3',
+            preferredMoveOutDate: undefined,
+            terminationDate: undefined,
+            contractDate: new Date('2024-11-04T00:00:00.000Z'),
+            lastDebitDate: undefined,
+            approvalDate: undefined,
+            residentialArea: {
+              code: 'VAL',
+              caption: 'Vallby',
+            },
+            rentInfo: undefined,
+            rentalProperty: undefined,
+            address: undefined,
+          },
+        ],
+      })
+      .build()
+
+    const result1 = assignPriorityToApplicantBasedOnRentalRules(
+      listing,
+      detailedApplicant1
+    )
+    expect(result1.priority).toBe(3)
+
+    const detailedApplicant2 = factory.detailedApplicant
+      .params({
+        id: 7073,
+        name: 'Sökande Fiktiv',
+        nationalRegistrationNumber: '198912157982',
+        contactCode: 'P145241',
+        applicationDate: new Date('2024-11-07T14:44:50.566Z'),
+        applicationType: 'Additional',
+        status: 1,
+        listingId: 1,
+        queuePoints: 1962,
+        address: {
+          street: 'Fiktiggatan 1',
+          number: '',
+          postalCode: '72222',
+          city: 'VÄSTERÅS',
+        },
+        currentHousingContract: {
+          leaseId: '306-001-01-0101/07',
+          leaseNumber: '07',
+          rentalPropertyId: '306-001-01-0101',
+          type: 'Bostadskontrakt               ',
+          leaseStartDate: new Date('2024-01-01T00:00:00.000Z'),
+          leaseEndDate: undefined,
+          status: 0,
+          tenantContactIds: [],
+          tenants: [],
+          noticeGivenBy: undefined,
+          noticeDate: undefined,
+          noticeTimeTenant: '3',
+          preferredMoveOutDate: undefined,
+          terminationDate: undefined,
+          contractDate: new Date('2023-09-27T00:00:00.000Z'),
+          lastDebitDate: undefined,
+          approvalDate: new Date('2023-09-27T00:00:00.000Z'),
+          residentialArea: {
+            code: 'PET',
+            caption: 'Pettersberg',
+          },
+        },
+        parkingSpaceContracts: [],
+      })
+      .build()
+
+    const result2 = assignPriorityToApplicantBasedOnRentalRules(
+      listing,
+      detailedApplicant2
+    )
+    expect(result2.priority).toBe(null)
+
+    const detailedApplicant3 = factory.detailedApplicant
+      .params({
+        id: 7072,
+        name: 'Lindström Johan',
+        nationalRegistrationNumber: '199007164750',
+        contactCode: 'P068937',
+        applicationDate: new Date('2024-11-07T14:44:40.610Z'),
+        applicationType: 'Additional',
+        status: 1,
+        listingId: 1,
+        queuePoints: 9,
+        address: {
+          street: 'Norra Allégatan',
+          number: '',
+          postalCode: '72219',
+          city: 'Västerås',
+        },
+        currentHousingContract: {
+          leaseId: '705-008-04-0101/04',
+          leaseNumber: '04',
+          rentalPropertyId: '705-008-04-0101',
+          type: 'Bostadskontrakt               ',
+          leaseStartDate: new Date('2013-03-01T00:00:00.000Z'),
+          leaseEndDate: undefined,
+          status: 0,
+          tenantContactIds: [],
+          tenants: [],
+          noticeGivenBy: undefined,
+          noticeDate: undefined,
+          noticeTimeTenant: '3',
+          preferredMoveOutDate: undefined,
+          terminationDate: undefined,
+          contractDate: new Date('2013-01-23T00:00:00.000Z'),
+          lastDebitDate: undefined,
+          approvalDate: new Date('2013-01-23T00:00:00.000Z'),
+          residentialArea: {
+            code: 'MAL',
+            caption: 'Malmaberg',
+          },
+        },
+        parkingSpaceContracts: [],
+      })
+      .build()
+
+    const result3 = assignPriorityToApplicantBasedOnRentalRules(
+      listing,
+      detailedApplicant3
+    )
+    expect(result3.priority).toBe(null)
+  })
 })
