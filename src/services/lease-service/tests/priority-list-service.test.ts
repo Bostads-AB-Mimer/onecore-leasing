@@ -711,4 +711,141 @@ describe('sortApplicantsBasedOnRentalRules', () => {
       applicant2.contactCode
     )
   })
+
+  it('should something', () => {
+    const listing = factory.listing.build({
+      rentalObjectCode: '307-714-00-0042',
+      address: 'Högloftsvägen 1-6',
+      monthlyRent: 190.45,
+      districtCaption: 'Vallby',
+      districtCode: 'VAL',
+      objectTypeCaption: 'Parkeringsplats utan el',
+      objectTypeCode: 'PPLUEL',
+      rentalObjectTypeCaption: 'Standard hyresobjektstyp',
+      rentalObjectTypeCode: 'STD',
+      publishedFrom: new Date('2024-11-19T15:29:06.000Z'),
+      publishedTo: new Date('2024-11-25T23:59:59.000Z'),
+      vacantFrom: new Date('2023-06-01T00:00:00.000Z'),
+      status: 1,
+      waitingListType: 'Bilplats (intern)',
+    })
+
+    const detailedApplicant = factory.detailedApplicant
+      .params({
+        applicationType: 'Replace', //todo: add as enum
+
+        parkingSpaceContracts: [
+          {
+            leaseId: '705-808-00-0007/07',
+            leaseNumber: '07',
+            rentalPropertyId: '705-808-00-0007',
+            type: 'P-Platskontrakt               ',
+            leaseStartDate: new Date('2011-11-01T00:00:00.000Z'),
+            leaseEndDate: undefined,
+            status: 0,
+            tenantContactIds: [],
+            tenants: [],
+            noticeGivenBy: undefined,
+            noticeDate: undefined,
+            noticeTimeTenant: '3',
+            preferredMoveOutDate: undefined,
+            terminationDate: undefined,
+            contractDate: new Date('2011-10-21T00:00:00.000Z'),
+            lastDebitDate: undefined,
+            approvalDate: new Date('2011-10-21T00:00:00.000Z'),
+            residentialArea: {
+              code: 'MAL',
+              caption: 'Malmaberg',
+            },
+            rentalProperty: undefined,
+            rentInfo: undefined,
+            address: undefined,
+          },
+          {
+            leaseId: '705-808-00-0002/13',
+            leaseNumber: '13',
+            rentalPropertyId: '705-808-00-0002',
+            type: 'P-Platskontrakt               ',
+            leaseStartDate: new Date('2023-03-01T00:00:00.000Z'),
+            leaseEndDate: undefined,
+            status: 0,
+            tenantContactIds: [],
+            tenants: [],
+            noticeGivenBy: undefined,
+            noticeDate: undefined,
+            noticeTimeTenant: '3',
+            preferredMoveOutDate: undefined,
+            terminationDate: undefined,
+            contractDate: new Date('2024-10-17T00:00:00.000Z'),
+            lastDebitDate: undefined,
+            approvalDate: undefined,
+            residentialArea: {
+              code: 'MAL',
+              caption: 'Malmaberg',
+            },
+            rentalProperty: undefined,
+            rentInfo: undefined,
+            address: undefined,
+          },
+          {
+            leaseId: '705-709-00-0002/05',
+            leaseNumber: '05',
+            rentalPropertyId: '705-709-00-0002',
+            type: 'P-Platskontrakt               ',
+            leaseStartDate: new Date('2023-04-01T00:00:00.000Z'),
+            leaseEndDate: undefined,
+            status: 0,
+            tenantContactIds: [],
+            tenants: [],
+            noticeGivenBy: undefined,
+            noticeDate: undefined,
+            noticeTimeTenant: '3',
+            preferredMoveOutDate: undefined,
+            terminationDate: undefined,
+            contractDate: new Date('2024-10-17T00:00:00.000Z'),
+            lastDebitDate: undefined,
+            approvalDate: undefined,
+            residentialArea: {
+              code: 'MAL',
+              caption: 'Malmaberg',
+            },
+            rentalProperty: undefined,
+            rentInfo: undefined,
+            address: undefined,
+          },
+        ],
+        currentHousingContract: {
+          leaseId: '705-010-01-0201/05',
+          leaseNumber: '05',
+          rentalPropertyId: '705-010-01-0201',
+          type: 'Bostadskontrakt               ',
+          leaseStartDate: new Date('2001-11-01T00:00:00.000Z'),
+          leaseEndDate: undefined,
+          status: 0,
+          tenantContactIds: [],
+          tenants: [],
+          noticeGivenBy: undefined,
+          noticeDate: undefined,
+          noticeTimeTenant: '3',
+          preferredMoveOutDate: undefined,
+          terminationDate: undefined,
+          contractDate: new Date('2001-11-01T00:00:00.000Z'),
+          lastDebitDate: undefined,
+          approvalDate: new Date('2001-11-01T00:00:00.000Z'),
+          residentialArea: {
+            code: 'MAL',
+            caption: 'Malmaberg',
+          },
+        },
+        listingId: listing.id,
+        queuePoints: 60,
+      })
+      .build()
+
+    const result = assignPriorityToApplicantBasedOnRentalRules(
+      listing,
+      detailedApplicant
+    )
+    expect(result.priority).toBe(null)
+  })
 })

@@ -72,10 +72,30 @@ const assignPriorityToApplicantBasedOnRentalRules = (
     }
   }
 
-  //priority  1
+  if (
+    applicant.currentHousingContract?.residentialArea?.code !=
+    listing.districtCode
+  ) {
+    return {
+      ...applicant,
+      priority: null,
+    }
+  }
 
-  //Applicant has no active parking space contract and is tenant in same area as listing
+  // if (
+  //   applicant.upcomingHousingContract?.residentialArea?.code !=
+  //   listing.districtCode
+  // ) {
+  //   return {
+  //     ...applicant,
+  //     priority: null,
+  //   }
+  // }
+
   if (!applicant.parkingSpaceContracts?.length) {
+    //priority  1
+
+    //Applicant has no active parking space contract and is tenant in same area as listing
     if (applicant.currentHousingContract) {
       if (
         applicant.currentHousingContract?.residentialArea?.code ===
