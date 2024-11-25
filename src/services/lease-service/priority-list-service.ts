@@ -76,26 +76,6 @@ const assignPriorityToApplicantBasedOnRentalRules = (
     }
   }
 
-  // if (
-  //   applicant.currentHousingContract?.residentialArea?.code !=
-  //   listing.districtCode
-  // ) {
-  //   return {
-  //     ...applicant,
-  //     priority: null,
-  //   }
-  // }
-
-  // if (
-  //   applicant.upcomingHousingContract?.residentialArea?.code !=
-  //   listing.districtCode
-  // ) {
-  //   return {
-  //     ...applicant,
-  //     priority: null,
-  //   }
-  // }
-
   if (!applicant.parkingSpaceContracts?.length) {
     //priority  1
 
