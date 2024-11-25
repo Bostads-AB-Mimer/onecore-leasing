@@ -714,7 +714,6 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
   it('should assign priority null if applicant has no upcoming housing contracts or active parking space contracts', () => {
     const listing = factory.listing.build({
-      id: 1,
       rentalObjectCode: '307-706-00-0015',
       address: 'Loftbodsvägen 10-12',
       monthlyRent: 317.42,
@@ -733,12 +732,11 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
     const detailedApplicant3 = factory.detailedApplicant
       .params({
-        id: 1,
         applicationDate: new Date('2024-11-07T14:44:40.610Z'),
         applicationType: 'Additional',
         status: 1,
-        listingId: 1,
-        queuePoints: 9,
+        listingId: listing.id,
+        queuePoints: 100,
         currentHousingContract: {
           leaseId: '705-008-04-0101/04',
           leaseNumber: '04',
@@ -748,7 +746,6 @@ describe('sortApplicantsBasedOnRentalRules', () => {
           status: 0,
           noticeTimeTenant: '3',
           contractDate: new Date('2013-01-23T00:00:00.000Z'),
-          lastDebitDate: undefined,
           approvalDate: new Date('2013-01-23T00:00:00.000Z'),
           residentialArea: {
             code: 'MAL',
