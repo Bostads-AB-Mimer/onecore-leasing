@@ -715,14 +715,11 @@ describe('sortApplicantsBasedOnRentalRules', () => {
   it('should assign priority null if applicant has no upcoming housing contracts or active parking space contracts', () => {
     const listing = factory.listing.build({
       rentalObjectCode: '307-706-00-0015',
-      address: 'Loftbodsvägen 10-12',
-      monthlyRent: 317.42,
       districtCaption: 'Vallby',
       districtCode: 'VAL',
       objectTypeCaption: 'Parkeringsplats med el',
       objectTypeCode: 'PPLMEL',
       rentalObjectTypeCaption: 'Standard hyresobjektstyp',
-      rentalObjectTypeCode: 'STD',
       publishedFrom: new Date('2024-10-21T07:55:51.000Z'),
       publishedTo: new Date('2024-10-19T22:59:59.000Z'),
       vacantFrom: new Date('2022-04-30T22:00:00.000Z'),
@@ -736,7 +733,6 @@ describe('sortApplicantsBasedOnRentalRules', () => {
         applicationType: 'Additional',
         status: 1,
         listingId: listing.id,
-        queuePoints: 100,
         currentHousingContract: {
           leaseId: '705-008-04-0101/04',
           leaseNumber: '04',
