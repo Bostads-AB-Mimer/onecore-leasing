@@ -1,8 +1,9 @@
 import { Knex } from 'knex'
-import { AdapterResult } from './types'
-import { logger } from 'onecore-utilities'
 import { RequestError } from 'tedious'
+import { logger } from 'onecore-utilities'
 import { ApplicationProfile } from 'onecore-types'
+
+import { AdapterResult } from './types'
 
 type CreateParams = {
   contactCode: string
