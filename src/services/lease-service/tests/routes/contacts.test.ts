@@ -202,6 +202,10 @@ describe('POST /contacts/:contactCode/application-profile', () => {
         id: 1,
         numAdults: 0,
         numChildren: 0,
+        housingType: undefined,
+        housingTypeDescription: undefined,
+        landlord: undefined,
+        housingReference: undefined,
       },
     })
 
@@ -232,6 +236,10 @@ describe('POST /contacts/:contactCode/application-profile', () => {
         id: 1,
         numAdults: 0,
         numChildren: 0,
+        housingType: undefined,
+        housingTypeDescription: undefined,
+        landlord: undefined,
+        housingReference: undefined,
       },
     })
 

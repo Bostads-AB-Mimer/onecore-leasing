@@ -1,7 +1,10 @@
 import { Knex } from 'knex'
 import { RequestError } from 'tedious'
 import { logger } from 'onecore-utilities'
-import { ApplicationProfile } from 'onecore-types'
+import {
+  ApplicationProfile,
+  ApplicationProfileHousingReference,
+} from 'onecore-types'
 
 import { AdapterResult } from './types'
 
@@ -10,6 +13,9 @@ type CreateParams = {
   numAdults: number
   numChildren: number
   expiresAt: Date | null
+  housingType?: string
+  housingTypeDescription?: string
+  landlord?: string
 }
 
 export async function create(
@@ -70,6 +76,10 @@ export async function update(
     numChildren: number
     numAdults: number
     expiresAt: Date | null
+    housingType?: string
+    housingTypeDescription?: string
+    landlord?: string
+    housingReference?: ApplicationProfileHousingReference
   }
 ): Promise<AdapterResult<ApplicationProfile, 'no-update' | 'unknown'>> {
   try {
