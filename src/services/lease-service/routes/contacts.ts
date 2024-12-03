@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 import * as applicationProfileAdapter from '../adapters/application-profile-adapter'
+import * as applicationProfileHousingReferenceAdapter from '../adapters/application-profile-housing-reference-adapter'
 import {
   getContactByContactCode,
   getContactByNationalRegistrationNumber,
@@ -492,9 +493,32 @@ export const routes = (router: KoaRouter) => {
       return
     }
 
+    const profileReference =
+      await applicationProfileHousingReferenceAdapter.findByApplicationProfileId(
+        db,
+        profile.data.id
+      )
+
+    if (!profileReference.ok) {
+      logger.error(
+        { err: profileReference.err },
+        'Failed to get application profile reference, returning rest of application profile'
+      )
+
+      ctx.status = 200
+      ctx.body = {
+        content: profile.data satisfies GetApplicationProfileResponseData,
+        ...metadata,
+      }
+      return
+    }
+
     ctx.status = 200
     ctx.body = {
-      content: profile.data satisfies GetApplicationProfileResponseData,
+      content: {
+        ...profile.data,
+        housingReference: profileReference.data,
+      } satisfies GetApplicationProfileResponseData,
       ...metadata,
     }
   })
@@ -596,6 +620,7 @@ export const routes = (router: KoaRouter) => {
           }
         }
 
+        ctx.status = 500
         return
       }
 

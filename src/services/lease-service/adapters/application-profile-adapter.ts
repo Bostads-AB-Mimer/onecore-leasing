@@ -1,10 +1,7 @@
 import { Knex } from 'knex'
 import { RequestError } from 'tedious'
 import { logger } from 'onecore-utilities'
-import {
-  ApplicationProfile,
-  ApplicationProfileHousingReference,
-} from 'onecore-types'
+import { ApplicationProfile } from 'onecore-types'
 
 import { AdapterResult } from './types'
 
@@ -26,7 +23,15 @@ export async function create(
 > {
   try {
     const [profile] = await db
-      .insert(params)
+      .insert({
+        contactCode: params.contactCode,
+        numChildren: params.numChildren,
+        numAdults: params.numAdults,
+        expiresAt: params.expiresAt,
+        housingType: params.housingType,
+        housingTypeDescription: params.housingTypeDescription,
+        landlord: params.landlord,
+      })
       .into('application_profile')
       .returning('*')
 
@@ -52,39 +57,66 @@ export async function getByContactCode(
   contactCode: string
 ): Promise<AdapterResult<ApplicationProfile, 'not-found' | 'unknown'>> {
   try {
-    const [profile] = await db
-      .select('*')
-      .from('application_profile')
-      .where('contactCode', contactCode)
-      .returning('*')
+    const [row] = await db.raw(
+      `
+        SELECT 
+          ap.*,
+          NULLIF((
+            SELECT apht.* 
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+          ), '{}') AS housingReference
+        FROM application_profile ap
+        LEFT JOIN application_profile_housing_reference apht
+        ON ap.id = apht.applicationProfileId
+        WHERE contactCode = ?
+      `,
+      [contactCode]
+    )
 
-    if (!profile) {
+    if (!row) {
       return { ok: false, err: 'not-found' }
     }
 
-    return { ok: true, data: profile }
+    return {
+      ok: true,
+      data: {
+        ...row,
+        housingReference: row.housingReference || undefined,
+        housingType: row.housingType || undefined,
+        housingTypeDescription: row.housingTypeDescription || undefined,
+        landlord: row.landlord || undefined,
+      },
+    }
   } catch (err) {
     logger.error(err, 'applicationProfileAdapter.getByContactCode')
     return { ok: false, err: 'unknown' }
   }
 }
 
+type UpdateParams = {
+  numChildren: number
+  numAdults: number
+  expiresAt: Date | null
+  housingType?: string
+  housingTypeDescription?: string
+  landlord?: string
+}
+
 export async function update(
   db: Knex,
   contactCode: string,
-  params: {
-    numChildren: number
-    numAdults: number
-    expiresAt: Date | null
-    housingType?: string
-    housingTypeDescription?: string
-    landlord?: string
-    housingReference?: ApplicationProfileHousingReference
-  }
+  params: UpdateParams
 ): Promise<AdapterResult<ApplicationProfile, 'no-update' | 'unknown'>> {
   try {
     const [profile] = await db('application_profile')
-      .update(params)
+      .update({
+        numChildren: params.numChildren,
+        numAdults: params.numAdults,
+        expiresAt: params.expiresAt,
+        housingType: params.housingType,
+        housingTypeDescription: params.housingTypeDescription,
+        landlord: params.landlord,
+      })
       .where('contactCode', contactCode)
       .returning('*')
 
