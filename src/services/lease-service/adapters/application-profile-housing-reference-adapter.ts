@@ -67,7 +67,6 @@ export async function findByApplicationProfileId(
 
     return { ok: true, data: row }
   } catch (err) {
-    console.log(err)
     logger.error(
       err,
       'ApplicationProfileHousingReferenceAdapter.findByApplicationProfileId'
