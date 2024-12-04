@@ -59,16 +59,21 @@ export async function getByContactCode(
   try {
     const [row] = await db.raw(
       `
-        SELECT 
-          ap.*,
-          NULLIF((
-            SELECT apht.* 
-            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES
-          ), '{}') AS housingReference
-        FROM application_profile ap
-        LEFT JOIN application_profile_housing_reference apht
-        ON ap.id = apht.applicationProfileId
-        WHERE contactCode = ?
+      SELECT 
+        ap.*,
+        CASE 
+          WHEN apht.applicationProfileId IS NOT NULL THEN 
+            NULLIF((
+              SELECT apht.* 
+              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES
+            ), '{}') 
+          ELSE 
+            NULL 
+        END AS housingReference
+      FROM application_profile ap
+      LEFT JOIN application_profile_housing_reference apht
+      ON ap.id = apht.applicationProfileId
+      WHERE contactCode = ?
       `,
       [contactCode]
     )
