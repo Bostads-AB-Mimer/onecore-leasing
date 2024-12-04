@@ -146,7 +146,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
         db,
         factory.applicationProfileHousingReference.build({
           applicationProfileId: existingProfile.data.id,
-          name: 'foo',
+          email: 'foo',
         })
       )
 
@@ -162,7 +162,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
           housingType: 'bar',
           landlord: 'quux',
           housingTypeDescription: 'corge',
-          housingReference: { ...existingReference.data, name: 'bar' },
+          housingReference: { ...existingReference.data, email: 'bar' },
         }
       )
       assert(res.ok)
@@ -180,7 +180,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
           numAdults: 2,
           housingReference: expect.objectContaining({
             applicationProfileId: existingProfile.data.id,
-            name: 'bar',
+            email: 'bar',
           }),
         }),
       })
@@ -205,7 +205,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
           housingTypeDescription: 'corge',
           housingReference: {
             ...factory.applicationProfileHousingReference.build({
-              name: 'foo',
+              email: 'foo',
             }),
           },
         }
@@ -225,7 +225,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
           numAdults: 2,
           housingReference: expect.objectContaining({
             applicationProfileId: existingProfile.data.id,
-            name: 'foo',
+            email: 'foo',
           }),
         }),
       })
@@ -242,7 +242,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
         db,
         factory.applicationProfileHousingReference.build({
           applicationProfileId: existingProfile.data.id,
-          name: 'foo',
+          email: 'foo',
         })
       )
 
@@ -262,7 +262,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
           housingType: 'bar',
           landlord: 'quux',
           housingTypeDescription: 'corge',
-          housingReference: { ...existingReference.data, name: 'bar' },
+          housingReference: { ...existingReference.data, email: 'bar' },
         }
       )
 
@@ -279,7 +279,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
           numAdults: 1,
           housingReference: expect.objectContaining({
             applicationProfileId: existingProfile.data.id,
-            name: 'foo',
+            email: 'foo',
           }),
         }),
       })

@@ -36,7 +36,6 @@ describe('application-profile-housing-reference-adapter', () => {
       const reference = await adapter.create(db, {
         applicationProfileId: applicationProfile.id,
         email: null,
-        name: 'John Doe',
         phone: '01234',
         reviewStatus: 'foo',
         reviewStatusReason: null,
@@ -57,7 +56,6 @@ describe('application-profile-housing-reference-adapter', () => {
         id: expect.any(Number),
         applicationProfileId: applicationProfile.id,
         email: null,
-        name: 'John Doe',
         phone: '01234',
         reviewStatus: 'foo',
         reviewStatusReason: null,
@@ -72,7 +70,6 @@ describe('application-profile-housing-reference-adapter', () => {
       const reference = await adapter.create(db, {
         applicationProfileId: applicationProfile.id,
         email: null,
-        name: 'John Doe',
         phone: '01234',
         reviewStatus: 'foo',
         reviewStatusReason: null,
@@ -83,7 +80,6 @@ describe('application-profile-housing-reference-adapter', () => {
       const duplicateReference = await adapter.create(db, {
         applicationProfileId: applicationProfile.id,
         email: null,
-        name: 'John Doe',
         phone: '01234',
         reviewStatus: 'foo',
         reviewStatusReason: null,
@@ -103,7 +99,6 @@ describe('application-profile-housing-reference-adapter', () => {
     it('returns err if no update', async () => {
       const result = await adapter.update(db, 1, {
         email: null,
-        name: 'John Doe',
         phone: '01234',
         reviewStatus: 'foo',
         reviewStatusReason: null,
@@ -120,7 +115,6 @@ describe('application-profile-housing-reference-adapter', () => {
       await adapter.create(db, {
         applicationProfileId: profile.id,
         email: null,
-        name: 'John Doe',
         phone: '01234',
         reviewStatus: 'foo',
         reviewStatusReason: null,
@@ -130,7 +124,6 @@ describe('application-profile-housing-reference-adapter', () => {
 
       await adapter.update(db, profile.id, {
         email: null,
-        name: 'John Doe',
         phone: '01234',
         reviewStatus: 'bar',
         reviewStatusReason: null,

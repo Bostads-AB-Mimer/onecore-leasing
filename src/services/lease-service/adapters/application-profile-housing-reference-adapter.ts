@@ -20,7 +20,6 @@ export async function create(
     const [row] = await db
       .insert({
         applicationProfileId: params.applicationProfileId,
-        name: params.name,
         phone: params.phone,
         email: params.email,
         reviewStatus: params.reviewStatus,
@@ -90,7 +89,6 @@ export async function update(
   try {
     const [row] = await db('application_profile_housing_reference')
       .update({
-        name: params.name,
         phone: params.phone,
         email: params.email,
         reviewStatus: params.reviewStatus,

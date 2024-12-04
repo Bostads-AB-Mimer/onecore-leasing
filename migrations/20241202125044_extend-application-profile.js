@@ -15,7 +15,6 @@ exports.up = function (knex) {
       CREATE TABLE application_profile_housing_reference (
         id int NOT NULL PRIMARY KEY IDENTITY(1,1),
         applicationProfileId int NOT NULL,
-        name nvarchar(36) NOT NULL,
         phone nvarchar(36) NOT NULL,
         email nvarchar(max),
         reviewStatus nvarchar(36) NOT NULL,
