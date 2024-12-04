@@ -1,4 +1,8 @@
-import { ApplicationProfile, leasing } from 'onecore-types'
+import {
+  ApplicationProfile,
+  ApplicationProfileHousingReference,
+  leasing,
+} from 'onecore-types'
 import { logger } from 'onecore-utilities'
 import { Knex } from 'knex'
 import { z } from 'zod'
@@ -17,7 +21,7 @@ export async function updateOrCreateApplicationProfile(
   params: Params
 ): Promise<
   AdapterResult<
-    ApplicationProfile,
+    [ApplicationProfile, 'created' | 'updated'],
     | 'update-application-profile'
     | 'update-housing-reference'
     | 'create-application-profile'
@@ -26,24 +30,30 @@ export async function updateOrCreateApplicationProfile(
   >
 > {
   try {
-    const res = await db.transaction(async (trx) => {
-      const profile = await updateOrCreateProfile(trx, contactCode, params)
+    const result = await db.transaction<
+      [ApplicationProfile, 'created' | 'updated']
+    >(async (trx) => {
+      const [profile, operation] = await updateOrCreateProfile(
+        trx,
+        contactCode,
+        params
+      )
 
       if (!params.housingReference) {
-        return profile
+        return [profile, operation] as const
       }
 
-      const housingReference = await updateOrCreateReference(trx, {
+      const [housingReference] = await updateOrCreateReference(trx, {
         ...params.housingReference,
         applicationProfileId: profile.id,
       })
 
-      return { ...profile, housingReference }
+      return [{ ...profile, housingReference }, operation] as const
     })
 
-    return { ok: true, data: res }
+    return { ok: true, data: result }
   } catch (err) {
-    logger.error(err, 'createOrUpdateApplicationProfile')
+    logger.error(err, 'updateOrCreateApplicationProfile')
 
     if (err === 'update-application-profile') {
       return { ok: false, err: 'update-application-profile' }
@@ -69,7 +79,7 @@ async function updateOrCreateProfile(
   trx: Knex,
   contactCode: string,
   params: Params
-) {
+): Promise<[ApplicationProfile, 'created' | 'updated']> {
   const updateProfile = await applicationProfileAdapter.update(
     trx,
     contactCode,
@@ -90,20 +100,19 @@ async function updateOrCreateProfile(
       throw 'create-application-profile'
     }
 
-    return insertProfile.data
+    return [insertProfile.data, 'created']
   }
 
-  return updateProfile.data
+  return [updateProfile.data, 'updated']
 }
 
 async function updateOrCreateReference(
   trx: Knex,
   params: Params['housingReference'] & { applicationProfileId: number }
-) {
+): Promise<[ApplicationProfileHousingReference, 'created' | 'updated']> {
   const updateReference =
     await applicationProfileHousingReferenceAdapter.update(
       trx,
-      // TODO: Make sure we cant overwrite applicationProfileId
       params.applicationProfileId,
       params
     )
@@ -120,8 +129,8 @@ async function updateOrCreateReference(
       throw 'create-housing-reference'
     }
 
-    return insertReference.data
+    return [insertReference.data, 'created']
   }
 
-  return updateReference.data
+  return [updateReference.data, 'updated']
 }
