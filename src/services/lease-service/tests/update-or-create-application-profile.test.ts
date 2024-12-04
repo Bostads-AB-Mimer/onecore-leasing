@@ -87,7 +87,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
 
       expect(res).toMatchObject({
         ok: false,
-        err: 'create-housing-reference',
+        err: 'create-reference',
       })
 
       const insertedProfile = await applicationProfileAdapter.getByContactCode(
@@ -266,7 +266,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
         }
       )
 
-      expect(res).toMatchObject({ ok: false, err: 'create-housing-reference' })
+      expect(res).toMatchObject({ ok: false, err: 'create-reference' })
       const updated = await applicationProfileAdapter.getByContactCode(
         db,
         '1234'

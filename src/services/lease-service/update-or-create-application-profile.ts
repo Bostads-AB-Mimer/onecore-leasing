@@ -3,7 +3,6 @@ import {
   ApplicationProfileHousingReference,
   leasing,
 } from 'onecore-types'
-import { logger } from 'onecore-utilities'
 import { Knex } from 'knex'
 import { z } from 'zod'
 
@@ -22,64 +21,53 @@ export async function updateOrCreateApplicationProfile(
 ): Promise<
   AdapterResult<
     [ApplicationProfile, 'created' | 'updated'],
-    | 'update-application-profile'
-    | 'update-housing-reference'
-    | 'create-application-profile'
-    | 'create-housing-reference'
+    | 'update-profile'
+    | 'update-reference'
+    | 'create-profile'
+    | 'create-reference'
     | 'unknown'
   >
 > {
-  try {
-    const result = await db.transaction<
-      [ApplicationProfile, 'created' | 'updated']
-    >(async (trx) => {
-      const [profile, operation] = await updateOrCreateProfile(
-        trx,
-        contactCode,
-        params
-      )
+  const trx = await db.transaction()
 
-      if (!params.housingReference) {
-        return [profile, operation] as const
-      }
-
-      const [housingReference] = await updateOrCreateReference(trx, {
-        ...params.housingReference,
-        applicationProfileId: profile.id,
-      })
-
-      return [{ ...profile, housingReference }, operation] as const
-    })
-
-    return { ok: true, data: result }
-  } catch (err) {
-    logger.error(err, 'updateOrCreateApplicationProfile')
-
-    if (err === 'update-application-profile') {
-      return { ok: false, err: 'update-application-profile' }
-    }
-
-    if (err === 'update-housing-reference') {
-      return { ok: false, err: 'update-housing-reference' }
-    }
-
-    if (err === 'create-application-profile') {
-      return { ok: false, err: 'create-application-profile' }
-    }
-
-    if (err === 'create-housing-reference') {
-      return { ok: false, err: 'create-housing-reference' }
-    }
-
-    return { ok: false, err: 'unknown' }
+  const profileResult = await updateOrCreateProfile(trx, contactCode, params)
+  if (!profileResult.ok) {
+    await trx.rollback()
+    return { ok: false, err: profileResult.err }
   }
+
+  const [profile, operation] = profileResult.data
+  if (!params.housingReference) {
+    await trx.commit()
+    return { ok: true, data: profileResult.data }
+  }
+
+  const housingReferenceResult = await updateOrCreateReference(trx, {
+    ...params.housingReference,
+    applicationProfileId: profile.id,
+  })
+
+  if (!housingReferenceResult.ok) {
+    await trx.rollback()
+    return { ok: false, err: housingReferenceResult.err }
+  }
+
+  const [housingReference] = housingReferenceResult.data
+
+  await trx.commit()
+  return { ok: true, data: [{ ...profile, housingReference }, operation] }
 }
 
 async function updateOrCreateProfile(
   trx: Knex,
   contactCode: string,
   params: Params
-): Promise<[ApplicationProfile, 'created' | 'updated']> {
+): Promise<
+  AdapterResult<
+    [ApplicationProfile, 'created' | 'updated'],
+    'update-profile' | 'create-profile'
+  >
+> {
   const updateProfile = await applicationProfileAdapter.update(
     trx,
     contactCode,
@@ -88,7 +76,7 @@ async function updateOrCreateProfile(
 
   if (!updateProfile.ok) {
     if (updateProfile.err !== 'no-update') {
-      throw 'update-application-profile'
+      return { ok: false, err: 'update-profile' }
     }
 
     const insertProfile = await applicationProfileAdapter.create(trx, {
@@ -97,19 +85,24 @@ async function updateOrCreateProfile(
     })
 
     if (!insertProfile.ok) {
-      throw 'create-application-profile'
+      return { ok: false, err: 'create-profile' }
     }
 
-    return [insertProfile.data, 'created']
+    return { ok: true, data: [insertProfile.data, 'created'] }
   }
 
-  return [updateProfile.data, 'updated']
+  return { ok: true, data: [updateProfile.data, 'updated'] }
 }
 
 async function updateOrCreateReference(
   trx: Knex,
   params: Params['housingReference'] & { applicationProfileId: number }
-): Promise<[ApplicationProfileHousingReference, 'created' | 'updated']> {
+): Promise<
+  AdapterResult<
+    [ApplicationProfileHousingReference, 'created' | 'updated'],
+    'update-reference' | 'create-reference'
+  >
+> {
   const updateReference =
     await applicationProfileHousingReferenceAdapter.update(
       trx,
@@ -119,18 +112,18 @@ async function updateOrCreateReference(
 
   if (!updateReference.ok) {
     if (updateReference.err !== 'no-update') {
-      throw 'update-housing-reference'
+      return { ok: false, err: 'update-reference' }
     }
 
     const insertReference =
       await applicationProfileHousingReferenceAdapter.create(trx, params)
 
     if (!insertReference.ok) {
-      throw 'create-housing-reference'
+      return { ok: false, err: 'create-reference' }
     }
 
-    return [insertReference.data, 'created']
+    return { ok: true, data: [insertReference.data, 'created'] }
   }
 
-  return [updateReference.data, 'updated']
+  return { ok: true, data: [updateReference.data, 'updated'] }
 }
