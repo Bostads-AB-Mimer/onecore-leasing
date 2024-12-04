@@ -19,7 +19,7 @@ exports.up = function (knex) {
         phone nvarchar(36) NOT NULL,
         email nvarchar(max),
         reviewStatus nvarchar(36) NOT NULL,
-        reviewStatusReason text,
+        reviewStatusReason nvarchar(max),
         reviewedAt datetimeoffset,
         expiresAt datetimeoffset NOT NULL,
         createdAt datetimeoffset NOT NULL DEFAULT SYSDATETIMEOFFSET(),
