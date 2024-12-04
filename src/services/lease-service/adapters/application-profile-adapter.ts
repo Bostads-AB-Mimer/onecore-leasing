@@ -63,7 +63,7 @@ export async function getByContactCode(
           ap.*,
           NULLIF((
             SELECT apht.* 
-            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES
           ), '{}') AS housingReference
         FROM application_profile ap
         LEFT JOIN application_profile_housing_reference apht
