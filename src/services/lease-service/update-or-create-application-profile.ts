@@ -19,7 +19,7 @@ export async function updateOrCreateApplicationProfile(
   AdapterResult<
     ApplicationProfile,
     | 'update-application-profile'
-    | 'update-profile-reference'
+    | 'update-housing-reference'
     | 'create-application-profile'
     | 'create-housing-reference'
     | 'unknown'
@@ -43,15 +43,14 @@ export async function updateOrCreateApplicationProfile(
 
     return { ok: true, data: res }
   } catch (err) {
-    console.log('fooo: ', err)
     logger.error(err, 'createOrUpdateApplicationProfile')
 
     if (err === 'update-application-profile') {
       return { ok: false, err: 'update-application-profile' }
     }
 
-    if (err === 'update-profile-reference') {
-      return { ok: false, err: 'update-profile-reference' }
+    if (err === 'update-housing-reference') {
+      return { ok: false, err: 'update-housing-reference' }
     }
 
     if (err === 'create-application-profile') {
@@ -111,7 +110,7 @@ async function updateOrCreateReference(
 
   if (!updateReference.ok) {
     if (updateReference.err !== 'no-update') {
-      throw 'update-profile-reference'
+      throw 'update-housing-reference'
     }
 
     const insertReference =

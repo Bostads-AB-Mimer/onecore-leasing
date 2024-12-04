@@ -1,7 +1,10 @@
 import { Knex } from 'knex'
 import { RequestError } from 'tedious'
 import { logger } from 'onecore-utilities'
-import { ApplicationProfile } from 'onecore-types'
+import {
+  ApplicationProfile,
+  ApplicationProfileHousingReference,
+} from 'onecore-types'
 
 import { AdapterResult } from './types'
 
@@ -77,11 +80,24 @@ export async function getByContactCode(
       return { ok: false, err: 'not-found' }
     }
 
+    const housingReference = row.housingReference
+      ? JSON.parse(row.housingReference)
+      : undefined
+
     return {
       ok: true,
       data: {
         ...row,
-        housingReference: row.housingReference || undefined,
+        housingReference: housingReference
+          ? {
+              ...housingReference,
+              expiresAt: new Date(housingReference.expiresAt),
+              createdAt: new Date(housingReference.createdAt),
+              reviewedAt: housingReference.reviewedAt
+                ? new Date(housingReference.reviewedAt)
+                : null,
+            }
+          : undefined,
         housingType: row.housingType || undefined,
         housingTypeDescription: row.housingTypeDescription || undefined,
         landlord: row.landlord || undefined,

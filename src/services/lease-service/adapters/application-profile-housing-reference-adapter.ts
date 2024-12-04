@@ -18,7 +18,16 @@ export async function create(
 > {
   try {
     const [row] = await db
-      .insert(params)
+      .insert({
+        applicationProfileId: params.applicationProfileId,
+        name: params.name,
+        phone: params.phone,
+        email: params.email,
+        reviewStatus: params.reviewStatus,
+        reviewStatusReason: params.reviewStatusReason,
+        reviewedAt: params.reviewedAt,
+        expiresAt: params.expiresAt,
+      })
       .into('application_profile_housing_reference')
       .returning('*')
 
@@ -81,7 +90,15 @@ export async function update(
 > {
   try {
     const [row] = await db('application_profile_housing_reference')
-      .update(params)
+      .update({
+        name: params.name,
+        phone: params.phone,
+        email: params.email,
+        reviewStatus: params.reviewStatus,
+        reviewStatusReason: params.reviewStatusReason,
+        reviewedAt: params.reviewedAt,
+        expiresAt: params.expiresAt,
+      })
       .where('applicationProfileId', applicationProfileId)
       .returning('*')
 
