@@ -1,4 +1,5 @@
 import configPackage from '@iteam/config'
+import 'dotenv/config'
 
 export interface Config {
   port: number
