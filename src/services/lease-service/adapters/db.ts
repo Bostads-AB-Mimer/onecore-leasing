@@ -21,10 +21,14 @@ const getTestConfig = () => {
 
 const getConfigBasedOnEnvironment = () => {
   const environment = process.env.NODE_ENV || 'dev'
-  return environment === 'test' ? getTestConfig() : getStandardConfig()
+  return environment.includes('test') ? getTestConfig() : getStandardConfig()
 }
 
-export const db = knex(getConfigBasedOnEnvironment())
+export const createDbClient = () => {
+  return knex(getConfigBasedOnEnvironment())
+}
+
+export const db = createDbClient()
 
 const migrate = async () => {
   await db.migrate
