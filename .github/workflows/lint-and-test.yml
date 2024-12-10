@@ -25,7 +25,10 @@ jobs:
           node-version: '20'
       - name: Create db
         run: |
-          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Passw0rd! -Q "CREATE DATABASE [tenants-leases-test]"
+          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Passw0rd! -Q "
+          CREATE DATABASE [tenants-leases-test];
+          ALTER DATABASE [tenants-leases-test] SET READ_COMMITTED_SNAPSHOT ON;
+          "
       - name: Install dependencies
         run: npm ci
       - name: Run tests
