@@ -6,6 +6,7 @@ module.exports = {
   transformIgnorePatterns: ['node_modules/(?!(onecore-types)/)'],
   extensionsToTreatAsEsm: ['.d.ts, .ts'],
   setupFiles: ['<rootDir>/.jest/common.ts'],
+  maxWorkers: 1,
   globalSetup: '<rootDir>/.jest/migrate.ts',
   globalTeardown: '<rootDir>/.jest/teardown.ts',
 }
