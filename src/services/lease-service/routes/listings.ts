@@ -16,6 +16,7 @@ import * as priorityListService from '../priority-list-service'
 import * as syncParkingSpacesFromXpandService from '../sync-internal-parking-space-listings-from-xpand'
 import * as listingAdapter from '../adapters/listing-adapter'
 import { getTenant } from '../get-tenant'
+import { db } from '../adapters/db'
 
 /**
  * @swagger
@@ -431,7 +432,7 @@ export const routes = (router: KoaRouter) => {
       .otherwise(() => undefined)
 
     const listingsWithApplicants =
-      await listingAdapter.getListingsWithApplicants(opts)
+      await listingAdapter.getListingsWithApplicants(db, opts)
 
     if (!listingsWithApplicants.ok) {
       logger.error(

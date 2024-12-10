@@ -126,10 +126,11 @@ const getActiveListingByRentalObjectCode = async (
 }
 
 const getListingById = async (
-  listingId: number
+  listingId: number,
+  dbConnection = db
 ): Promise<Listing | undefined> => {
   logger.info({ listingId }, `Getting listing ${listingId} from leasing DB`)
-  const result = await db
+  const result = await dbConnection
     .from('listing AS l')
     .select<DbListing & { applicants: string | null }>(
       'l.*',
@@ -257,6 +258,7 @@ const updateApplicantStatus = async (
 }
 
 const getListingsWithApplicants = async (
+  db: Knex,
   opts?: GetListingsWithApplicantsFilterParams
 ): Promise<AdapterResult<Array<Listing>, 'unknown'>> => {
   try {
@@ -278,7 +280,7 @@ const getListingsWithApplicants = async (
       )
       .with({ type: 'ready-for-offer' }, () =>
         db.raw(
-          `WHERE l.Status = ? 
+          `WHERE l.Status = ?
           AND EXISTS (
             SELECT 1
             FROM applicant a
@@ -295,7 +297,7 @@ const getListingsWithApplicants = async (
       )
       .with({ type: 'offered' }, () =>
         db.raw(
-          `WHERE l.Status = ? 
+          `WHERE l.Status = ?
           AND EXISTS (
             SELECT 1
             FROM offer o
@@ -468,10 +470,11 @@ const updateListingStatuses = async (
 }
 
 const deleteListing = async (
-  listingId: number
+  listingId: number,
+  dbConnection = db
 ): Promise<AdapterResult<null, 'unknown' | 'conflict'>> => {
   try {
-    await db('listing').delete().where('Id', listingId)
+    await dbConnection('listing').delete().where('Id', listingId)
     return { ok: true, data: null }
   } catch (err) {
     logger.error(err, 'listingAdapter.deleteListing')
