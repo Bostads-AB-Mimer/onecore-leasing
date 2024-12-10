@@ -127,6 +127,7 @@ export async function create(
       },
     }
   } catch (err) {
+    console.log('err: ', err)
     logger.error(err, 'Error creating offer')
     return { ok: false, err: 'unknown' }
   }

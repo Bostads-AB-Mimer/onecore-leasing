@@ -110,9 +110,10 @@ const createListing = async (
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
 const getActiveListingByRentalObjectCode = async (
-  rentalObjectCode: string
+  rentalObjectCode: string,
+  dbConnection = db
 ): Promise<Listing | undefined> => {
-  const listing = await db<DbListing>('Listing')
+  const listing = await dbConnection<DbListing>('Listing')
     .where({
       RentalObjectCode: rentalObjectCode,
       Status: ListingStatus.Active,
@@ -186,10 +187,11 @@ const getListingById = async (
  * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
 const getApplicantById = async (
-  applicantId: number
+  applicantId: number,
+  dbConnection = db
 ): Promise<Applicant | undefined> => {
   logger.info({ applicantId }, 'Getting applicant from leasing DB')
-  const applicant = await db<DbApplicant>('Applicant')
+  const applicant = await dbConnection<DbApplicant>('Applicant')
     .where({
       Id: applicantId,
     })
@@ -368,8 +370,11 @@ const getListingsWithApplicants = async (
  * @returns {Promise<Applicant | undefined>} - Returns the applicants.
  */
 
-const getApplicantsByContactCode = async (contactCode: string) => {
-  const result = await db('Applicant')
+const getApplicantsByContactCode = async (
+  contactCode: string,
+  dbConnection = db
+) => {
+  const result = await dbConnection('Applicant')
     .where({ ContactCode: contactCode })
     .select<Array<DbApplicant>>('*')
 
@@ -385,9 +390,10 @@ const getApplicantsByContactCode = async (contactCode: string) => {
  */
 const getApplicantByContactCodeAndListingId = async (
   contactCode: string,
-  listingId: number
+  listingId: number,
+  dbConnection = db
 ) => {
-  const result = await db<DbApplicant>('Applicant')
+  const result = await dbConnection<DbApplicant>('Applicant')
     .where({
       ContactCode: contactCode,
       ListingId: listingId,
@@ -406,8 +412,12 @@ const getApplicantByContactCodeAndListingId = async (
  * @param {number} listingId - The ID of the listing the applicant belongs to.
  * @returns {Promise<boolean>} - Returns true if applicant belongs to listing, false if not.
  */
-const applicationExists = async (contactCode: string, listingId: number) => {
-  const result = await db<DbApplicant>('applicant')
+const applicationExists = async (
+  contactCode: string,
+  listingId: number,
+  dbConnection = db
+) => {
+  const result = await dbConnection<DbApplicant>('applicant')
     .where({
       ContactCode: contactCode,
       ListingId: listingId,
@@ -421,9 +431,9 @@ const applicationExists = async (contactCode: string, listingId: number) => {
   return true
 }
 
-const getExpiredListings = async () => {
+const getExpiredListings = async (dbConnection = db) => {
   const currentDate = new Date()
-  const listings = await db('listing')
+  const listings = await dbConnection('listing')
     .where('PublishedTo', '<', currentDate)
     .andWhere('Status', '=', ListingStatus.Active)
   return listings
