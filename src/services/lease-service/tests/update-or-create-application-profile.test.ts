@@ -8,17 +8,16 @@ import { updateOrCreateApplicationProfile } from '../update-or-create-applicatio
 import { withContext } from './testUtils'
 
 describe(updateOrCreateApplicationProfile.name, () => {
-  describe('when no profile exists', () => {
-    it('creates application profile', () =>
-      withContext(async (ctx) => {
-        const res = await updateOrCreateApplicationProfile(ctx.db, '1234', {
-          expiresAt: new Date(),
-          numAdults: 1,
-          numChildren: 1,
-          housingType: 'foo',
-          landlord: 'baz',
-          housingTypeDescription: 'qux',
-        })
+  describe('when no profile exists ', () => {
+    it('creates application profile', async () => {
+      const res = await updateOrCreateApplicationProfile(db, '1234', {
+        expiresAt: new Date(),
+        numAdults: 1,
+        numChildren: 1,
+        housingType: 'RENTAL',
+        landlord: 'baz',
+        housingTypeDescription: 'qux',
+      })
 
         expect(res).toMatchObject({ ok: true })
         const inserted = await applicationProfileAdapter.getByContactCode(
@@ -32,17 +31,16 @@ describe(updateOrCreateApplicationProfile.name, () => {
         })
       }))
 
-    it('creates application profile and housing reference', () =>
-      withContext(async (ctx) => {
-        const res = await updateOrCreateApplicationProfile(ctx.db, '1234', {
-          expiresAt: new Date(),
-          numAdults: 1,
-          numChildren: 1,
-          housingType: 'foo',
-          landlord: 'baz',
-          housingTypeDescription: 'qux',
-          housingReference: factory.applicationProfileHousingReference.build(),
-        })
+    it('creates application profile and housing reference', async () => {
+      const res = await updateOrCreateApplicationProfile(db, '1234', {
+        expiresAt: new Date(),
+        numAdults: 1,
+        numChildren: 1,
+        housingType: 'RENTAL',
+        landlord: 'baz',
+        housingTypeDescription: 'qux',
+        housingReference: factory.applicationProfileHousingReference.build(),
+      })
 
         expect(res).toMatchObject({ ok: true })
         const insertedProfile =
@@ -65,15 +63,15 @@ describe(updateOrCreateApplicationProfile.name, () => {
           .spyOn(housingReferenceAdapter, 'create')
           .mockResolvedValueOnce({ ok: false, err: 'unknown' })
 
-        const res = await updateOrCreateApplicationProfile(ctx.db, '1234', {
-          expiresAt: new Date(),
-          numAdults: 1,
-          numChildren: 1,
-          housingType: 'foo',
-          landlord: 'baz',
-          housingTypeDescription: 'qux',
-          housingReference: factory.applicationProfileHousingReference.build(),
-        })
+      const res = await updateOrCreateApplicationProfile(db, '1234', {
+        expiresAt: new Date(),
+        numAdults: 1,
+        numChildren: 1,
+        housingType: 'RENTAL',
+        landlord: 'baz',
+        housingTypeDescription: 'qux',
+        housingReference: factory.applicationProfileHousingReference.build(),
+      })
 
         expect(res).toMatchObject({
           ok: false,
@@ -99,33 +97,33 @@ describe(updateOrCreateApplicationProfile.name, () => {
         )
         assert(existingProfile.ok)
 
-        const res = await updateOrCreateApplicationProfile(
-          ctx.db,
-          existingProfile.data.contactCode,
-          {
-            expiresAt: new Date(),
-            numAdults: 2,
-            numChildren: 2,
-            housingType: 'bar',
-            landlord: 'quux',
-            housingTypeDescription: 'corge',
-          }
-        )
+      const res = await updateOrCreateApplicationProfile(
+        db,
+        existingProfile.data.contactCode,
+        {
+          expiresAt: new Date(),
+          numAdults: 2,
+          numChildren: 2,
+          housingType: 'RENTAL',
+          landlord: 'quux',
+          housingTypeDescription: 'corge',
+        }
+      )
 
-        expect(res).toMatchObject({ ok: true })
-        const updated = await applicationProfileAdapter.getByContactCode(
-          ctx.db,
-          '1234'
-        )
-        assert(updated.ok)
-        expect(updated).toMatchObject({
-          ok: true,
-          data: expect.objectContaining({
-            contactCode: '1234',
-            numAdults: 2,
-          }),
-        })
-      }))
+      expect(res).toMatchObject({ ok: true })
+      const updated = await applicationProfileAdapter.getByContactCode(
+        db,
+        '1234'
+      )
+      assert(updated.ok)
+      expect(updated).toMatchObject({
+        ok: true,
+        data: expect.objectContaining({
+          contactCode: '1234',
+          numAdults: 2,
+        }),
+      })
+    })
 
     it('updates application profile and housing reference', () =>
       withContext(async (ctx) => {
@@ -138,13 +136,13 @@ describe(updateOrCreateApplicationProfile.name, () => {
         )
         assert(existingProfile.ok)
 
-        const existingReference = await housingReferenceAdapter.create(
-          ctx.db,
-          factory.applicationProfileHousingReference.build({
-            applicationProfileId: existingProfile.data.id,
-            email: 'foo',
-          })
-        )
+      const existingReference = await housingReferenceAdapter.create(
+        db,
+        factory.applicationProfileHousingReference.build({
+          applicationProfileId: existingProfile.data.id,
+          email: 'foo',
+        })
+      )
 
         assert(existingReference.ok)
 
@@ -212,39 +210,36 @@ describe(updateOrCreateApplicationProfile.name, () => {
         )
         assert(res.ok)
 
-        expect(res).toMatchObject({ ok: true })
-        const updated = await applicationProfileAdapter.getByContactCode(
-          ctx.db,
-          '1234'
-        )
-        assert(updated.ok)
-        expect(updated).toMatchObject({
-          ok: true,
-          data: expect.objectContaining({
-            contactCode: '1234',
-            numAdults: 2,
-            housingReference: expect.objectContaining({
-              applicationProfileId: existingProfile.data.id,
+      const res = await updateOrCreateApplicationProfile(
+        db,
+        existingProfile.data.contactCode,
+        {
+          expiresAt: new Date(),
+          numAdults: 2,
+          numChildren: 2,
+          housingType: 'RENTAL',
+          landlord: 'quux',
+          housingTypeDescription: 'corge',
+          housingReference: {
+            ...factory.applicationProfileHousingReference.build({
               email: 'foo',
             }),
           }),
         })
       }))
 
-    it('if update reference fails, profile is not updated', () =>
-      withContext(async (ctx) => {
-        const existingProfile = await applicationProfileAdapter.create(
-          ctx.db,
-          factory.applicationProfile.build({
-            contactCode: '1234',
-            numAdults: 1,
-          })
-        )
-        assert(existingProfile.ok)
-
-        const existingReference = await housingReferenceAdapter.create(
-          ctx.db,
-          factory.applicationProfileHousingReference.build({
+      expect(res).toMatchObject({ ok: true })
+      const updated = await applicationProfileAdapter.getByContactCode(
+        db,
+        '1234'
+      )
+      assert(updated.ok)
+      expect(updated).toMatchObject({
+        ok: true,
+        data: expect.objectContaining({
+          contactCode: '1234',
+          numAdults: 2,
+          housingReference: expect.objectContaining({
             applicationProfileId: existingProfile.data.id,
             email: 'foo',
           })
