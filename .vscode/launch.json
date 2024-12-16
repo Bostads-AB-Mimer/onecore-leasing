@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch App",
+      "name": "Launch Leasing",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "program": "${workspaceFolder}/src/index.ts",
