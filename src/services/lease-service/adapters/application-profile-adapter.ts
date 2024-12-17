@@ -1,19 +1,19 @@
 import { Knex } from 'knex'
 import { RequestError } from 'tedious'
 import { logger } from 'onecore-utilities'
-import { ApplicationProfile, leasing } from 'onecore-types'
+import { ApplicationProfile } from 'onecore-types'
 
 import { AdapterResult } from './types'
 
-type CreateParams = {
-  contactCode: string
-  numAdults: number
-  numChildren: number
-  expiresAt: Date | null
-  housingType: string | null
-  housingTypeDescription: string | null
-  landlord: string | null
-}
+type CreateParams = Pick<
+  ApplicationProfile,
+  | 'numChildren'
+  | 'numAdults'
+  | 'expiresAt'
+  | 'housingType'
+  | 'housingTypeDescription'
+  | 'landlord'
+> & { contactCode: string }
 
 export async function create(
   db: Knex,
@@ -107,14 +107,15 @@ export async function getByContactCode(
   }
 }
 
-type UpdateParams = {
-  numChildren: number
-  numAdults: number
-  expiresAt: Date | null
-  housingType: string | null
-  housingTypeDescription: string | null
-  landlord: string | null
-}
+type UpdateParams = Pick<
+  ApplicationProfile,
+  | 'numChildren'
+  | 'numAdults'
+  | 'expiresAt'
+  | 'housingType'
+  | 'housingTypeDescription'
+  | 'landlord'
+>
 
 export async function update(
   db: Knex,

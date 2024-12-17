@@ -11,7 +11,7 @@ async function createApplicationProfile(db: Knex) {
     expiresAt: new Date(),
     numAdults: 1,
     numChildren: 1,
-    housingType: null,
+    housingType: 'RENTAL',
     housingTypeDescription: null,
     landlord: null,
   })
