@@ -32,7 +32,6 @@ describe('application-profile-housing-reference-adapter', () => {
         expiresAt: new Date(),
         comment: null,
         lastAdminUpdatedAt: null,
-        lastAdminUpdatedBy: 'not-implemented',
         lastApplicantUpdatedAt: null,
         reasonRejected: null,
       })
@@ -73,7 +72,6 @@ describe('application-profile-housing-reference-adapter', () => {
 
         comment: null,
         lastAdminUpdatedAt: null,
-        lastAdminUpdatedBy: 'foo',
         lastApplicantUpdatedAt: null,
         reasonRejected: null,
       })
@@ -86,7 +84,6 @@ describe('application-profile-housing-reference-adapter', () => {
         expiresAt: new Date(),
         comment: null,
         lastAdminUpdatedAt: null,
-        lastAdminUpdatedBy: 'foo',
         lastApplicantUpdatedAt: null,
         reasonRejected: null,
       })
@@ -108,7 +105,6 @@ describe('application-profile-housing-reference-adapter', () => {
         expiresAt: new Date(),
         comment: null,
         lastAdminUpdatedAt: null,
-        lastAdminUpdatedBy: 'foo',
         lastApplicantUpdatedAt: null,
         reasonRejected: null,
       })
@@ -127,7 +123,6 @@ describe('application-profile-housing-reference-adapter', () => {
         expiresAt: new Date(),
         comment: null,
         lastAdminUpdatedAt: null,
-        lastAdminUpdatedBy: 'foo',
         lastApplicantUpdatedAt: null,
         reasonRejected: null,
       })
@@ -139,7 +134,6 @@ describe('application-profile-housing-reference-adapter', () => {
         expiresAt: new Date(),
         comment: null,
         lastAdminUpdatedAt: null,
-        lastAdminUpdatedBy: 'foo',
         lastApplicantUpdatedAt: null,
         reasonRejected: null,
       })

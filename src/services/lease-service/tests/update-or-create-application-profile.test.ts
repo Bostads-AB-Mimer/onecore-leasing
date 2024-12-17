@@ -1,5 +1,4 @@
 import assert from 'node:assert'
-import { ApplicationProfile } from 'onecore-types'
 
 import * as applicationProfileAdapter from '../adapters/application-profile-adapter'
 import * as housingReferenceAdapter from '../adapters/application-profile-housing-reference-adapter'
@@ -39,7 +38,16 @@ describe(updateOrCreateApplicationProfile.name, () => {
         housingType: 'RENTAL',
         landlord: 'baz',
         housingTypeDescription: 'qux',
-        housingReference: factory.applicationProfileHousingReference.build(),
+        housingReference: {
+          comment: null,
+          email: null,
+          expiresAt: new Date(),
+          lastAdminUpdatedAt: null,
+          lastApplicantUpdatedAt: new Date(),
+          phone: null,
+          reasonRejected: null,
+          reviewStatus: 'PENDING',
+        },
       })
 
         expect(res).toMatchObject({ ok: true })

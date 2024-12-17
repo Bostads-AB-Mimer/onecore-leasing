@@ -5,7 +5,10 @@ import { ApplicationProfileHousingReference } from 'onecore-types'
 import { AdapterResult } from './types'
 import { RequestError } from 'tedious'
 
-type CreateParams = Omit<ApplicationProfileHousingReference, 'id' | 'createdAt'>
+type CreateParams = Omit<
+  ApplicationProfileHousingReference,
+  'id' | 'createdAt' | 'lastAdminUpdatedBy'
+>
 
 export async function create(
   db: Knex,
@@ -79,7 +82,7 @@ export async function findByApplicationProfileId(
 
 type UpdateParams = Omit<
   ApplicationProfileHousingReference,
-  'id' | 'createdAt' | 'applicationProfileId'
+  'id' | 'createdAt' | 'applicationProfileId' | 'lastAdminUpdatedBy'
 >
 
 export async function update(
