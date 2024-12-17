@@ -107,6 +107,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
           housingType: 'RENTAL',
           landlord: 'quux',
           housingTypeDescription: 'corge',
+          housingReference: existingProfile.data.housingReference,
         }
       )
 
