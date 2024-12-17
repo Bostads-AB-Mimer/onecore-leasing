@@ -1,5 +1,4 @@
 import assert from 'node:assert'
-import { ApplicationProfile } from 'onecore-types'
 
 import { migrate, db, teardown } from '../adapters/db'
 import { updateOrCreateApplicationProfile } from '../update-or-create-application-profile'
@@ -35,7 +34,6 @@ describe(updateOrCreateApplicationProfile.name, () => {
           email: null,
           expiresAt: new Date(),
           lastAdminUpdatedAt: null,
-          lastAdminUpdatedBy: 'foo',
           lastApplicantUpdatedAt: new Date(),
           phone: null,
           reasonRejected: null,
