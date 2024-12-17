@@ -10,9 +10,9 @@ type CreateParams = {
   numAdults: number
   numChildren: number
   expiresAt: Date | null
-  housingType?: string
-  housingTypeDescription?: string
-  landlord?: string
+  housingType: string | null
+  housingTypeDescription: string | null
+  landlord: string | null
 }
 
 export async function create(
@@ -38,6 +38,7 @@ export async function create(
     return { ok: true, data: profile }
   } catch (err) {
     if (err instanceof RequestError) {
+      console.log(err)
       if (err.message.includes('UQ_contactCode')) {
         logger.info(
           { contactCode: params.contactCode },
@@ -110,9 +111,9 @@ type UpdateParams = {
   numChildren: number
   numAdults: number
   expiresAt: Date | null
-  housingType?: string
-  housingTypeDescription?: string
-  landlord?: string
+  housingType: string | null
+  housingTypeDescription: string | null
+  landlord: string | null
 }
 
 export async function update(

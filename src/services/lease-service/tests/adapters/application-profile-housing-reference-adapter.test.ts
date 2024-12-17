@@ -11,6 +11,9 @@ async function createApplicationProfile(db: Knex) {
     expiresAt: new Date(),
     numAdults: 1,
     numChildren: 1,
+    housingType: null,
+    housingTypeDescription: null,
+    landlord: null,
   })
 
   assert(profile.ok)
@@ -26,9 +29,12 @@ describe('application-profile-housing-reference-adapter', () => {
         email: null,
         phone: '01234',
         reviewStatus: 'PENDING',
-        reviewStatusReason: null,
-        reviewedAt: null,
         expiresAt: new Date(),
+        comment: null,
+        lastAdminUpdatedAt: null,
+        lastAdminUpdatedBy: 'not-implemented',
+        lastApplicantUpdatedAt: null,
+        reasonRejected: null,
       })
 
       assert(reference.ok)
@@ -45,11 +51,14 @@ describe('application-profile-housing-reference-adapter', () => {
         applicationProfileId: applicationProfile.id,
         email: null,
         phone: '01234',
-        reviewStatus: 'foo',
-        reviewStatusReason: null,
-        reviewedAt: null,
+        reviewStatus: 'PENDING',
         expiresAt: expect.any(Date),
         createdAt: expect.any(Date),
+        comment: null,
+        lastAdminUpdatedAt: null,
+        lastAdminUpdatedBy: 'not-implemented',
+        lastApplicantUpdatedAt: null,
+        reasonRejected: null,
       })
     })
 
@@ -60,9 +69,13 @@ describe('application-profile-housing-reference-adapter', () => {
         email: null,
         phone: '01234',
         reviewStatus: 'PENDING',
-        reviewStatusReason: null,
-        reviewedAt: null,
         expiresAt: new Date(),
+
+        comment: null,
+        lastAdminUpdatedAt: null,
+        lastAdminUpdatedBy: 'foo',
+        lastApplicantUpdatedAt: null,
+        reasonRejected: null,
       })
 
       const duplicateReference = await adapter.create(db, {
@@ -70,9 +83,12 @@ describe('application-profile-housing-reference-adapter', () => {
         email: null,
         phone: '01234',
         reviewStatus: 'PENDING',
-        reviewStatusReason: null,
-        reviewedAt: null,
         expiresAt: new Date(),
+        comment: null,
+        lastAdminUpdatedAt: null,
+        lastAdminUpdatedBy: 'foo',
+        lastApplicantUpdatedAt: null,
+        reasonRejected: null,
       })
 
       assert(reference.ok)
@@ -89,9 +105,12 @@ describe('application-profile-housing-reference-adapter', () => {
         email: null,
         phone: '01234',
         reviewStatus: 'PENDING',
-        reviewStatusReason: null,
-        reviewedAt: null,
         expiresAt: new Date(),
+        comment: null,
+        lastAdminUpdatedAt: null,
+        lastAdminUpdatedBy: 'foo',
+        lastApplicantUpdatedAt: null,
+        reasonRejected: null,
       })
 
       expect(result).toMatchObject({ ok: false, err: 'no-update' })
@@ -105,18 +124,24 @@ describe('application-profile-housing-reference-adapter', () => {
         email: null,
         phone: '01234',
         reviewStatus: 'PENDING',
-        reviewStatusReason: null,
-        reviewedAt: null,
         expiresAt: new Date(),
+        comment: null,
+        lastAdminUpdatedAt: null,
+        lastAdminUpdatedBy: 'foo',
+        lastApplicantUpdatedAt: null,
+        reasonRejected: null,
       })
 
       await adapter.update(db, profile.id, {
         email: null,
         phone: '01234',
         reviewStatus: 'PENDING',
-        reviewStatusReason: null,
-        reviewedAt: new Date(),
         expiresAt: new Date(),
+        comment: null,
+        lastAdminUpdatedAt: null,
+        lastAdminUpdatedBy: 'foo',
+        lastApplicantUpdatedAt: null,
+        reasonRejected: null,
       })
 
       const updated = await adapter.findByApplicationProfileId(db, profile.id)
@@ -124,8 +149,7 @@ describe('application-profile-housing-reference-adapter', () => {
       assert(updated.ok)
       expect(updated.data).toMatchObject({
         applicationProfileId: profile.id,
-        reviewStatus: 'bar',
-        reviewedAt: expect.any(Date),
+        reviewStatus: 'PENDING',
       })
     })
   })
