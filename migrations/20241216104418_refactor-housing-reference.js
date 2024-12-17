@@ -23,6 +23,11 @@ exports.up = function (knex) {
       ALTER TABLE application_profile_housing_reference
       DROP COLUMN reviewStatusReason, reviewedAt;
     `)
+
+    await trx.raw(`
+      ALTER TABLE application_profile
+      ALTER COLUMN housingType nvarchar(36) NOT NULL;
+    `)
   })
 }
 
@@ -52,5 +57,10 @@ exports.down = function (knex) {
        ALTER TABLE application_profile_housing_reference
        ALTER COLUMN phone nvarchar(36) NOT NULL;
      `)
+
+    await trx.raw(`
+      ALTER TABLE application_profile
+      ALTER COLUMN housingType nvarchar(36) NULL;
+    `)
   })
 }
