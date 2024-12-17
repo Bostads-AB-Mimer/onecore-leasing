@@ -22,7 +22,7 @@ afterAll(async () => {
 
 describe(updateOrCreateApplicationProfile.name, () => {
   describe('when no profile exists ', () => {
-    it('creates application profile', async () => {
+    it('creates application profile and housing reference', async () => {
       const res = await updateOrCreateApplicationProfile(db, '1234', {
         expiresAt: new Date(),
         numAdults: 1,
@@ -30,6 +30,17 @@ describe(updateOrCreateApplicationProfile.name, () => {
         housingType: 'RENTAL',
         landlord: 'baz',
         housingTypeDescription: 'qux',
+        housingReference: {
+          comment: null,
+          email: null,
+          expiresAt: new Date(),
+          lastAdminUpdatedAt: null,
+          lastAdminUpdatedBy: 'foo',
+          lastApplicantUpdatedAt: new Date(),
+          phone: null,
+          reasonRejected: null,
+          reviewStatus: 'PENDING',
+        },
       })
 
       expect(res).toMatchObject({ ok: true })
@@ -41,32 +52,6 @@ describe(updateOrCreateApplicationProfile.name, () => {
       expect(inserted).toMatchObject({
         ok: true,
         data: expect.objectContaining({ contactCode: '1234' }),
-      })
-    })
-
-    it('creates application profile and housing reference', async () => {
-      const res = await updateOrCreateApplicationProfile(db, '1234', {
-        expiresAt: new Date(),
-        numAdults: 1,
-        numChildren: 1,
-        housingType: 'RENTAL',
-        landlord: 'baz',
-        housingTypeDescription: 'qux',
-        housingReference: factory.applicationProfileHousingReference.build(),
-      })
-
-      expect(res).toMatchObject({ ok: true })
-      const insertedProfile = await applicationProfileAdapter.getByContactCode(
-        db,
-        '1234'
-      )
-      assert(insertedProfile.ok)
-      expect(insertedProfile).toMatchObject({
-        ok: true,
-        data: expect.objectContaining<Partial<ApplicationProfile>>({
-          contactCode: '1234',
-          housingReference: expect.objectContaining({ id: expect.any(Number) }),
-        }),
       })
     })
 
@@ -117,6 +102,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
           housingType: 'RENTAL',
           landlord: 'quux',
           housingTypeDescription: 'corge',
+          housingReference: existingProfile.data.housingReference,
         }
       )
 

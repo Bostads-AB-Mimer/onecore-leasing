@@ -205,6 +205,7 @@ describe('POST /contacts/:contactCode/application-profile', () => {
         housingType: 'RENTAL',
         housingTypeDescription: null,
         landlord: null,
+        housingReference: factories.applicationProfileHousingReference.build(),
       })
 
     expect(res.status).toBe(200)
@@ -232,6 +233,7 @@ describe('POST /contacts/:contactCode/application-profile', () => {
         housingType: 'RENTAL',
         housingTypeDescription: null,
         landlord: null,
+        housingReference: factories.applicationProfileHousingReference.build(),
       })
 
     expect(res.status).toBe(201)
