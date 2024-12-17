@@ -24,7 +24,7 @@ describe('application-profile-adapter', () => {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
-        housingType: 'foo',
+        housingType: 'RENTAL',
         housingTypeDescription: 'bar',
         landlord: 'baz',
       })
@@ -45,7 +45,7 @@ describe('application-profile-adapter', () => {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
-        housingType: null,
+        housingType: 'RENTAL',
         housingTypeDescription: null,
         landlord: null,
       })
@@ -57,7 +57,7 @@ describe('application-profile-adapter', () => {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
-        housingType: null,
+        housingType: 'RENTAL',
         housingTypeDescription: null,
         landlord: null,
       })
@@ -84,7 +84,7 @@ describe('application-profile-adapter', () => {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
-        housingType: null,
+        housingType: 'RENTAL',
         housingTypeDescription: null,
         landlord: null,
       })
@@ -117,7 +117,7 @@ describe('application-profile-adapter', () => {
           expiresAt: new Date(),
           numAdults: 1,
           numChildren: 1,
-          housingType: null,
+          housingType: 'RENTAL',
           housingTypeDescription: null,
           landlord: null,
         }
@@ -132,7 +132,7 @@ describe('application-profile-adapter', () => {
         expiresAt: null,
         numAdults: 1,
         numChildren: 1,
-        housingType: null,
+        housingType: 'RENTAL',
         housingTypeDescription: null,
         landlord: null,
       })
@@ -142,7 +142,7 @@ describe('application-profile-adapter', () => {
         expiresAt: new Date(),
         numAdults: 2,
         numChildren: 2,
-        housingType: null,
+        housingType: 'RENTAL',
         housingTypeDescription: null,
         landlord: null,
       })
