@@ -24,11 +24,15 @@ export const ApplicationProfileHousingReferenceFactory =
     id: sequence,
     applicationProfileId: 1,
     email: 'email',
-    name: 'name',
     phone: 'phone',
     reviewStatus: 'PENDING',
-    reviewedAt: new Date(),
-    expiresAt: new Date(),
     reviewStatusReason: 'reason',
+    comment: 'comment',
+    lastAdminUpdatedAt: null,
+    lastAdminUpdatedBy: 'foo',
+    lastApplicantUpdatedAt: new Date(),
+    reasonRejected: null,
+
+    expiresAt: new Date(),
     createdAt: new Date(),
   }))

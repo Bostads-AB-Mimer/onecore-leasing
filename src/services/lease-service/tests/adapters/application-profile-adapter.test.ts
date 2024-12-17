@@ -45,6 +45,9 @@ describe('application-profile-adapter', () => {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
+        housingType: null,
+        housingTypeDescription: null,
+        landlord: null,
       })
 
       assert(profile.ok)
@@ -54,6 +57,9 @@ describe('application-profile-adapter', () => {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
+        housingType: null,
+        housingTypeDescription: null,
+        landlord: null,
       })
 
       expect(duplicate).toMatchObject({
@@ -78,6 +84,9 @@ describe('application-profile-adapter', () => {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
+        housingType: null,
+        housingTypeDescription: null,
+        landlord: null,
       })
 
       const result = await applicationProfileAdapter.getByContactCode(
@@ -108,6 +117,9 @@ describe('application-profile-adapter', () => {
           expiresAt: new Date(),
           numAdults: 1,
           numChildren: 1,
+          housingType: null,
+          housingTypeDescription: null,
+          landlord: null,
         }
       )
 
@@ -120,6 +132,9 @@ describe('application-profile-adapter', () => {
         expiresAt: null,
         numAdults: 1,
         numChildren: 1,
+        housingType: null,
+        housingTypeDescription: null,
+        landlord: null,
       })
 
       assert(profile.ok)
@@ -127,6 +142,9 @@ describe('application-profile-adapter', () => {
         expiresAt: new Date(),
         numAdults: 2,
         numChildren: 2,
+        housingType: null,
+        housingTypeDescription: null,
+        landlord: null,
       })
 
       const updated = await applicationProfileAdapter.getByContactCode(

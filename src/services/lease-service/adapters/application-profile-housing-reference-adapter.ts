@@ -23,8 +23,11 @@ export async function create(
         phone: params.phone,
         email: params.email,
         reviewStatus: params.reviewStatus,
-        reviewStatusReason: params.reviewStatusReason,
-        reviewedAt: params.reviewedAt,
+        comment: params.comment,
+        reasonRejected: params.reasonRejected,
+        lastAdminUpdatedAt: params.lastAdminUpdatedAt,
+        lastAdminUpdatedBy: 'not-implemented',
+        lastApplicantUpdatedAt: params.lastApplicantUpdatedAt,
         expiresAt: params.expiresAt,
       })
       .into('application_profile_housing_reference')
@@ -92,8 +95,9 @@ export async function update(
         phone: params.phone,
         email: params.email,
         reviewStatus: params.reviewStatus,
-        reviewStatusReason: params.reviewStatusReason,
-        reviewedAt: params.reviewedAt,
+        reasonRejected: params.reasonRejected,
+        lastAdminUpdatedAt: params.lastAdminUpdatedAt,
+        lastAdminUpdatedBy: 'not-implemented',
         expiresAt: params.expiresAt,
       })
       .where('applicationProfileId', applicationProfileId)
