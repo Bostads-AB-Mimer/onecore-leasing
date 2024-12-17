@@ -1,9 +1,9 @@
 import { Knex } from 'knex'
 import { logger } from 'onecore-utilities'
 import { ApplicationProfileHousingReference } from 'onecore-types'
+import { RequestError } from 'tedious'
 
 import { AdapterResult } from './types'
-import { RequestError } from 'tedious'
 
 type CreateParams = Omit<
   ApplicationProfileHousingReference,
@@ -99,6 +99,8 @@ export async function update(
         email: params.email,
         reviewStatus: params.reviewStatus,
         reasonRejected: params.reasonRejected,
+        comment: params.comment,
+        lastApplicantUpdatedAt: params.lastApplicantUpdatedAt,
         lastAdminUpdatedAt: params.lastAdminUpdatedAt,
         lastAdminUpdatedBy: 'not-implemented',
         expiresAt: params.expiresAt,

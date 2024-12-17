@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 import { RequestError } from 'tedious'
 import { logger } from 'onecore-utilities'
-import { ApplicationProfile } from 'onecore-types'
+import { ApplicationProfile, leasing } from 'onecore-types'
 
 import { AdapterResult } from './types'
 
