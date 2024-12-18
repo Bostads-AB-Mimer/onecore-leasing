@@ -1,7 +1,10 @@
 import { Knex } from 'knex'
 import { RequestError } from 'tedious'
 import { logger } from 'onecore-utilities'
-import { ApplicationProfile } from 'onecore-types'
+import {
+  ApplicationProfile,
+  ApplicationProfileHousingReference,
+} from 'onecore-types'
 
 import { AdapterResult } from './types'
 
@@ -13,32 +16,62 @@ type CreateParams = Pick<
   | 'housingType'
   | 'housingTypeDescription'
   | 'landlord'
-> & { contactCode: string }
+> & { contactCode: string } & {
+  housingReference: Pick<
+    ApplicationProfileHousingReference,
+    | 'expiresAt'
+    | 'phone'
+    | 'email'
+    | 'reviewStatus'
+    | 'comment'
+    | 'reasonRejected'
+    | 'lastAdminUpdatedAt'
+    | 'lastApplicantUpdatedAt'
+  >
+}
 
 export async function create(
   db: Knex,
   params: CreateParams
 ): Promise<
-  AdapterResult<
-    Omit<ApplicationProfile, 'housingReference'>,
-    'conflict-contact-code' | 'unknown'
-  >
+  AdapterResult<ApplicationProfile, 'conflict-contact-code' | 'unknown'>
 > {
   try {
-    const [profile] = await db
-      .insert({
-        contactCode: params.contactCode,
-        numChildren: params.numChildren,
-        numAdults: params.numAdults,
-        expiresAt: params.expiresAt,
-        housingType: params.housingType,
-        housingTypeDescription: params.housingTypeDescription,
-        landlord: params.landlord,
-      })
-      .into('application_profile')
-      .returning('*')
+    const result = await db.transaction(async (trx) => {
+      const [profile] = await trx
+        .insert({
+          contactCode: params.contactCode,
+          numChildren: params.numChildren,
+          numAdults: params.numAdults,
+          expiresAt: params.expiresAt,
+          housingType: params.housingType,
+          housingTypeDescription: params.housingTypeDescription,
+          landlord: params.landlord,
+        })
+        .into('application_profile')
+        .returning('*')
 
-    return { ok: true, data: profile }
+      const [reference] = await trx
+        .insert({
+          applicationProfileId: profile.id,
+          phone: params.housingReference.phone,
+          email: params.housingReference.email,
+          reviewStatus: params.housingReference.reviewStatus,
+          comment: params.housingReference.comment,
+          reasonRejected: params.housingReference.reasonRejected,
+          lastAdminUpdatedAt: params.housingReference.lastAdminUpdatedAt,
+          lastAdminUpdatedBy: 'not-implemented',
+          lastApplicantUpdatedAt:
+            params.housingReference.lastApplicantUpdatedAt,
+          expiresAt: params.housingReference.expiresAt,
+        })
+        .into('application_profile_housing_reference')
+        .returning('*')
+
+      return { ...profile, housingReference: reference }
+    })
+
+    return { ok: true, data: result }
   } catch (err) {
     if (err instanceof RequestError) {
       if (err.message.includes('UQ_contactCode')) {
@@ -65,14 +98,15 @@ export async function getByContactCode(
       SELECT 
         ap.*,
         (
-          SELECT apht.* 
-          FROM application_profile_housing_reference apht
-          WHERE apht.applicationProfileId = ap.id
+          SELECT apht2.*
+          FROM application_profile_housing_reference apht2
+          WHERE apht2.applicationProfileId = ap.id
           FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES
         ) AS housingReference
       FROM application_profile ap
+      INNER JOIN application_profile_housing_reference apht ON ap.id = apht.applicationProfileId
       WHERE ap.contactCode = ?
-  `,
+      `,
       [contactCode]
     )
 
@@ -86,9 +120,9 @@ export async function getByContactCode(
       ok: true,
       data: {
         ...row,
-        housingType: row.housingType || 'foo',
-        housingTypeDescription: row.housingTypeDescription || undefined,
-        landlord: row.landlord || undefined,
+        housingType: row.housingType,
+        housingTypeDescription: row.housingTypeDescription || null,
+        landlord: row.landlord || null,
         housingReference: {
           ...housingReference,
           expiresAt: new Date(housingReference.expiresAt),
@@ -116,36 +150,67 @@ type UpdateParams = Pick<
   | 'housingType'
   | 'housingTypeDescription'
   | 'landlord'
->
+> & {
+  housingReference: Pick<
+    ApplicationProfileHousingReference,
+    | 'expiresAt'
+    | 'phone'
+    | 'email'
+    | 'reviewStatus'
+    | 'comment'
+    | 'reasonRejected'
+    | 'lastAdminUpdatedAt'
+    | 'lastApplicantUpdatedAt'
+  >
+}
 
 export async function update(
   db: Knex,
   contactCode: string,
   params: UpdateParams
-): Promise<
-  AdapterResult<
-    Omit<ApplicationProfile, 'housingReference'>,
-    'no-update' | 'unknown'
-  >
-> {
+): Promise<AdapterResult<ApplicationProfile, 'no-update' | 'unknown'>> {
   try {
-    const [profile] = await db('application_profile')
-      .update({
-        numChildren: params.numChildren,
-        numAdults: params.numAdults,
-        expiresAt: params.expiresAt,
-        housingType: params.housingType,
-        housingTypeDescription: params.housingTypeDescription,
-        landlord: params.landlord,
-      })
-      .where('contactCode', contactCode)
-      .returning('*')
+    const result = await db.transaction(async (trx) => {
+      const [profile] = await db('application_profile')
+        .update({
+          numChildren: params.numChildren,
+          numAdults: params.numAdults,
+          expiresAt: params.expiresAt,
+          housingType: params.housingType,
+          housingTypeDescription: params.housingTypeDescription,
+          landlord: params.landlord,
+        })
+        .where('contactCode', contactCode)
+        .returning('*')
 
-    if (!profile) {
+      if (!profile) {
+        return 'no-update'
+      }
+
+      const [reference] = await trx('application_profile_housing_reference')
+        .update({
+          phone: params.housingReference.phone,
+          email: params.housingReference.email,
+          reviewStatus: params.housingReference.reviewStatus,
+          comment: params.housingReference.comment,
+          reasonRejected: params.housingReference.reasonRejected,
+          lastAdminUpdatedAt: params.housingReference.lastAdminUpdatedAt,
+          lastAdminUpdatedBy: 'not-implemented',
+          lastApplicantUpdatedAt:
+            params.housingReference.lastApplicantUpdatedAt,
+          expiresAt: params.expiresAt,
+        })
+        .where({ applicationProfileId: profile.id })
+        .returning('*')
+
+      return { ...profile, housingReference: reference }
+    })
+
+    if (result === 'no-update') {
       return { ok: false, err: 'no-update' }
     }
 
-    return { ok: true, data: profile }
+    return { ok: true, data: result }
   } catch (err) {
     logger.error(err, 'applicationProfileAdapter.update')
     return { ok: false, err: 'unknown' }
