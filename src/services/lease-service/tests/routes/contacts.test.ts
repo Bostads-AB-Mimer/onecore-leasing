@@ -193,7 +193,7 @@ describe('POST /contacts/:contactCode/application-profile', () => {
       .spyOn(applicationProfileService, 'updateOrCreateApplicationProfile')
       .mockResolvedValueOnce({
         ok: true,
-        data: [factories.applicationProfile.build(), 'updated'],
+        data: ['updated', factories.applicationProfile.build()],
       })
 
     const res = await request(app.callback())
@@ -221,7 +221,7 @@ describe('POST /contacts/:contactCode/application-profile', () => {
       .spyOn(applicationProfileService, 'updateOrCreateApplicationProfile')
       .mockResolvedValueOnce({
         ok: true,
-        data: [factories.applicationProfile.build(), 'created'],
+        data: ['created', factories.applicationProfile.build()],
       })
 
     const res = await request(app.callback())
