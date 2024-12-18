@@ -150,9 +150,11 @@ describe(updateOrCreateApplicationProfile.name, () => {
 
       const existingReference = await housingReferenceAdapter.create(
         db,
-        factory.applicationProfileHousingReference.build({
-          applicationProfileId: existingProfile.data.id,
-          email: 'foo',
+        '1234',
+        factory.applicationProfile.build({
+          contactCode: '1234',
+          numAdults: 1,
+          housingReference: { email: 'foo' },
         })
       )
 
