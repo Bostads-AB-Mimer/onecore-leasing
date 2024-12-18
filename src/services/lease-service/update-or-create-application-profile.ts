@@ -37,10 +37,6 @@ export async function updateOrCreateApplicationProfile(
   }
 
   const [profile, operation] = profileResult.data
-  if (!params.housingReference) {
-    await trx.commit()
-    return { ok: true, data: profileResult.data }
-  }
 
   const housingReferenceResult = await updateOrCreateReference(trx, {
     ...params.housingReference,
@@ -64,7 +60,7 @@ async function updateOrCreateProfile(
   params: Params
 ): Promise<
   AdapterResult<
-    [ApplicationProfile, 'created' | 'updated'],
+    [Omit<ApplicationProfile, 'housingReference'>, 'created' | 'updated'],
     'update-profile' | 'create-profile'
   >
 > {

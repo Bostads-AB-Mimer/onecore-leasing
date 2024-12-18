@@ -115,7 +115,10 @@ describe(updateOrCreateApplicationProfile.name, () => {
           housingType: 'RENTAL',
           landlord: 'quux',
           housingTypeDescription: 'corge',
-          housingReference: existingProfile.data.housingReference,
+          housingReference: expect.objectContaining({
+            applicationProfileId: existingProfile.data.id,
+            email: 'bar',
+          }),
         }
       )
 

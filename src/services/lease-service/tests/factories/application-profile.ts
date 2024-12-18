@@ -26,7 +26,6 @@ export const ApplicationProfileHousingReferenceFactory =
     email: 'email',
     phone: 'phone',
     reviewStatus: 'PENDING',
-    reviewStatusReason: 'reason',
     comment: 'comment',
     lastAdminUpdatedAt: null,
     lastAdminUpdatedBy: 'foo',
