@@ -198,7 +198,7 @@ export async function update(
           lastAdminUpdatedBy: 'not-implemented',
           lastApplicantUpdatedAt:
             params.housingReference.lastApplicantUpdatedAt,
-          expiresAt: params.expiresAt,
+          expiresAt: params.housingReference.expiresAt,
         })
         .where({ applicationProfileId: profile.id })
         .returning('*')
