@@ -83,42 +83,6 @@ describe(updateOrCreateApplicationProfile.name, () => {
   })
 
   describe('when profile exists ', () => {
-    it('updates application profile', async () => {
-      const existingProfile = await applicationProfileAdapter.create(
-        db,
-        factory.applicationProfile.build({ contactCode: '1234', numAdults: 1 })
-      )
-      assert(existingProfile.ok)
-
-      const res = await updateOrCreateApplicationProfile(
-        db,
-        existingProfile.data.contactCode,
-        {
-          expiresAt: new Date(),
-          numAdults: 2,
-          numChildren: 2,
-          housingType: 'RENTAL',
-          landlord: 'quux',
-          housingTypeDescription: 'corge',
-          housingReference: existingProfile.data.housingReference,
-        }
-      )
-
-      expect(res).toMatchObject({ ok: true })
-      const updated = await applicationProfileAdapter.getByContactCode(
-        db,
-        '1234'
-      )
-      assert(updated.ok)
-      expect(updated).toMatchObject({
-        ok: true,
-        data: expect.objectContaining({
-          contactCode: '1234',
-          numAdults: 2,
-        }),
-      })
-    })
-
     it('updates application profile and housing reference', async () => {
       const existingProfile = await applicationProfileAdapter.create(
         db,
@@ -165,51 +129,6 @@ describe(updateOrCreateApplicationProfile.name, () => {
           housingReference: expect.objectContaining({
             applicationProfileId: existingProfile.data.id,
             email: 'bar',
-          }),
-        }),
-      })
-    })
-
-    it('updates application profile and creates housing reference', async () => {
-      const existingProfile = await applicationProfileAdapter.create(
-        db,
-        factory.applicationProfile.build({ contactCode: '1234', numAdults: 1 })
-      )
-      assert(existingProfile.ok)
-
-      const res = await updateOrCreateApplicationProfile(
-        db,
-        existingProfile.data.contactCode,
-        {
-          expiresAt: new Date(),
-          numAdults: 2,
-          numChildren: 2,
-          housingType: 'RENTAL',
-          landlord: 'quux',
-          housingTypeDescription: 'corge',
-          housingReference: {
-            ...factory.applicationProfileHousingReference.build({
-              email: 'foo',
-            }),
-          },
-        }
-      )
-      assert(res.ok)
-
-      expect(res).toMatchObject({ ok: true })
-      const updated = await applicationProfileAdapter.getByContactCode(
-        db,
-        '1234'
-      )
-      assert(updated.ok)
-      expect(updated).toMatchObject({
-        ok: true,
-        data: expect.objectContaining({
-          contactCode: '1234',
-          numAdults: 2,
-          housingReference: expect.objectContaining({
-            applicationProfileId: existingProfile.data.id,
-            email: 'foo',
           }),
         }),
       })

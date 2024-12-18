@@ -2,6 +2,8 @@ import assert from 'node:assert'
 
 import { db, migrate, teardown } from '../../adapters/db'
 import * as applicationProfileAdapter from '../../adapters/application-profile-adapter'
+import * as housingReferenceAdapter from '../../adapters/application-profile-housing-reference-adapter'
+import * as factory from '../factories'
 import { clearDb } from '../testUtils'
 
 beforeAll(async () => {
@@ -30,13 +32,12 @@ describe('application-profile-adapter', () => {
       })
       assert(profile.ok)
 
-      const inserted = await applicationProfileAdapter.getByContactCode(
-        db,
-        profile.data.contactCode
-      )
+      const inserted = await db('application_profile')
+        .select('*')
+        .where({ id: profile.data.id })
+        .first()
 
-      assert(inserted.ok)
-      expect(inserted).toMatchObject({ ok: true, data: profile.data })
+      expect(inserted).toMatchObject(profile.data)
     })
 
     it('fails if existing profile for contact code already exists', async () => {
@@ -79,7 +80,7 @@ describe('application-profile-adapter', () => {
     })
 
     it('gets application profile', async () => {
-      await applicationProfileAdapter.create(db, {
+      const profile = await applicationProfileAdapter.create(db, {
         contactCode: '1234',
         expiresAt: new Date(),
         numAdults: 1,
@@ -88,6 +89,20 @@ describe('application-profile-adapter', () => {
         housingTypeDescription: null,
         landlord: null,
       })
+      assert(profile.ok)
+
+      const reference = await housingReferenceAdapter.create(db, {
+        applicationProfileId: profile.data.id,
+        email: null,
+        phone: '01234',
+        reviewStatus: 'PENDING',
+        expiresAt: new Date(),
+        comment: null,
+        lastAdminUpdatedAt: null,
+        lastApplicantUpdatedAt: null,
+        reasonRejected: null,
+      })
+      assert(reference.ok)
 
       const result = await applicationProfileAdapter.getByContactCode(
         db,
@@ -138,6 +153,14 @@ describe('application-profile-adapter', () => {
       })
 
       assert(profile.ok)
+
+      await housingReferenceAdapter.create(
+        db,
+        factory.applicationProfileHousingReference.build({
+          applicationProfileId: profile.data.id,
+        })
+      )
+
       await applicationProfileAdapter.update(db, profile.data.contactCode, {
         expiresAt: new Date(),
         numAdults: 2,
@@ -147,21 +170,18 @@ describe('application-profile-adapter', () => {
         landlord: null,
       })
 
-      const updated = await applicationProfileAdapter.getByContactCode(
-        db,
-        profile.data.contactCode
-      )
+      const updated = await db('application_profile')
+        .select('*')
+        .where({ id: profile.data.id })
+        .first()
 
       expect(updated).toMatchObject({
-        ok: true,
-        data: {
-          id: expect.any(Number),
-          contactCode: '1234',
-          numAdults: 2,
-          numChildren: 2,
-          expiresAt: expect.any(Date),
-          createdAt: expect.any(Date),
-        },
+        id: expect.any(Number),
+        contactCode: '1234',
+        numAdults: 2,
+        numChildren: 2,
+        expiresAt: expect.any(Date),
+        createdAt: expect.any(Date),
       })
     })
   })

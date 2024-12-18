@@ -19,7 +19,10 @@ export async function create(
   db: Knex,
   params: CreateParams
 ): Promise<
-  AdapterResult<ApplicationProfile, 'conflict-contact-code' | 'unknown'>
+  AdapterResult<
+    Omit<ApplicationProfile, 'housingReference'>,
+    'conflict-contact-code' | 'unknown'
+  >
 > {
   try {
     const [profile] = await db
@@ -38,7 +41,6 @@ export async function create(
     return { ok: true, data: profile }
   } catch (err) {
     if (err instanceof RequestError) {
-      console.log(err)
       if (err.message.includes('UQ_contactCode')) {
         logger.info(
           { contactCode: params.contactCode },
@@ -78,27 +80,26 @@ export async function getByContactCode(
       return { ok: false, err: 'not-found' }
     }
 
-    const housingReference = row.housingReference
-      ? JSON.parse(row.housingReference)
-      : undefined
+    const housingReference = JSON.parse(row.housingReference)
 
     return {
       ok: true,
       data: {
         ...row,
-        housingReference: housingReference
-          ? {
-              ...housingReference,
-              expiresAt: new Date(housingReference.expiresAt),
-              createdAt: new Date(housingReference.createdAt),
-              reviewedAt: housingReference.reviewedAt
-                ? new Date(housingReference.reviewedAt)
-                : null,
-            }
-          : undefined,
-        housingType: row.housingType || undefined,
+        housingType: row.housingType || 'foo',
         housingTypeDescription: row.housingTypeDescription || undefined,
         landlord: row.landlord || undefined,
+        housingReference: {
+          ...housingReference,
+          expiresAt: new Date(housingReference.expiresAt),
+          createdAt: new Date(housingReference.createdAt),
+          lastAdminUpdatedAt: housingReference.lastAdminUpdatedAt
+            ? new Date(housingReference.lastAdminUpdatedAt)
+            : null,
+          lastApplicantUpdatedAt: housingReference.lastApplicantUpdatedAt
+            ? new Date(housingReference.lastApplicantUpdatedAt)
+            : null,
+        },
       },
     }
   } catch (err) {
@@ -121,7 +122,12 @@ export async function update(
   db: Knex,
   contactCode: string,
   params: UpdateParams
-): Promise<AdapterResult<ApplicationProfile, 'no-update' | 'unknown'>> {
+): Promise<
+  AdapterResult<
+    Omit<ApplicationProfile, 'housingReference'>,
+    'no-update' | 'unknown'
+  >
+> {
   try {
     const [profile] = await db('application_profile')
       .update({
