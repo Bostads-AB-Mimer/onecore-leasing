@@ -20,8 +20,7 @@ afterAll(async () => {
 describe('application-profile-adapter', () => {
   describe(applicationProfileAdapter.create, () => {
     it('creates application profile', async () => {
-      const profile = await applicationProfileAdapter.create(db, {
-        contactCode: '1234',
+      const profile = await applicationProfileAdapter.create(db, '1234', {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
@@ -42,8 +41,7 @@ describe('application-profile-adapter', () => {
     })
 
     it('fails if existing profile for contact code already exists', async () => {
-      const profile = await applicationProfileAdapter.create(db, {
-        contactCode: '1234',
+      const profile = await applicationProfileAdapter.create(db, '1234', {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
@@ -55,8 +53,7 @@ describe('application-profile-adapter', () => {
 
       assert(profile.ok)
 
-      const duplicate = await applicationProfileAdapter.create(db, {
-        contactCode: '1234',
+      const duplicate = await applicationProfileAdapter.create(db, '1234', {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
@@ -83,8 +80,7 @@ describe('application-profile-adapter', () => {
     })
 
     it('gets application profile', async () => {
-      const profile = await applicationProfileAdapter.create(db, {
-        contactCode: '1234',
+      const profile = await applicationProfileAdapter.create(db, '1234', {
         expiresAt: new Date(),
         numAdults: 1,
         numChildren: 1,
@@ -134,8 +130,7 @@ describe('application-profile-adapter', () => {
     })
 
     it('updates application profile', async () => {
-      const profile = await applicationProfileAdapter.create(db, {
-        contactCode: '1234',
+      const profile = await applicationProfileAdapter.create(db, '1234', {
         expiresAt: null,
         numAdults: 1,
         numChildren: 1,

@@ -1,37 +1,41 @@
 import { Knex } from 'knex'
 import { RequestError } from 'tedious'
 import { logger } from 'onecore-utilities'
-import {
-  ApplicationProfile,
-  ApplicationProfileHousingReference,
-} from 'onecore-types'
+import { z } from 'zod'
 
 import { AdapterResult } from './types'
+import {
+  ApplicationProfileHousingReferenceSchema,
+  ApplicationProfileSchema,
+} from './db-schemas'
 
-type CreateParams = Pick<
-  ApplicationProfile,
-  | 'numChildren'
-  | 'numAdults'
-  | 'expiresAt'
-  | 'housingType'
-  | 'housingTypeDescription'
-  | 'landlord'
-> & { contactCode: string } & {
-  housingReference: Pick<
-    ApplicationProfileHousingReference,
-    | 'expiresAt'
-    | 'phone'
-    | 'email'
-    | 'reviewStatus'
-    | 'comment'
-    | 'reasonRejected'
-    | 'lastAdminUpdatedAt'
-    | 'lastApplicantUpdatedAt'
-  >
-}
+type ApplicationProfile = z.infer<typeof ApplicationProfileSchema>
+
+const _CreateParamsSchema = ApplicationProfileSchema.pick({
+  numChildren: true,
+  numAdults: true,
+  expiresAt: true,
+  housingType: true,
+  housingTypeDescription: true,
+  landlord: true,
+}).extend({
+  housingReference: ApplicationProfileHousingReferenceSchema.pick({
+    expiresAt: true,
+    phone: true,
+    email: true,
+    reviewStatus: true,
+    comment: true,
+    reasonRejected: true,
+    lastAdminUpdatedAt: true,
+    lastApplicantUpdatedAt: true,
+  }),
+})
+
+type CreateParams = z.infer<typeof _CreateParamsSchema>
 
 export async function create(
   db: Knex,
+  contactCode: string,
   params: CreateParams
 ): Promise<
   AdapterResult<ApplicationProfile, 'conflict-contact-code' | 'unknown'>
@@ -40,7 +44,7 @@ export async function create(
     const result = await db.transaction(async (trx) => {
       const [profile] = await trx
         .insert({
-          contactCode: params.contactCode,
+          contactCode: contactCode,
           numChildren: params.numChildren,
           numAdults: params.numAdults,
           expiresAt: params.expiresAt,
@@ -68,7 +72,10 @@ export async function create(
         .into('application_profile_housing_reference')
         .returning('*')
 
-      return { ...profile, housingReference: reference }
+      return ApplicationProfileSchema.parse({
+        ...profile,
+        housingReference: reference,
+      })
     })
 
     return { ok: true, data: result }
@@ -76,7 +83,7 @@ export async function create(
     if (err instanceof RequestError) {
       if (err.message.includes('UQ_contactCode')) {
         logger.info(
-          { contactCode: params.contactCode },
+          { contactCode },
           'applicationProfileAdapter.create - can not insert duplicate application profile'
         )
         return { ok: false, err: 'conflict-contact-code' }
@@ -114,27 +121,12 @@ export async function getByContactCode(
       return { ok: false, err: 'not-found' }
     }
 
-    const housingReference = JSON.parse(row.housingReference)
-
     return {
       ok: true,
-      data: {
+      data: ApplicationProfileSchema.parse({
         ...row,
-        housingType: row.housingType,
-        housingTypeDescription: row.housingTypeDescription || null,
-        landlord: row.landlord || null,
-        housingReference: {
-          ...housingReference,
-          expiresAt: new Date(housingReference.expiresAt),
-          createdAt: new Date(housingReference.createdAt),
-          lastAdminUpdatedAt: housingReference.lastAdminUpdatedAt
-            ? new Date(housingReference.lastAdminUpdatedAt)
-            : null,
-          lastApplicantUpdatedAt: housingReference.lastApplicantUpdatedAt
-            ? new Date(housingReference.lastApplicantUpdatedAt)
-            : null,
-        },
-      },
+        housingReference: JSON.parse(row.housingReference),
+      }),
     }
   } catch (err) {
     logger.error(err, 'applicationProfileAdapter.getByContactCode')
@@ -142,27 +134,7 @@ export async function getByContactCode(
   }
 }
 
-type UpdateParams = Pick<
-  ApplicationProfile,
-  | 'numChildren'
-  | 'numAdults'
-  | 'expiresAt'
-  | 'housingType'
-  | 'housingTypeDescription'
-  | 'landlord'
-> & {
-  housingReference: Pick<
-    ApplicationProfileHousingReference,
-    | 'expiresAt'
-    | 'phone'
-    | 'email'
-    | 'reviewStatus'
-    | 'comment'
-    | 'reasonRejected'
-    | 'lastAdminUpdatedAt'
-    | 'lastApplicantUpdatedAt'
-  >
-}
+type UpdateParams = z.infer<typeof _CreateParamsSchema>
 
 export async function update(
   db: Knex,
@@ -203,7 +175,10 @@ export async function update(
         .where({ applicationProfileId: profile.id })
         .returning('*')
 
-      return { ...profile, housingReference: reference }
+      return ApplicationProfileSchema.parse({
+        ...profile,
+        housingReference: reference,
+      })
     })
 
     if (result === 'no-update') {

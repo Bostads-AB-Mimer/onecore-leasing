@@ -22,10 +22,11 @@ export async function updateOrCreateApplicationProfile(
     if (update.err !== 'no-update') {
       return { ok: false, err: 'unknown' }
     }
-    const profile = await applicationProfileAdapter.create(db, {
+    const profile = await applicationProfileAdapter.create(
+      db,
       contactCode,
-      ...params,
-    })
+      params
+    )
 
     if (!profile.ok) {
       return { ok: false, err: 'unknown' }

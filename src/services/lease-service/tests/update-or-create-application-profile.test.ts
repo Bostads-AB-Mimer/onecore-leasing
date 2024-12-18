@@ -57,6 +57,7 @@ describe(updateOrCreateApplicationProfile.name, () => {
     it('updates application profile and housing reference', async () => {
       const existingProfile = await applicationProfileAdapter.create(
         db,
+        '1234',
         factory.applicationProfile.build({
           contactCode: '1234',
           numAdults: 1,
