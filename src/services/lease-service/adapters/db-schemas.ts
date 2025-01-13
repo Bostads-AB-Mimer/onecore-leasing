@@ -27,7 +27,7 @@ export const ApplicationProfileHousingReferenceSchema = z.object({
   lastAdminUpdatedBy: z.string().nullable(),
   lastApplicantUpdatedAt: z.coerce.date().nullable(),
 
-  expiresAt: z.union([z.null(), z.coerce.date()]),
+  expiresAt: z.coerce.date(),
   createdAt: z.coerce.date(),
 })
 
@@ -47,7 +47,7 @@ export const ApplicationProfileSchema = z.object({
   contactCode: z.string(),
   numAdults: z.number(),
   numChildren: z.number(),
-  housingType: ApplicationProfileHousingTypeSchema.nullable(),
+  housingType: ApplicationProfileHousingTypeSchema,
   housingTypeDescription: z.string().nullable(),
   landlord: z.string().nullable(),
   housingReference: ApplicationProfileHousingReferenceSchema,
