@@ -9,8 +9,6 @@ import * as tenantLeaseAdapter from '../../adapters/xpand/tenant-lease-adapter'
 import * as xPandSoapAdapter from '../../adapters/xpand/xpand-soap-adapter'
 import * as applicationProfileAdapter from '../../adapters/application-profile-adapter'
 import * as applicationProfileService from '../../update-or-create-application-profile'
-import * as tenants from '../../get-tenant'
-import * as factory from '../factories'
 import * as factories from '../../tests/factories'
 
 const app = new Koa()
