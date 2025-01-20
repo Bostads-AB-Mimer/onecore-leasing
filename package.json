@@ -41,7 +41,7 @@
     "@types/supertest": "2.0.12",
     "@typescript-eslint/eslint-plugin": "^8.6.0",
     "@typescript-eslint/typescript-estree": "^8.6.0",
-    "eslint": "^9.10.0",
+    "eslint": "^9.18.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-n": "^17.10.3",
     "globals": "^15.9.0",
