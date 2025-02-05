@@ -228,9 +228,14 @@ const parseLeasesForHousingContracts = (
   | undefined => {
   const currentDate = new Date()
   const housingContracts: Lease[] = []
+
   for (const lease of leases) {
-    //use startsWith to handle whitespace issues from xpand
-    if (lease.type.includes(leaseTypes.housingContract)) {
+    const isHousingContract = [
+      leaseTypes.housingContract,
+      leaseTypes.cooperativeTenancyContract,
+    ].some((v) => lease.type.includes(v))
+
+    if (isHousingContract) {
       housingContracts.push(lease)
     }
   }
