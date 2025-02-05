@@ -251,12 +251,12 @@ const parseLeasesForHousingContracts = (
 
   //applicant have 1 active and 1 upcoming contract
   if (housingContracts.length == 2) {
-    const currentActiveLease = leases.find((lease) => {
-      const lastDebitDateNotSet =
-        lease.lastDebitDate === null || lease.lastDebitDate === undefined
+    const currentActiveLease = housingContracts.find((lease) => {
+      const compatibleLastDebitDate =
+        !lease.lastDebitDate || lease.lastDebitDate > currentDate
       const hasLeaseStarted = lease.leaseStartDate <= currentDate
 
-      return lastDebitDateNotSet && hasLeaseStarted
+      return hasLeaseStarted && compatibleLastDebitDate
     })
 
     if (currentActiveLease == undefined) {
@@ -266,7 +266,7 @@ const parseLeasesForHousingContracts = (
       throw new Error('could not find any active lease')
     }
 
-    const upcomingLease = leases.find((lease) => {
+    const upcomingLease = housingContracts.find((lease) => {
       const lastDebitDateNotSet =
         lease.lastDebitDate === null || lease.lastDebitDate === undefined
       const isLeaseUpcoming = lease.leaseStartDate > currentDate
