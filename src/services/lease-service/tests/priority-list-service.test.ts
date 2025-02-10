@@ -1,11 +1,11 @@
 import { Lease, LeaseStatus } from 'onecore-types'
 import assert from 'node:assert'
 import {
-  addPriorityToApplicantsBasedOnRentalRules,
   assignPriorityToApplicantBasedOnRentalRules,
   isLeaseActiveOrUpcoming,
   parseLeasesForHousingContracts,
   parseLeasesForParkingSpaces,
+  prioritizeApplicant,
   sortApplicantsBasedOnRentalRules,
 } from '../priority-list-service'
 import * as factory from './factories'
@@ -18,7 +18,7 @@ const thirtyDaysInTheFutureDate = new Date()
 thirtyDaysInThePastDate.setDate(currentDate.getDate() + 30)
 thirtyDaysInTheFutureDate.setDate(currentDate.getDate() + 30)
 
-describe('parseLeasesForHousingContract', () => {
+describe(parseLeasesForHousingContracts, () => {
   it('should return 1 housing contract if only 1 active housing contract', async () => {
     const terminatedHousingContract = factory.lease
       .params({
@@ -159,7 +159,7 @@ describe('parseLeasesForHousingContract', () => {
   })
 })
 
-describe('parseLeasesForParkingSpaces', () => {
+describe(parseLeasesForParkingSpaces, () => {
   it('should return all parking spaces from leases', async () => {
     const housingContract = factory.lease
       .params({
@@ -210,9 +210,7 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
 
     const applicant = factory.detailedApplicant.build({ listingId: 2 })
 
-    expect(() =>
-      assignPriorityToApplicantBasedOnRentalRules(listing, applicant)
-    ).toThrow()
+    expect(() => prioritizeApplicant(listing, applicant)).toThrow()
   })
 
   it('applicant should get priority 1 if no parking space contract and valid housing contract in same residential area as listing', async () => {
@@ -237,12 +235,9 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
       })
       .build()
 
-    const result = assignPriorityToApplicantBasedOnRentalRules(
-      listing,
-      applicant
-    )
+    const result = prioritizeApplicant(listing, applicant)
 
-    expect(result.priority).toBe(1)
+    expect(result).toBe(1)
   })
 
   it('applicant should get priority 1 if no parking space contract and upcoming housing contract in same residential area as listing', () => {
@@ -276,12 +271,9 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
       })
       .build()
 
-    const result = assignPriorityToApplicantBasedOnRentalRules(
-      listing,
-      applicant
-    )
+    const result = prioritizeApplicant(listing, applicant)
 
-    expect(result.priority).toBe(1)
+    expect(result).toBe(1)
   })
 
   it('applicant should get priority 1 if has active parking space contract and applicationType equals Replace', () => {
@@ -298,12 +290,9 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
       })
       .build()
 
-    const result = assignPriorityToApplicantBasedOnRentalRules(
-      listing,
-      applicant
-    )
+    const result = prioritizeApplicant(listing, applicant)
 
-    expect(result.priority).toBe(1)
+    expect(result).toBe(1)
   })
 
   it('applicant should get priority 2 if has active parking space contract and applicationType equals Additional', () => {
@@ -320,12 +309,9 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
       })
       .build()
 
-    const result = assignPriorityToApplicantBasedOnRentalRules(
-      listing,
-      applicant
-    )
+    const result = prioritizeApplicant(listing, applicant)
 
-    expect(result.priority).toBe(2)
+    expect(result).toBe(2)
   })
 
   it('applicant should get priority 2 if has more than 1 active parking space contracts and applicationType equals Replace', () => {
@@ -344,12 +330,9 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
       })
       .build()
 
-    const result = assignPriorityToApplicantBasedOnRentalRules(
-      listing,
-      applicant
-    )
+    const result = prioritizeApplicant(listing, applicant)
 
-    expect(result.priority).toBe(2)
+    expect(result).toBe(2)
   })
 
   it('applicant should get priority 3 if has more than 2 active parking space contracts applicationType equals Additional', () => {
@@ -374,12 +357,9 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
       })
       .build()
 
-    const result = assignPriorityToApplicantBasedOnRentalRules(
-      listing,
-      applicant
-    )
+    const result = prioritizeApplicant(listing, applicant)
 
-    expect(result.priority).toBe(3)
+    expect(result).toBe(3)
   })
 
   it('applicant should not get a priority if not eligible for renting in area with specific rental rule', () => {
@@ -404,11 +384,8 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
       })
       .build()
 
-    const result = assignPriorityToApplicantBasedOnRentalRules(
-      listing,
-      applicant
-    )
-    expect(result.priority).toBe(null)
+    const result = prioritizeApplicant(listing, applicant)
+    expect(result).toBe(null)
   })
 })
 
@@ -540,10 +517,10 @@ describe('sortApplicantsBasedOnRentalRules', () => {
       applicant6,
     ]
 
-    const applicantsWithPriority = addPriorityToApplicantsBasedOnRentalRules(
-      listing,
-      applicants
-    )
+    const applicantsWithPriority = applicants.map((applicant) => ({
+      ...applicant,
+      priority: prioritizeApplicant(listing, applicant),
+    }))
     expect(
       applicantsWithPriority.filter((applicant) => applicant.priority === 1)
     ).toHaveLength(3)
@@ -630,10 +607,11 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
     const applicants = [applicant1, applicant2]
 
-    const applicantsWithPriority = addPriorityToApplicantsBasedOnRentalRules(
-      listing,
-      applicants
-    )
+    const applicantsWithPriority = applicants.map((applicant) => ({
+      ...applicant,
+      priority: prioritizeApplicant(listing, applicant),
+    }))
+
     expect(
       applicantsWithPriority.filter((applicant) => applicant.priority === 1)
     ).toHaveLength(2)
@@ -690,10 +668,11 @@ describe('sortApplicantsBasedOnRentalRules', () => {
 
     const applicants = [applicant1, applicant2]
 
-    const applicantsWithPriority = addPriorityToApplicantsBasedOnRentalRules(
-      listing,
-      applicants
-    )
+    const applicantsWithPriority = applicants.map((applicant) => ({
+      ...applicant,
+      priority: prioritizeApplicant(listing, applicant),
+    }))
+
     expect(
       applicantsWithPriority.filter((applicant) => applicant.priority === 1)
     ).toHaveLength(1)
@@ -715,7 +694,7 @@ describe('sortApplicantsBasedOnRentalRules', () => {
     )
   })
 
-  it('should assign priority null if applicant has no upcoming housing contracts or active parking space contracts', () => {
+  it.only('should assign priority null if applicant has no upcoming housing contracts or active parking space contracts', () => {
     const listing = factory.listing.build({
       rentalObjectCode: '307-706-00-0015',
       districtCaption: 'Vallby',

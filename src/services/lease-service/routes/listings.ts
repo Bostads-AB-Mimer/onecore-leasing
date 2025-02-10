@@ -618,11 +618,11 @@ export const routes = (router: KoaRouter) => {
         }
       }
 
-      const applicantsWithPriority =
-        priorityListService.addPriorityToApplicantsBasedOnRentalRules(
-          listing,
-          applicants
-        )
+      const applicantsWithPriority = applicants.map((applicant) => ({
+        ...applicant,
+        priority: priorityListService.prioritizeApplicant(listing, applicant),
+      }))
+
       ctx.status = 200
       ctx.body = {
         content: priorityListService.sortApplicantsBasedOnRentalRules(

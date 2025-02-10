@@ -49,6 +49,82 @@ const sortApplicantsBasedOnRentalRules = (
   })
 }
 
+function prioritizeApplicant(
+  listing: Listing,
+  applicant: DetailedApplicant
+): DetailedApplicant {
+  if (applicant.listingId !== listing.id) {
+    throw new Error(
+      `applicant ${applicant.contactCode} does not belong to listing ${listing.id}`
+    )
+  }
+
+  const { currentHousingContract, upcomingHousingContract } = applicant
+
+  const applicableHousingContract =
+    upcomingHousingContract ?? currentHousingContract
+
+  if (!applicableHousingContract) {
+    throw new Error(
+      `applicant ${applicant.contactCode} missing both current and upcoming housing contract`
+    )
+  }
+
+  if (
+    listing.districtCode &&
+    isListingInAreaWithSpecificRentalRules(listing.districtCode) &&
+    !isHousingContractsOfApplicantInSameAreaAsListing(
+      listing.districtCode,
+      applicant
+    )
+  ) {
+    logger.info(
+      `${applicant.contactCode}: priority null - special residential area rental rules apply to this listing. applicant is not allowed to rent this object`
+    )
+
+    return { ...applicant, priority: null }
+  }
+
+  if (!applicant.parkingSpaceContracts?.length) {
+    return { ...applicant, priority: 1 }
+  }
+
+  if (
+    applicant.parkingSpaceContracts.length === 1 &&
+    applicableHousingContract.residentialArea?.code === listing.districtCode
+  ) {
+    if (applicant.applicationType === 'Replace') {
+      logger.info(
+        `${applicant.contactCode}: priority 1 - One active contract for parking space and wishes to replace current parking space`
+      )
+
+      return { ...applicant, priority: 1 }
+    } else {
+      logger.info(
+        `${applicant.contactCode}: priority 2 - One active parking space contract and either wishes to rent an additional parking space or missing applicationType entirely`
+      )
+
+      return { ...applicant, priority: 2 }
+    }
+  }
+
+  if (applicant.applicationType === 'Replace') {
+    logger.info(
+      `${applicant.contactCode}: priority 2 - More than one active parking space contract and wishes to replace one parking space contract`
+    )
+
+    return { ...applicant, priority: 2 }
+  } else {
+    logger.info(
+      `${applicant.contactCode}: priority 3 - More than one active parking space contract and wishes to rent an additional parking space`
+    )
+
+    return { ...applicant, priority: 3 }
+  }
+
+  return { ...applicant, priority: null }
+}
+
 const assignPriorityToApplicantBasedOnRentalRules = (
   listing: Listing,
   applicant: DetailedApplicant
@@ -80,6 +156,7 @@ const assignPriorityToApplicantBasedOnRentalRules = (
   }
 
   if (!applicant.parkingSpaceContracts?.length) {
+    console.log(listing, applicant)
     //priority  1
 
     //Applicant has no active parking space contract and is tenant in same area as listing
@@ -301,6 +378,7 @@ export {
   addPriorityToApplicantsBasedOnRentalRules,
   sortApplicantsBasedOnRentalRules,
   assignPriorityToApplicantBasedOnRentalRules,
+  prioritizeApplicant,
   parseLeasesForHousingContracts,
   parseLeasesForParkingSpaces,
   isLeaseActiveOrUpcoming,
