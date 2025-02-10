@@ -75,7 +75,7 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
     expect(result).toBe(true)
   })
 
-  it('shouldReturnTrueIfUpcomingHousingContractInSameAreaAsListing', () => {
+  it('should return true if upcoming housing contract is in same area as listing', () => {
     const detailedApplicant = factory.detailedApplicant.build({
       currentHousingContract: undefined,
       upcomingHousingContract: factory.lease.build({
@@ -88,7 +88,7 @@ describe('isHousingContractsOfApplicantInSameAreaAsListing', () => {
       detailedApplicant
     )
 
-    expect(result).toBe(false)
+    expect(result).toBe(true)
   })
 })
 
