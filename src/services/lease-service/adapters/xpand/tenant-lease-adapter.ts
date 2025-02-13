@@ -156,8 +156,8 @@ const getLeasesForNationalRegistrationNumber = async (
 
 const getLeasesForContactCode = async (
   contactCode: string,
-  includeTerminatedLeases: string | string[] | undefined,
-  includeContacts: string | string[] | undefined
+  includeTerminatedLeases: boolean,
+  includeContacts: boolean
 ): Promise<AdapterResult<Array<Lease>, unknown>> => {
   logger.info({ contactCode }, 'Getting leases for contact code from Xpand DB')
   try {
@@ -178,7 +178,7 @@ const getLeasesForContactCode = async (
       )
 
       const leases = await getLeasesByContactKey(contact[0].contactKey)
-      if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
+      if (includeTerminatedLeases) {
         return { ok: true, data: leases }
       }
 
@@ -206,8 +206,8 @@ const getLeasesForContactCode = async (
 
 const getLeasesForPropertyId = async (
   propertyId: string,
-  includeTerminatedLeases: string | string[] | undefined,
-  includeContacts: string | string[] | undefined
+  includeTerminatedLeases: boolean,
+  includeContacts: boolean
 ) => {
   const leases: Lease[] = []
   const rows = await db
@@ -238,7 +238,7 @@ const getLeasesForPropertyId = async (
       leases.push(transformFromXPandDb.toLease(row, [], []))
     }
   }
-  if (shouldIncludeTerminatedLeases(includeTerminatedLeases)) {
+  if (includeTerminatedLeases) {
     return leases
   }
 
@@ -515,16 +515,6 @@ const getLeaseById = async (hyobjben: string) => {
     .innerJoin('hyhav', 'hyhav.keyhyhav', 'hyobj.keyhyhav')
     .where({ hyobjben: hyobjben })
   return rows
-}
-
-const shouldIncludeTerminatedLeases = (
-  includeTerminatedLeases: string | string[] | undefined
-) => {
-  const queryParamResult = Array.isArray(includeTerminatedLeases)
-    ? includeTerminatedLeases[0]
-    : includeTerminatedLeases
-
-  return !(!queryParamResult || queryParamResult === 'false')
 }
 
 const isLeaseActive = (lease: Lease | PartialLease): boolean => {

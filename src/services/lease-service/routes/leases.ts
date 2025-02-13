@@ -132,15 +132,36 @@ export const routes = (router: KoaRouter) => {
    *       500:
    *         description: Internal server error. Failed to retrieve leases.
    */
+
+  const getLeasesForContactCodeQueryParamSchema = z.object({
+    includeTerminatedLeases: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((value) => value === 'true'),
+    includeContacts: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((value) => value === 'true'),
+  })
+
   router.get('(.*)/leases/for/contactCode/:pnr', async (ctx) => {
     const metadata = generateRouteMetadata(ctx, [
       'includeTerminatedLeases',
       'includeContacts',
     ])
+
+    const queryParams = getLeasesForContactCodeQueryParamSchema.safeParse(
+      ctx.query
+    )
+    if (queryParams.success === false) {
+      ctx.status = 400
+      return
+    }
+
     const result = await getLeasesForContactCode(
       ctx.params.pnr,
-      ctx.query.includeTerminatedLeases,
-      ctx.query.includeContacts
+      queryParams.data.includeTerminatedLeases,
+      queryParams.data.includeContacts
     )
     if (!result.ok) {
       ctx.status = 500
@@ -198,15 +219,36 @@ export const routes = (router: KoaRouter) => {
    *       500:
    *         description: Internal server error. Failed to retrieve leases.
    */
+
+  const getLeasesForPropertyIdQueryParamSchema = z.object({
+    includeTerminatedLeases: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((value) => value === 'true'),
+    includeContacts: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((value) => value === 'true'),
+  })
+
   router.get('(.*)/leases/for/propertyId/:propertyId', async (ctx) => {
     const metadata = generateRouteMetadata(ctx, [
       'includeTerminatedLeases',
       'includeContacts',
     ])
+
+    const queryParams = getLeasesForPropertyIdQueryParamSchema.safeParse(
+      ctx.query
+    )
+    if (queryParams.success === false) {
+      ctx.status = 400
+      return
+    }
+
     const responseData = await getLeasesForPropertyId(
       ctx.params.propertyId,
-      ctx.query.includeTerminatedLeases,
-      ctx.query.includeContacts
+      queryParams.data.includeTerminatedLeases,
+      queryParams.data.includeContacts
     )
 
     ctx.body = {

@@ -52,8 +52,8 @@ async function fetchTenant(params: {
 
   const leases = await tenantLeaseAdapter.getLeasesForContactCode(
     contact.data.contactCode,
-    'true',
-    undefined
+    true,
+    false
   )
 
   if (!leases.ok) {
