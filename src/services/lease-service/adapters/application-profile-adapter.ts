@@ -18,6 +18,7 @@ const _CreateParamsSchema = ApplicationProfileSchema.pick({
   housingType: true,
   housingTypeDescription: true,
   landlord: true,
+  lastUpdatedAt: true,
 }).extend({
   housingReference: ApplicationProfileHousingReferenceSchema.pick({
     expiresAt: true,
@@ -26,8 +27,8 @@ const _CreateParamsSchema = ApplicationProfileSchema.pick({
     reviewStatus: true,
     comment: true,
     reasonRejected: true,
-    lastAdminUpdatedAt: true,
-    lastApplicantUpdatedAt: true,
+    reviewedAt: true,
+    reviewedBy: true,
   }),
 })
 
@@ -51,6 +52,7 @@ export async function create(
           housingType: params.housingType,
           housingTypeDescription: params.housingTypeDescription,
           landlord: params.landlord,
+          lastUpdatedAt: params.lastUpdatedAt,
         })
         .into('application_profile')
         .returning('*')
@@ -63,10 +65,8 @@ export async function create(
           reviewStatus: params.housingReference.reviewStatus,
           comment: params.housingReference.comment,
           reasonRejected: params.housingReference.reasonRejected,
-          lastAdminUpdatedAt: params.housingReference.lastAdminUpdatedAt,
-          lastAdminUpdatedBy: 'not-implemented',
-          lastApplicantUpdatedAt:
-            params.housingReference.lastApplicantUpdatedAt,
+          reviewedAt: params.housingReference.reviewedAt,
+          reviewedBy: 'not-implemented',
           expiresAt: params.housingReference.expiresAt,
         })
         .into('application_profile_housing_reference')
@@ -166,10 +166,8 @@ export async function update(
           reviewStatus: params.housingReference.reviewStatus,
           comment: params.housingReference.comment,
           reasonRejected: params.housingReference.reasonRejected,
-          lastAdminUpdatedAt: params.housingReference.lastAdminUpdatedAt,
-          lastAdminUpdatedBy: 'not-implemented',
-          lastApplicantUpdatedAt:
-            params.housingReference.lastApplicantUpdatedAt,
+          reviewedAt: params.housingReference.reviewedAt,
+
           expiresAt: params.housingReference.expiresAt,
         })
         .where({ applicationProfileId: profile.id })
