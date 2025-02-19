@@ -151,6 +151,7 @@ export async function update(
           housingType: params.housingType,
           housingTypeDescription: params.housingTypeDescription,
           landlord: params.landlord,
+          lastUpdatedAt: params.lastUpdatedAt,
         })
         .where('contactCode', contactCode)
         .returning('*')
@@ -167,7 +168,6 @@ export async function update(
           comment: params.housingReference.comment,
           reasonRejected: params.housingReference.reasonRejected,
           reviewedAt: params.housingReference.reviewedAt,
-
           expiresAt: params.housingReference.expiresAt,
         })
         .where({ applicationProfileId: profile.id })
