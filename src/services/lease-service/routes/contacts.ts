@@ -4,6 +4,7 @@ import { generateRouteMetadata } from 'onecore-utilities'
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
 import {
   getContactByContactCode,
+  getContactsByContactCodes,
   getContactByNationalRegistrationNumber,
   getContactByPhoneNumber,
 } from '../adapters/xpand/tenant-lease-adapter'
@@ -65,6 +66,29 @@ export const routes = (router: KoaRouter) => {
 
     const result = await tenantLeaseAdapter.getContactsDataBySearchQuery(
       ctx.query.q
+    )
+
+    if (!result.ok) {
+      ctx.status = 500
+      ctx.body = { error: result.err, ...metadata }
+      return
+    }
+
+    ctx.status = 200
+    ctx.body = { content: result.data, ...metadata }
+  })
+
+  interface GetContactsByContactCodeRequest {
+    contactCodes: string[]
+  }
+
+  router.post('(.*)/contacts/by-contact-codes', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+
+    console.log(ctx.params)
+
+    const result = await getContactsByContactCodes(
+      (<GetContactsByContactCodeRequest>ctx.request.body)['contactCodes']
     )
 
     if (!result.ok) {

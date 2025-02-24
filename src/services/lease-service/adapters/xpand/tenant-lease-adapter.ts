@@ -273,6 +273,46 @@ const getContactsDataBySearchQuery = async (
   }
 }
 
+const getContactsByContactCodes = async (
+  contactCodes: string[]
+): Promise<AdapterResult<Array<Contact>, 'internal-error'>> => {
+  try {
+    const rows = await getContactQuery()
+      .distinct()
+      .where('cmadr.keycmtyp', 'adrfakt')
+      .andWhere((query) => {
+        query
+          .where((query) => {
+            query.whereNull('cmadr.fdate').whereNull('cmadr.tdate')
+          })
+          .orWhere((query) => {
+            query
+              .whereNull('cmadr.fdate')
+              .andWhereRaw('cmadr.tdate > getdate()')
+          })
+          .orWhere((query) => {
+            query
+              .whereNull('cmadr.tdate')
+              .andWhereRaw('cmadr.fdate < getdate()')
+          })
+      })
+      .whereIn('cmctc.cmctckod', contactCodes)
+
+    const contacts = rows.map((row) => {
+      return transformFromDbContact(row, [], [])
+    })
+    console.log(contacts)
+
+    return { ok: true, data: contacts }
+  } catch (err) {
+    logger.error({ err }, 'tenant-lease-adapter.getContactsByContactCodes')
+    return {
+      ok: false,
+      err: 'internal-error',
+    }
+  }
+}
+
 const getContactByNationalRegistrationNumber = async (
   nationalRegistrationNumber: string,
   includeTerminatedLeases: string | string[] | undefined
@@ -519,6 +559,7 @@ export {
   getContactByContactCode,
   getContactByPhoneNumber,
   getContactForPhoneNumber,
+  getContactsByContactCodes,
   isLeaseActive,
   getResidentialAreaByRentalPropertyId,
   getContactsDataBySearchQuery,
