@@ -295,11 +295,7 @@ const isUpcomingLease = (lease: Lease, currentDate: Date) => {
 const parseLeasesForParkingSpaces = (
   leases: Array<Lease & { propertyType?: string }>
 ): Array<Lease> => {
-  return leases.filter(
-    (v) => v.propertyType === 'babps'
-    // &&
-    // (v.status == LeaseStatus.Current || v.status == LeaseStatus.Upcoming)
-  ) // I think 'babps' is xpands name for "bilplats"
+  return leases.filter((v) => v.propertyType === 'babps') // I think 'babps' is xpands name for "bilplats"
 }
 
 export {
