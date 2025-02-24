@@ -2,10 +2,13 @@ import request from 'supertest'
 import Koa from 'koa'
 import KoaRouter from '@koa/router'
 import bodyParser from 'koa-bodyparser'
+import { leasing, WaitingListType } from 'onecore-types'
 
 import { routes } from '../../routes/contacts'
 import * as tenantLeaseAdapter from '../../adapters/xpand/tenant-lease-adapter'
 import * as xPandSoapAdapter from '../../adapters/xpand/xpand-soap-adapter'
+import * as applicationProfileAdapter from '../../adapters/application-profile-adapter'
+import * as applicationProfileService from '../../update-or-create-application-profile'
 
 const app = new Koa()
 const router = new KoaRouter()
@@ -48,7 +51,7 @@ describe('GET /contacts/search', () => {
     })
   })
 
-  describe('POST /contact/waitingList/:nationalRegistrationNumber/reset', () => {
+  describe('POST /contacts/:nationalRegistrationNumber/waitingLists/reset', () => {
     it('responds with 200 and a message upon success', async () => {
       jest
         .spyOn(xPandSoapAdapter, 'removeApplicantFromWaitingList')
@@ -58,10 +61,10 @@ describe('GET /contacts/search', () => {
         .mockResolvedValue()
 
       const res = await request(app.callback())
-        .post('/contact/waitingList/1234567890/reset')
+        .post('/contacts/1234567890/waitingLists/reset')
         .send({
           contactCode: '123',
-          waitingListTypeCaption: 'Bilplatser (intern)',
+          waitingListType: WaitingListType.ParkingSpace,
         })
 
       expect(res.status).toBe(200)
@@ -81,10 +84,10 @@ describe('GET /contacts/search', () => {
         .mockResolvedValue()
 
       const res = await request(app.callback())
-        .post('/contact/waitingList/1234567890/reset')
+        .post('/contacts/1234567890/waitingLists/reset')
         .send({
           contactCode: '123',
-          waitingListTypeCaption: 'Bilplatser (intern)',
+          waitingListType: WaitingListType.ParkingSpace,
         })
 
       expect(res.status).toBe(404)
@@ -102,10 +105,10 @@ describe('GET /contacts/search', () => {
         .mockResolvedValue()
 
       const res = await request(app.callback())
-        .post('/contact/waitingList/1234567890/reset')
+        .post('/contacts/1234567890/waitingLists/reset')
         .send({
           contactCode: '123',
-          waitingListTypeCaption: 'Bilplatser (intern)',
+          waitingListType: WaitingListType.ParkingSpace,
         })
 
       expect(res.status).toBe(500)
@@ -125,10 +128,10 @@ describe('GET /contacts/search', () => {
         })
 
       const res = await request(app.callback())
-        .post('/contact/waitingList/1234567890/reset')
+        .post('/contacts/1234567890/waitingLists/reset')
         .send({
           contactCode: '123',
-          waitingListTypeCaption: 'Bilplatser (intern)',
+          waitingListType: WaitingListType.ParkingSpace,
         })
 
       expect(res.status).toBe(500)
@@ -136,5 +139,125 @@ describe('GET /contacts/search', () => {
         error: 'Noooo fel',
       })
     })
+  })
+})
+
+describe('GET /contacts/:contactCode/application-profile', () => {
+  it('responds with 404 if not found', async () => {
+    jest
+      .spyOn(applicationProfileAdapter, 'getByContactCode')
+      .mockResolvedValueOnce({ ok: false, err: 'not-found' })
+
+    const res = await request(app.callback()).get(
+      '/contacts/1234/application-profile'
+    )
+
+    expect(res.status).toBe(404)
+    expect(res.body).toEqual({
+      error: 'not-found',
+    })
+  })
+
+  it('responds with 200 and application profile', async () => {
+    jest
+      .spyOn(applicationProfileAdapter, 'getByContactCode')
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          contactCode: '1234',
+          createdAt: new Date(),
+          expiresAt: null,
+          id: 1,
+          numAdults: 0,
+          numChildren: 0,
+        },
+      })
+
+    const res = await request(app.callback()).get(
+      '/contacts/1234/application-profile'
+    )
+
+    expect(res.status).toBe(200)
+    expect(() =>
+      leasing.GetApplicationProfileResponseDataSchema.parse(res.body.content)
+    ).not.toThrow()
+  })
+})
+
+describe('POST /contacts/:contactCode/application-profile', () => {
+  it('responds with 400 if bad params', async () => {
+    const res = await request(app.callback())
+      .post('/contacts/1234/application-profile')
+      .send({ foo: 'bar' })
+
+    expect(res.status).toBe(400)
+  })
+
+  it('updates application profile', async () => {
+    jest
+      .spyOn(applicationProfileService, 'updateOrCreateApplicationProfile')
+      .mockResolvedValueOnce({
+        ok: true,
+        data: [
+          {
+            contactCode: '1234',
+            createdAt: new Date(),
+            expiresAt: null,
+            id: 1,
+            numAdults: 0,
+            numChildren: 0,
+            housingType: undefined,
+            housingTypeDescription: undefined,
+            landlord: undefined,
+            housingReference: undefined,
+          },
+          'updated',
+        ],
+      })
+
+    const res = await request(app.callback())
+      .post('/contacts/1234/application-profile')
+      .send({ expiresAt: null, numAdults: 0, numChildren: 0 })
+
+    expect(res.status).toBe(200)
+    expect(() =>
+      leasing.CreateOrUpdateApplicationProfileResponseDataSchema.parse(
+        res.body.content
+      )
+    ).not.toThrow()
+  })
+
+  it('creates if non-existent', async () => {
+    jest
+      .spyOn(applicationProfileService, 'updateOrCreateApplicationProfile')
+      .mockResolvedValueOnce({
+        ok: true,
+        data: [
+          {
+            contactCode: '1234',
+            createdAt: new Date(),
+            expiresAt: null,
+            id: 1,
+            numAdults: 0,
+            numChildren: 0,
+            housingType: undefined,
+            housingTypeDescription: undefined,
+            landlord: undefined,
+            housingReference: undefined,
+          },
+          'created',
+        ],
+      })
+
+    const res = await request(app.callback())
+      .post('/contacts/1234/application-profile')
+      .send({ expiresAt: null, numAdults: 0, numChildren: 0 })
+
+    expect(res.status).toBe(201)
+    expect(() =>
+      leasing.CreateOrUpdateApplicationProfileResponseDataSchema.parse(
+        res.body.content
+      )
+    ).not.toThrow()
   })
 })

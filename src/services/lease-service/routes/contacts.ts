@@ -1,20 +1,25 @@
 import KoaRouter from '@koa/router'
-import { generateRouteMetadata } from 'onecore-utilities'
+import { generateRouteMetadata, logger } from 'onecore-utilities'
+import { leasing, WaitingListType } from 'onecore-types'
+import { z } from 'zod'
 
 import * as tenantLeaseAdapter from '../adapters/xpand/tenant-lease-adapter'
+import * as applicationProfileAdapter from '../adapters/application-profile-adapter'
 import {
   getContactByContactCode,
   getContactsByContactCodes,
   getContactByNationalRegistrationNumber,
   getContactByPhoneNumber,
 } from '../adapters/xpand/tenant-lease-adapter'
-import { logger } from 'onecore-utilities'
+
 import {
   addApplicantToToWaitingList,
-  getWaitingList,
   removeApplicantFromWaitingList,
 } from '../adapters/xpand/xpand-soap-adapter'
 import { getTenant } from '../get-tenant'
+import { db } from '../adapters/db'
+import { parseRequestBody } from '../../../middlewares/parse-request-body'
+import { updateOrCreateApplicationProfile } from '../update-or-create-application-profile'
 
 /**
  * @swagger
@@ -136,11 +141,28 @@ export const routes = (router: KoaRouter) => {
    *       500:
    *         description: Internal server error. Failed to retrieve contact information.
    */
+
+  const getContactByPnrQueryParamSchema = z
+    .object({
+      includeTerminatedLeases: z
+        .enum(['true', 'false'])
+        .optional()
+        .transform((value) => value === 'true'),
+    })
+    .default({ includeTerminatedLeases: 'false' })
+
   router.get('(.*)/contact/nationalRegistrationNumber/:pnr', async (ctx) => {
     const metadata = generateRouteMetadata(ctx, ['includeTerminatedLeases'])
+    const queryParams = getContactByPnrQueryParamSchema.safeParse(ctx.query)
+
+    if (!queryParams.success) {
+      ctx.status = 400
+      return
+    }
+
     const responseData = await getContactByNationalRegistrationNumber(
       ctx.params.pnr,
-      ctx.query.includeTerminatedLeases
+      queryParams.data.includeTerminatedLeases
     )
 
     ctx.status = 200
@@ -183,11 +205,31 @@ export const routes = (router: KoaRouter) => {
    *       500:
    *         description: Internal server error. Failed to retrieve contact information.
    */
+
+  const getContactByContactCodeQueryParamSchema = z
+    .object({
+      includeTerminatedLeases: z
+        .enum(['true', 'false'])
+        .optional()
+        .transform((value) => value === 'true'),
+    })
+    .default({ includeTerminatedLeases: 'false' })
+
   router.get('(.*)/contact/contactCode/:contactCode', async (ctx) => {
     const metadata = generateRouteMetadata(ctx, ['includeTerminatedLeases'])
+
+    const queryParams = getContactByContactCodeQueryParamSchema.safeParse(
+      ctx.query
+    )
+
+    if (!queryParams.success) {
+      ctx.status = 400
+      return
+    }
+
     const result = await getContactByContactCode(
       ctx.params.contactCode,
-      ctx.query.includeTerminatedLeases
+      queryParams.data.includeTerminatedLeases
     )
 
     if (!result.ok) {
@@ -290,11 +332,30 @@ export const routes = (router: KoaRouter) => {
    *       500:
    *         description: Internal server error. Failed to retrieve contact information.
    */
+
+  const getContactByPhoneNumberQueryParamSchema = z
+    .object({
+      includeTerminatedLeases: z
+        .enum(['true', 'false'])
+        .optional()
+        .transform((value) => value === 'true'),
+    })
+    .default({ includeTerminatedLeases: 'false' })
+
   router.get('(.*)/contact/phoneNumber/:phoneNumber', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
+
+    const queryParams = getContactByPhoneNumberQueryParamSchema.safeParse(
+      ctx.query
+    )
+
+    if (!queryParams.success) {
+      ctx.status = 400
+      return
+    }
     const responseData = await getContactByPhoneNumber(
       ctx.params.phoneNumber,
-      ctx.query.includeTerminatedLeases
+      queryParams.data.includeTerminatedLeases
     )
 
     ctx.status = 200
@@ -304,84 +365,14 @@ export const routes = (router: KoaRouter) => {
     }
   })
 
-  /**
-   * @swagger
-   * /contact/waitingList/{nationalRegistrationNumber}:
-   *   get:
-   *     summary: Get waiting list from xpand for contact
-   *     description: Retrieve waiting list information for a contact by national registration number.
-   *     tags: [Contacts]
-   *     parameters:
-   *       - in: path
-   *         name: nationalRegistrationNumber
-   *         required: true
-   *         schema:
-   *           type: string
-   *         description: The national registration number (pnr) of the contact.
-   *     responses:
-   *       200:
-   *         description: Successfully retrieved waiting list information.
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 data:
-   *                   type: object
-   *                   description: The waiting list data.
-   *       500:
-   *         description: Internal server error. Failed to retrieve waiting list information.
-   */
-  router.get(
-    '(.*)/contact/waitingList/:nationalRegistrationNumber',
-    async (ctx) => {
-      const metadata = generateRouteMetadata(ctx)
-      try {
-        const result = await getWaitingList(
-          ctx.params.nationalRegistrationNumber
-        )
-
-        if (!result.ok) {
-          ctx.status = 500
-          ctx.body = { error: result.err, ...metadata }
-          return
-        }
-
-        if (!result.data) {
-          ctx.status = 400
-          ctx.body = { reason: 'Not found', ...metadata }
-          return
-        }
-        ctx.status = 200
-        ctx.body = {
-          content: result.data,
-          ...metadata,
-        }
-      } catch (error: unknown) {
-        logger.error(
-          error,
-          'Error getting waiting lists for contact by national identity number'
-        )
-        ctx.status = 500
-
-        if (error instanceof Error) {
-          ctx.body = {
-            error: error.message,
-            ...metadata,
-          }
-        }
-      }
-    }
-  )
-
   interface CreateWaitingListRequest {
     contactCode: string
-    waitingListTypeCaption: string
+    waitingListType: WaitingListType
   }
 
   /**
    * @swagger
-   * /contact/waitingList/{nationalRegistrationNumber}:
+   * /contacts/{nationalRegistrationNumber}/waitingLists:
    *   post:
    *     summary: Add contact to waiting list in xpand
    *     description: Add a contact to a waiting list by national registration number.
@@ -403,9 +394,9 @@ export const routes = (router: KoaRouter) => {
    *               contactCode:
    *                 type: string
    *                 description: The code of the contact to be added to the waiting list.
-   *               waitingListTypeCaption:
-   *                 type: string
-   *                 description: The caption or type of the waiting list.
+   *               waitingListType:
+   *                 type: WaitingListType
+   *                 description: The type of the waiting list.
    *     responses:
    *       201:
    *         description: Contact successfully added to the waiting list.
@@ -413,7 +404,7 @@ export const routes = (router: KoaRouter) => {
    *         description: Internal server error. Failed to add contact to the waiting list.
    */
   router.post(
-    '(.*)/contact/waitingList/:nationalRegistrationNumber',
+    '(.*)/contacts/:nationalRegistrationNumber/waitingLists',
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
       const request = <CreateWaitingListRequest>ctx.request.body
@@ -421,7 +412,7 @@ export const routes = (router: KoaRouter) => {
         await addApplicantToToWaitingList(
           ctx.params.nationalRegistrationNumber,
           request.contactCode,
-          request.waitingListTypeCaption
+          request.waitingListType
         )
 
         ctx.status = 201
@@ -445,7 +436,7 @@ export const routes = (router: KoaRouter) => {
 
   /**
    * @swagger
-   * /contact/waitingList/{nationalRegistrationNumber}/reset:
+   * /contacts/{nationalRegistrationNumber}/waitingLists/reset:
    *   post:
    *     summary: Reset a waiting list for a contact in XPand
    *     description: Resets a waiting list for a contact by national registration number.
@@ -467,9 +458,9 @@ export const routes = (router: KoaRouter) => {
    *               contactCode:
    *                 type: string
    *                 description: The code of the contact whose waiting list should be reset.
-   *               waitingListTypeCaption:
-   *                 type: string
-   *                 description: The caption or type of the waiting list.
+   *               waitingListType:
+   *                 type: WaitingListType
+   *                 description: The type of the waiting list.
    *     responses:
    *       201:
    *         description: Waiting list successfully reset for contact.
@@ -477,7 +468,7 @@ export const routes = (router: KoaRouter) => {
    *         description: Internal server error. Failed to reset waiting list for contact.
    */
   router.post(
-    '(.*)/contact/waitingList/:nationalRegistrationNumber/reset',
+    '(.*)/contacts/:nationalRegistrationNumber/waitingLists/reset',
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
       const request = <CreateWaitingListRequest>ctx.request.body
@@ -486,7 +477,7 @@ export const routes = (router: KoaRouter) => {
         const res = await removeApplicantFromWaitingList(
           ctx.params.nationalRegistrationNumber,
           request.contactCode,
-          request.waitingListTypeCaption
+          request.waitingListType
         )
 
         if (!res.ok) {
@@ -504,7 +495,7 @@ export const routes = (router: KoaRouter) => {
         await addApplicantToToWaitingList(
           ctx.params.nationalRegistrationNumber,
           request.contactCode,
-          request.waitingListTypeCaption
+          request.waitingListType as WaitingListType
         )
 
         ctx.status = 200
@@ -525,6 +516,160 @@ export const routes = (router: KoaRouter) => {
           }
         }
       }
+    }
+  )
+
+  /**
+   * @swagger
+   * /contacts/{contactCode}/application-profile:
+   *   get:
+   *     summary: Gets an application profile by contact code
+   *     description: Retrieve application profile information by contact code.
+   *     tags: [Contacts]
+   *     parameters:
+   *       - in: path
+   *         name: contactCode
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The contact code associated with the application profile.
+   *     responses:
+   *       200:
+   *         description: Successfully retrieved application profile.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   description: The application profile data.
+   *       404:
+   *         description: Not found.
+   *       500:
+   *         description: Internal server error. Failed to retrieve application profile information.
+   */
+
+  type GetApplicationProfileResponseData = z.infer<
+    typeof leasing.GetApplicationProfileResponseDataSchema
+  >
+
+  router.get('(.*)/contacts/:contactCode/application-profile', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+    const profile = await applicationProfileAdapter.getByContactCode(
+      db,
+      ctx.params.contactCode
+    )
+
+    if (!profile.ok) {
+      if (profile.err === 'not-found') {
+        ctx.status = 404
+        ctx.body = { error: 'not-found', ...metadata }
+        return
+      }
+
+      ctx.status = 500
+      ctx.body = { error: 'unknown', ...metadata }
+      return
+    }
+
+    ctx.status = 200
+    ctx.body = {
+      content: profile.data satisfies GetApplicationProfileResponseData,
+      ...metadata,
+    }
+  })
+
+  /**
+   * @swagger
+   * /contacts/{contactCode}/application-profile:
+   *   post:
+   *     summary: Creates or updates an application profile by contact code
+   *     description: Create or update application profile information by contact code.
+   *     tags: [Contacts]
+   *     parameters:
+   *       - in: path
+   *         name: contactCode
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The contact code associated with the application profile.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *          application/json:
+   *             schema:
+   *               type: object
+   *       properties:
+   *         numAdults:
+   *           type: number
+   *           description: Number of adults in the current housing.
+   *         numChildren:
+   *           type: number
+   *           description: Number of children in the current housing.
+   *         expiresAt:
+   *           type: string
+   *           format: date
+   *           nullable: true
+   *           description: Number of children in the current housing.
+   *     responses:
+   *       200:
+   *         description: Successfully updated application profile.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   description: The application profile data.
+   *       201:
+   *         description: Successfully created application profile.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   description: The application profile data.
+   *       404:
+   *         description: Not found.
+   *       500:
+   *         description: Internal server error. Failed to update application profile information.
+   */
+
+  type CreateOrUpdateApplicationProfileResponseData = z.infer<
+    typeof leasing.CreateOrUpdateApplicationProfileResponseDataSchema
+  >
+
+  router.post(
+    '(.*)/contacts/:contactCode/application-profile',
+    parseRequestBody(
+      leasing.CreateOrUpdateApplicationProfileRequestParamsSchema
+    ),
+    async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
+
+      const result = await updateOrCreateApplicationProfile(
+        db,
+        ctx.params.contactCode,
+        ctx.request.body
+      )
+
+      if (!result.ok) {
+        ctx.status = 500
+        ctx.body = { error: 'Internal server error', ...metadata }
+        return
+      }
+
+      const [profile, operation] = result.data
+      ctx.status = operation === 'created' ? 201 : 200
+      ctx.body = {
+        content: profile satisfies CreateOrUpdateApplicationProfileResponseData,
+        ...metadata,
+      }
+      return
     }
   )
 }

@@ -51,10 +51,11 @@ function transformDbApplicant(row: DbApplicant): Applicant {
 }
 
 const createListing = async (
-  listingData: Omit<Listing, 'id'>
+  listingData: Omit<Listing, 'id'>,
+  dbConnection = db
 ): Promise<AdapterResult<Listing, 'conflict-active-listing' | 'unknown'>> => {
   try {
-    const insertedRow = await db<DbListing>('Listing')
+    const insertedRow = await dbConnection<DbListing>('Listing')
       .insert({
         RentalObjectCode: listingData.rentalObjectCode,
         Address: listingData.address,
@@ -103,17 +104,19 @@ const createListing = async (
 }
 
 /**
- * Checks if a listing already exists based on unique criteria.
+ * Checks if an active listing already exists based on unique criteria.
  *
- * @param {string} rentalObjectCode - The rental object code of the listing (originally from xpand)
+ * @param {string} rentalObjectCode - The rental object code of the active listing (originally from xpand)
  * @returns {Promise<Listing>} - Promise that resolves to the existing listing if it exists.
  */
-const getListingByRentalObjectCode = async (
-  rentalObjectCode: string
+const getActiveListingByRentalObjectCode = async (
+  rentalObjectCode: string,
+  dbConnection = db
 ): Promise<Listing | undefined> => {
-  const listing = await db<DbListing>('Listing')
+  const listing = await dbConnection<DbListing>('Listing')
     .where({
       RentalObjectCode: rentalObjectCode,
+      Status: ListingStatus.Active,
     })
     .first()
 
@@ -124,10 +127,11 @@ const getListingByRentalObjectCode = async (
 }
 
 const getListingById = async (
-  listingId: number
+  listingId: number,
+  dbConnection = db
 ): Promise<Listing | undefined> => {
-  logger.info({ listingId }, 'Getting listing from leasing DB')
-  const result = await db
+  logger.info({ listingId }, `Getting listing ${listingId} from leasing DB`)
+  const result = await dbConnection
     .from('listing AS l')
     .select<DbListing & { applicants: string | null }>(
       'l.*',
@@ -183,10 +187,11 @@ const getListingById = async (
  * @returns {Promise<Applicant | undefined>} - Returns the applicant.
  */
 const getApplicantById = async (
-  applicantId: number
+  applicantId: number,
+  dbConnection = db
 ): Promise<Applicant | undefined> => {
   logger.info({ applicantId }, 'Getting applicant from leasing DB')
-  const applicant = await db<DbApplicant>('Applicant')
+  const applicant = await dbConnection<DbApplicant>('Applicant')
     .where({
       Id: applicantId,
     })
@@ -205,13 +210,16 @@ const getApplicantById = async (
   return transformDbApplicant(applicant)
 }
 
-const createApplication = async (applicationData: Omit<Applicant, 'id'>) => {
+const createApplication = async (
+  applicationData: Omit<Applicant, 'id'>,
+  dbConnection = db
+) => {
   logger.info(
     { contactCode: applicationData.contactCode },
     'Creating application in listing DB'
   )
 
-  const insertedRow = await db('applicant')
+  const insertedRow = await dbConnection('applicant')
     .insert({
       Name: applicationData.name,
       NationalRegistrationNumber: applicationData.nationalRegistrationNumber,
@@ -231,15 +239,21 @@ const createApplication = async (applicationData: Omit<Applicant, 'id'>) => {
 }
 
 const updateApplicantStatus = async (
-  applicantId: number,
-  status: ApplicantStatus,
-  dbConnection: Knex<any, unknown[]> = db
+  dbConnection: Knex<any, unknown[]>,
+  params: {
+    applicantId: number
+    status: ApplicantStatus
+    applicationType?: string
+  }
 ): Promise<AdapterResult<null, 'no-update' | 'unknown'>> => {
   try {
     const query = await dbConnection('applicant')
-      .where('Id', applicantId)
+      .where('Id', params.applicantId)
       .update({
-        Status: status,
+        Status: params.status,
+        ApplicationType: dbConnection.raw('COALESCE(?, "ApplicationType")', [
+          params.applicationType ?? null,
+        ]),
       })
     if (!query) {
       return { ok: false, err: 'no-update' }
@@ -252,6 +266,7 @@ const updateApplicantStatus = async (
 }
 
 const getListingsWithApplicants = async (
+  db: Knex,
   opts?: GetListingsWithApplicantsFilterParams
 ): Promise<AdapterResult<Array<Listing>, 'unknown'>> => {
   try {
@@ -260,11 +275,20 @@ const getListingsWithApplicants = async (
         db.raw('WHERE l.Status = ?', [ListingStatus.Active])
       )
       .with({ type: 'historical' }, () =>
-        db.raw('WHERE l.Status = ?', [ListingStatus.Assigned])
+        db.raw(
+          `WHERE l.Status = ?
+           OR (l.Status = ? AND EXISTS (
+              SELECT 1
+              FROM applicant a
+              WHERE a.ListingId = l.Id
+           ))
+          `,
+          [ListingStatus.Assigned, ListingStatus.Closed]
+        )
       )
       .with({ type: 'ready-for-offer' }, () =>
         db.raw(
-          `WHERE l.Status = ? 
+          `WHERE l.Status = ?
           AND EXISTS (
             SELECT 1
             FROM applicant a
@@ -281,7 +305,7 @@ const getListingsWithApplicants = async (
       )
       .with({ type: 'offered' }, () =>
         db.raw(
-          `WHERE l.Status = ? 
+          `WHERE l.Status = ?
           AND EXISTS (
             SELECT 1
             FROM offer o
@@ -290,6 +314,9 @@ const getListingsWithApplicants = async (
           )`,
           [ListingStatus.Expired, OfferStatus.Active]
         )
+      )
+      .with({ type: 'needs-republish' }, () =>
+        db.raw(`WHERE l.Status = ?`, [ListingStatus.NoApplicants])
       )
       .otherwise(() => db.raw('WHERE 1=1'))
 
@@ -349,8 +376,11 @@ const getListingsWithApplicants = async (
  * @returns {Promise<Applicant | undefined>} - Returns the applicants.
  */
 
-const getApplicantsByContactCode = async (contactCode: string) => {
-  const result = await db('Applicant')
+const getApplicantsByContactCode = async (
+  contactCode: string,
+  dbConnection = db
+) => {
+  const result = await dbConnection('Applicant')
     .where({ ContactCode: contactCode })
     .select<Array<DbApplicant>>('*')
 
@@ -366,9 +396,10 @@ const getApplicantsByContactCode = async (contactCode: string) => {
  */
 const getApplicantByContactCodeAndListingId = async (
   contactCode: string,
-  listingId: number
+  listingId: number,
+  dbConnection = db
 ) => {
-  const result = await db<DbApplicant>('Applicant')
+  const result = await dbConnection<DbApplicant>('Applicant')
     .where({
       ContactCode: contactCode,
       ListingId: listingId,
@@ -387,8 +418,12 @@ const getApplicantByContactCodeAndListingId = async (
  * @param {number} listingId - The ID of the listing the applicant belongs to.
  * @returns {Promise<boolean>} - Returns true if applicant belongs to listing, false if not.
  */
-const applicationExists = async (contactCode: string, listingId: number) => {
-  const result = await db<DbApplicant>('applicant')
+const applicationExists = async (
+  contactCode: string,
+  listingId: number,
+  dbConnection = db
+) => {
+  const result = await dbConnection<DbApplicant>('applicant')
     .where({
       ContactCode: contactCode,
       ListingId: listingId,
@@ -402,12 +437,32 @@ const applicationExists = async (contactCode: string, listingId: number) => {
   return true
 }
 
-const getExpiredListings = async () => {
+const getExpiredListings = async (dbConnection = db) => {
   const currentDate = new Date()
-  const listings = await db('listing')
+  const listings = await dbConnection('listing')
     .where('PublishedTo', '<', currentDate)
     .andWhere('Status', '=', ListingStatus.Active)
   return listings
+}
+
+const getExpiredListingsWithNoOffers = async (): Promise<
+  AdapterResult<Array<Listing>, 'unknown'>
+> => {
+  const dbListings = await db('listing')
+    .leftJoin('offer', 'offer.ListingId', 'listing.Id')
+    .whereNull('offer.ListingId')
+    .where('listing.Status', '=', ListingStatus.Expired)
+
+  const listings = dbListings.map((dbListing) => {
+    const listing = transformFromDbListing(dbListing)
+    // Manual transformations because colliding column names due to left join
+    listing.id = dbListing.Id[0]
+    listing.status = dbListing.Status[0]
+
+    return listing
+  })
+
+  return { ok: true, data: listings }
 }
 
 const updateListingStatuses = async (
@@ -431,10 +486,11 @@ const updateListingStatuses = async (
 }
 
 const deleteListing = async (
-  listingId: number
+  listingId: number,
+  dbConnection = db
 ): Promise<AdapterResult<null, 'unknown' | 'conflict'>> => {
   try {
-    await db('listing').delete().where('Id', listingId)
+    await dbConnection('listing').delete().where('Id', listingId)
     return { ok: true, data: null }
   } catch (err) {
     logger.error(err, 'listingAdapter.deleteListing')
@@ -452,7 +508,8 @@ export {
   createListing,
   createApplication,
   getListingById,
-  getListingByRentalObjectCode,
+  getActiveListingByRentalObjectCode,
+  getExpiredListingsWithNoOffers,
   getListingsWithApplicants,
   getApplicantById,
   getApplicantsByContactCode,

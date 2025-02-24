@@ -4,6 +4,8 @@ import {
   DetailedApplicant,
   InternalParkingSpaceSyncSuccessResponse,
   Listing,
+  ListingStatus,
+  UpdateListingStatusErrorCodes,
 } from 'onecore-types'
 import { z } from 'zod'
 import { generateRouteMetadata, logger } from 'onecore-utilities'
@@ -14,6 +16,7 @@ import * as priorityListService from '../priority-list-service'
 import * as syncParkingSpacesFromXpandService from '../sync-internal-parking-space-listings-from-xpand'
 import * as listingAdapter from '../adapters/listing-adapter'
 import { getTenant } from '../get-tenant'
+import { db } from '../adapters/db'
 
 /**
  * @swagger
@@ -288,10 +291,10 @@ export const routes = (router: KoaRouter) => {
 
   /**
    * @swagger
-   * /listings/by-code/{rentalObjectCode}:
+   * /listings/active/by-code/{rentalObjectCode}:
    *   get:
-   *     summary: Get a listing by Rental Object Code
-   *     description: Fetches a listing from the database using its Rental Object Code.
+   *     summary: Get an active listing by Rental Object Code
+   *     description: Fetches an active listing from the database using its Rental Object Code.
    *     tags:
    *       - Listings
    *     parameters:
@@ -328,12 +331,14 @@ export const routes = (router: KoaRouter) => {
    *                   type: string
    *                   description: The error message.
    */
-  router.get('/listings/by-code/:rentalObjectCode', async (ctx) => {
+  router.get('/listings/active/by-code/:rentalObjectCode', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     try {
       const rentaLObjectCode = ctx.params.rentalObjectCode
       const listing =
-        await listingAdapter.getListingByRentalObjectCode(rentaLObjectCode)
+        await listingAdapter.getActiveListingByRentalObjectCode(
+          rentaLObjectCode
+        )
       if (listing == undefined) {
         ctx.status = 404
         ctx.body = { reason: 'Listing not found', ...metadata }
@@ -371,7 +376,7 @@ export const routes = (router: KoaRouter) => {
    *         required: false
    *         schema:
    *           type: string
-   *           enum: [published, ready-for-offer, offered, historical]
+   *           enum: [published, ready-for-offer, offered, historical, needs-republish]
    *         description: Filters listings by one of the above types. Must be one of the specified values.
    *     responses:
    *       '200':
@@ -415,13 +420,19 @@ export const routes = (router: KoaRouter) => {
     const metadata = generateRouteMetadata(ctx)
     const opts = match(ctx.query.type)
       .with(
-        P.union('published', 'ready-for-offer', 'offered', 'historical'),
+        P.union(
+          'published',
+          'ready-for-offer',
+          'offered',
+          'historical',
+          'needs-republish'
+        ),
         (type) => ({ by: { type } })
       )
       .otherwise(() => undefined)
 
     const listingsWithApplicants =
-      await listingAdapter.getListingsWithApplicants(opts)
+      await listingAdapter.getListingsWithApplicants(db, opts)
 
     if (!listingsWithApplicants.ok) {
       logger.error(
@@ -440,10 +451,30 @@ export const routes = (router: KoaRouter) => {
     ctx.body = { content: listingsWithApplicants.data, ...metadata }
   })
 
+  router.get('/listings/readyforoffers', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+    const listings = await listingAdapter.getExpiredListingsWithNoOffers()
+
+    if (!listings.ok) {
+      ctx.status = 500
+      ctx.body = {
+        err: 'Could not retrieve listings ready for offers',
+        ...metadata,
+      }
+      return
+    }
+
+    ctx.status = 200
+    ctx.body = {
+      content: listings.data,
+      ...metadata,
+    }
+  })
+
   router.post('/listings/sync-internal-from-xpand', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
     const result =
-      await syncParkingSpacesFromXpandService.syncInternalParkingSpaces()
+      await syncParkingSpacesFromXpandService.syncInternalParkingSpaces(db)
 
     if (!result.ok) {
       logger.error(
@@ -575,11 +606,14 @@ export const routes = (router: KoaRouter) => {
             ...applicant,
             contactCode: tenant.data.contactCode,
             nationalRegistrationNumber: tenant.data.nationalRegistrationNumber,
-            queuePoints: tenant.data.queuePoints,
+            queuePoints: tenant.data.parkingSpaceWaitingList
+              ? tenant.data.parkingSpaceWaitingList.queuePoints
+              : 0,
             address: tenant.data.address,
             currentHousingContract: tenant.data.currentHousingContract,
             upcomingHousingContract: tenant.data.upcomingHousingContract,
             parkingSpaceContracts: tenant.data.parkingSpaceContracts,
+            priority: null,
           })
         }
       }
@@ -589,7 +623,6 @@ export const routes = (router: KoaRouter) => {
           listing,
           applicants
         )
-
       ctx.status = 200
       ctx.body = {
         content: priorityListService.sortApplicantsBasedOnRentalRules(
@@ -598,7 +631,7 @@ export const routes = (router: KoaRouter) => {
         ...metadata,
       }
     } catch (error: unknown) {
-      logger.error(error, 'Error getting applicants for waiting list')
+      logger.error(error, 'Error getting applicants for listing')
       ctx.status = 500
 
       if (error instanceof Error) {
@@ -661,4 +694,82 @@ export const routes = (router: KoaRouter) => {
     ctx.status = 200
     ctx.body = { ...metadata }
   })
+
+  /**
+   * @swagger
+   * /listings/{listingId}/status:
+   *   put:
+   *     summary: Update a listings status by ID
+   *     description: Updates a listing status by it's ID.
+   *     tags:
+   *       - Listings
+   *     parameters:
+   *       - in: path
+   *         name: listingId
+   *         required: true
+   *         schema:
+   *           type: number
+   *         description: ID of the listing to delete.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *          application/json:
+   *             schema:
+   *               type: object
+   *       properties:
+   *         status:
+   *           type: number
+   *           description: The listing status.
+   *     responses:
+   *       '200':
+   *         description: Successfully updated listing.
+   *       '404':
+   *         description: Listing not found.
+   *       '500':
+   *         description: Internal server error.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 error:
+   *                   type: string
+   *                   description: The error message.
+   */
+  const UpdateListingStatusRequestParamsSchema = z.object({
+    status: z.nativeEnum(ListingStatus),
+  })
+
+  router.put(
+    '(.*)/listings/:listingId/status',
+    parseRequestBody(UpdateListingStatusRequestParamsSchema),
+    async (ctx) => {
+      const metadata = generateRouteMetadata(ctx)
+      const result = await listingAdapter.updateListingStatuses(
+        [Number(ctx.params.listingId)],
+        ctx.request.body.status
+      )
+
+      if (!result.ok) {
+        if (result.err === 'no-update') {
+          ctx.status = 404
+          ctx.body = {
+            error: UpdateListingStatusErrorCodes.NotFound,
+            ...metadata,
+          }
+          return
+        } else {
+          ctx.status = 500
+          ctx.body = {
+            error: UpdateListingStatusErrorCodes.Unknown,
+            ...metadata,
+          }
+          return
+        }
+      }
+
+      ctx.status = 200
+      ctx.body = { ...metadata }
+    }
+  )
 }

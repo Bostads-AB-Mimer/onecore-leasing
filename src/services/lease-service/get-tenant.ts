@@ -3,7 +3,6 @@ import { Lease, Tenant } from 'onecore-types'
 import { AdapterResult } from './adapters/types'
 import * as estateCodeAdapter from './adapters/xpand/estate-code-adapter'
 import * as tenantLeaseAdapter from './adapters/xpand/tenant-lease-adapter'
-import * as xpandSoapAdapter from './adapters/xpand/xpand-soap-adapter'
 import * as priorityListService from './priority-list-service'
 import { logger } from 'onecore-utilities'
 
@@ -11,8 +10,6 @@ type GetTenantError =
   | 'get-contact'
   | 'contact-not-found'
   | 'contact-not-tenant'
-  | 'get-waiting-lists'
-  | 'waiting-list-internal-parking-space-not-found'
   | 'get-contact-leases'
   | 'contact-leases-not-found'
   | 'get-residential-area'
@@ -38,8 +35,9 @@ async function fetchTenant(params: {
 }): Promise<AdapterResult<Tenant, GetTenantError>> {
   const contact = await tenantLeaseAdapter.getContactByContactCode(
     params.contactCode,
-    'false'
+    true
   )
+
   if (!contact.ok) {
     return { ok: false, err: 'get-contact' }
   }
@@ -52,30 +50,10 @@ async function fetchTenant(params: {
     return { ok: false, err: 'contact-not-tenant' }
   }
 
-  const waitingList = await xpandSoapAdapter.getWaitingList(
-    contact.data.nationalRegistrationNumber
-  )
-
-  if (!waitingList.ok) {
-    return { ok: false, err: 'get-waiting-lists' }
-  }
-
-  const waitingListForInternalParkingSpace =
-    priorityListService.parseWaitingListForInternalParkingSpace(
-      waitingList.data
-    )
-
-  if (!waitingListForInternalParkingSpace) {
-    return {
-      ok: false,
-      err: 'waiting-list-internal-parking-space-not-found',
-    }
-  }
-
   const leases = await tenantLeaseAdapter.getLeasesForContactCode(
     contact.data.contactCode,
-    'true',
-    undefined
+    true,
+    false
   )
 
   if (!leases.ok) {
@@ -158,7 +136,6 @@ async function fetchTenant(params: {
     ok: true,
     data: {
       ...contact.data,
-      queuePoints: waitingListForInternalParkingSpace.queuePoints,
       address: contact.data.address,
       currentHousingContract,
       upcomingHousingContract,

@@ -1,48 +1,15 @@
-import { Lease, LeaseStatus, WaitingList } from 'onecore-types'
+import { Lease, LeaseStatus } from 'onecore-types'
+import assert from 'node:assert'
 import {
   addPriorityToApplicantsBasedOnRentalRules,
   assignPriorityToApplicantBasedOnRentalRules,
   isLeaseActiveOrUpcoming,
   parseLeasesForHousingContracts,
   parseLeasesForParkingSpaces,
-  parseWaitingListForInternalParkingSpace,
   sortApplicantsBasedOnRentalRules,
 } from '../priority-list-service'
 import * as factory from './factories'
 import { leaseTypes } from '../../../constants/leaseTypes'
-
-const mockedWaitingListWithInteralParkingSpace: WaitingList[] = [
-  {
-    applicantCaption: 'Foo Bar',
-    contactCode: 'P12345',
-    contractFromApartment: new Date('2024-02-29T23:00:00.000Z'),
-    queuePoints: 45,
-    queuePointsSocialConnection: 0,
-    waitingListFrom: new Date('2024-01-31T23:00:00.000Z'),
-    waitingListTypeCaption: 'Bostad',
-  },
-  {
-    applicantCaption: 'Foo Bar',
-    contactCode: 'P12345',
-    contractFromApartment: new Date('2024-02-29T23:00:00.000Z'),
-    queuePoints: 45,
-    queuePointsSocialConnection: 0,
-    waitingListFrom: new Date('2024-01-31T23:00:00.000Z'),
-    waitingListTypeCaption: 'Bilplats (intern)',
-  },
-]
-
-const mockedWaitingListWithoutInternalParkingSpace: WaitingList[] = [
-  {
-    applicantCaption: 'Foo Bar',
-    contactCode: 'P12345',
-    contractFromApartment: new Date('2024-02-29T23:00:00.000Z'),
-    queuePoints: 45,
-    queuePointsSocialConnection: 0,
-    waitingListFrom: new Date('2024-01-31T23:00:00.000Z'),
-    waitingListTypeCaption: 'Bostad',
-  },
-]
 
 //dynamic dates for active and upcoming contracts
 const currentDate = new Date()
@@ -50,24 +17,6 @@ const thirtyDaysInThePastDate = new Date()
 const thirtyDaysInTheFutureDate = new Date()
 thirtyDaysInThePastDate.setDate(currentDate.getDate() + 30)
 thirtyDaysInTheFutureDate.setDate(currentDate.getDate() + 30)
-
-describe('parseWaitingList', () => {
-  it('should return waitingList for internal parking space', async () => {
-    const result = parseWaitingListForInternalParkingSpace(
-      mockedWaitingListWithInteralParkingSpace
-    )
-
-    expect(result).toBeDefined()
-    expect(result).toEqual(mockedWaitingListWithInteralParkingSpace[1])
-  })
-
-  it('should return undefined for waitingList without internal parking space', async () => {
-    const result = parseWaitingListForInternalParkingSpace(
-      mockedWaitingListWithoutInternalParkingSpace
-    )
-    expect(result).toBeUndefined()
-  })
-})
 
 describe('parseLeasesForHousingContract', () => {
   it('should return 1 housing contract if only 1 active housing contract', async () => {
@@ -169,12 +118,14 @@ describe('parseLeasesForHousingContract', () => {
     const result = parseLeasesForHousingContracts(filteredLeases)
 
     expect(filteredLeases).toHaveLength(3)
+    assert(result)
+    const [current, upcoming] = result
 
-    expect(result).toBeDefined()
-    if (result) {
-      expect(result[0]).toBeDefined()
-      expect(result[1]).toBeDefined()
-    }
+    assert(current)
+    assert(upcoming)
+
+    expect(result[0]).toBeDefined()
+    expect(result[1]).toBeDefined()
   })
 
   it('should return empty active housing contract and 1 upcoming housing contract', async () => {
@@ -457,7 +408,7 @@ describe('assignPriorityToApplicantBasedOnRentalRules', () => {
       listing,
       applicant
     )
-    expect(result.priority).toBe(undefined)
+    expect(result.priority).toBe(null)
   })
 })
 
@@ -747,9 +698,7 @@ describe('sortApplicantsBasedOnRentalRules', () => {
       applicantsWithPriority.filter((applicant) => applicant.priority === 1)
     ).toHaveLength(1)
     expect(
-      applicantsWithPriority.filter(
-        (applicant) => applicant.priority === undefined
-      )
+      applicantsWithPriority.filter((applicant) => applicant.priority === null)
     ).toHaveLength(1)
 
     const sortedApplicantsBasedOnRentalRules = sortApplicantsBasedOnRentalRules(
@@ -764,5 +713,52 @@ describe('sortApplicantsBasedOnRentalRules', () => {
     expect(sortedApplicantsBasedOnRentalRules[1].contactCode).toEqual(
       applicant2.contactCode
     )
+  })
+
+  it('should assign priority null if applicant has no upcoming housing contracts or active parking space contracts', () => {
+    const listing = factory.listing.build({
+      rentalObjectCode: '307-706-00-0015',
+      districtCaption: 'Vallby',
+      districtCode: 'VAL',
+      objectTypeCaption: 'Parkeringsplats med el',
+      objectTypeCode: 'PPLMEL',
+      rentalObjectTypeCaption: 'Standard hyresobjektstyp',
+      publishedFrom: new Date('2024-10-21T07:55:51.000Z'),
+      publishedTo: new Date('2024-10-19T22:59:59.000Z'),
+      vacantFrom: new Date('2022-04-30T22:00:00.000Z'),
+      status: 4,
+      waitingListType: 'Bilplats (intern)',
+    })
+
+    const detailedApplicant3 = factory.detailedApplicant
+      .params({
+        applicationDate: new Date('2024-11-07T14:44:40.610Z'),
+        applicationType: 'Additional',
+        status: 1,
+        listingId: listing.id,
+        currentHousingContract: {
+          leaseId: '705-008-04-0101/04',
+          leaseNumber: '04',
+          rentalPropertyId: '705-008-04-0101',
+          type: 'Bostadskontrakt               ',
+          leaseStartDate: new Date('2013-03-01T00:00:00.000Z'),
+          status: 0,
+          noticeTimeTenant: '3',
+          contractDate: new Date('2013-01-23T00:00:00.000Z'),
+          approvalDate: new Date('2013-01-23T00:00:00.000Z'),
+          residentialArea: {
+            code: 'MAL',
+            caption: 'Malmaberg',
+          },
+        },
+        parkingSpaceContracts: [],
+      })
+      .build()
+
+    const result3 = assignPriorityToApplicantBasedOnRentalRules(
+      listing,
+      detailedApplicant3
+    )
+    expect(result3.priority).toBe(null)
   })
 })
