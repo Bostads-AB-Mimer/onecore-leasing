@@ -23,6 +23,25 @@ exports.up = function (knex) {
       ALTER TABLE application_profile
       ADD lastUpdatedAt datetimeoffset;
     `)
+
+    await trx.raw(`
+      INSERT INTO application_profile_housing_reference (applicationProfileId, reviewStatus, createdAt)
+      SELECT 
+        ap.id as applicationProfileId,
+        'PENDING' as reviewStatus,
+        GETUTCDATE() as createdAt
+      FROM application_profile ap
+      WHERE NOT EXISTS (
+        SELECT 1 
+        FROM application_profile_housing_reference hr 
+        WHERE hr.applicationProfileId = ap.id
+      );
+    `)
+
+    await trx.raw(`
+      UPDATE application_profile
+      SET expiresAt = GETUTCDATE();
+    `)
   })
 }
 
