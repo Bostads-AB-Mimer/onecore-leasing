@@ -173,6 +173,13 @@ export async function update(
         .where({ applicationProfileId: profile.id })
         .returning('*')
 
+      if (!reference) {
+        logger.error(
+          `applicationProfileAdapter.update - no reference found for profile id ${profile.id}`
+        )
+        return 'missing-reference'
+      }
+
       return ApplicationProfileSchema.parse({
         ...profile,
         housingReference: reference,
@@ -181,6 +188,10 @@ export async function update(
 
     if (result === 'no-update') {
       return { ok: false, err: 'no-update' }
+    }
+
+    if (result === 'missing-reference') {
+      return { ok: false, err: 'unknown' }
     }
 
     return { ok: true, data: result }
