@@ -155,7 +155,7 @@ describe('parseLeasesForHousingContract', () => {
   })
 
   it("shouldn't choose a housing contract that is about to end as currentHousingContract", async () => {
-    let currentDate = new Date()
+    const currentDate = new Date()
     const soonToBeTerminatedHousingContract = factory.lease
       .params({
         leaseId: '211-141-02-1005/02',
