@@ -264,12 +264,39 @@ export const routes = (router: KoaRouter) => {
     if (!result.ok) {
       if (result.err === 'contact-not-found') {
         ctx.status = 404
-        ctx.body = { error: 'Contact not found', ...metadata }
+        ctx.body = {
+          // error: 'Contact not found',
+          type: result.err,
+          title: 'Contact not found',
+          status: 500,
+          ...metadata,
+        }
+        return
+      }
+
+      if (result.err === 'no-valid-housing-contract') {
+        ctx.status = 500
+        ctx.body = {
+          // error: 'Housing contracts not found',
+          // reason: 'no-valid-housing-contract',
+          type: result.err,
+          title: 'No valid housing contract found',
+          status: 500,
+          detail:
+            'A housing contract needs to be current or upcoming to be a valid contract when applying for a parking space.',
+          ...metadata,
+        }
         return
       }
 
       ctx.status = 500
-      ctx.body = { error: result.err, ...metadata }
+      ctx.body = {
+        // error: result.err,
+        type: result.err,
+        title: 'Unknown error',
+        status: 500,
+        ...metadata,
+      }
       return
     }
 
