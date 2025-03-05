@@ -310,9 +310,34 @@ const getContactsByContactCodes = async (
   contactCodes: string[]
 ): Promise<AdapterResult<Array<Contact>, 'internal-error'>> => {
   try {
-    const rows = await getContactQuery()
+    // Almost a duplicate of getContactQuery, but queue fields need to
+    // be omitted since they generate one row per queue for each contact
+    const contactQuery = db
+      .from('cmctc')
+      .select(
+        'cmctc.cmctckod as contactCode',
+        'cmctc.fnamn as firstName',
+        'cmctc.enamn as lastName',
+        'cmctc.cmctcben as fullName',
+        'cmctc.persorgnr as nationalRegistrationNumber',
+        'cmctc.birthdate as birthDate',
+        'cmadr.adress1 as street',
+        'cmadr.adress3 as postalCode',
+        'cmadr.adress4 as city',
+        'cmeml.cmemlben as emailAddress',
+        'cmctc.keycmobj as keycmobj',
+        'cmctc.keycmctc as contactKey',
+        'cmctc.lagsokt as protectedIdentity'
+      )
+      .leftJoin('cmadr', 'cmadr.keycode', 'cmctc.keycmobj')
+      .leftJoin('cmeml', 'cmeml.keycmobj', 'cmctc.keycmobj')
+      .leftJoin('bkqte', 'bkqte.keycmctc', 'cmctc.keycmctc')
+      .leftJoin('bkkty', 'bkkty.keybkkty', 'bkqte.keybkkty')
+
+    const rows = await contactQuery
       .distinct()
       .where('cmadr.keycmtyp', 'adrfakt')
+      .where('cmeml.main', '1')
       .andWhere((query) => {
         query
           .where((query) => {
@@ -332,9 +357,8 @@ const getContactsByContactCodes = async (
       .whereIn('cmctc.cmctckod', contactCodes)
 
     const contacts = rows.map((row) => {
-      return transformFromDbContact(row, [], [])
+      return transformFromDbContact([row], [], [])
     })
-    console.log(contacts)
 
     return { ok: true, data: contacts }
   } catch (err) {
