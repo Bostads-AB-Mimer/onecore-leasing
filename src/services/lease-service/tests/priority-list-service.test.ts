@@ -120,6 +120,7 @@ describe('parseLeasesForHousingContract', () => {
     assert(result)
 
     expect(result[0]).toBeUndefined()
+    expect(result[0]).toBeUndefined()
     expect(result[1]).toBeDefined()
   })
 
@@ -202,6 +203,80 @@ describe('parseLeasesForHousingContract', () => {
         contractDate: parseISO('2024-11-21T00:00:00.000Z'),
         lastDebitDate: undefined,
         approvalDate: parseISO('2024-11-21T00:00:00.000Z'),
+        residentialArea: { code: 'CEN', caption: 'Centrum' },
+      })
+      .build()
+
+    const leases = [
+      soonToBeTerminatedHousingContract,
+      anotherActiveHousingContract,
+    ]
+
+    const filteredLeases: Lease[] = leases.filter(isLeaseActiveOrUpcoming)
+    const result = parseLeasesForHousingContracts(filteredLeases)
+
+    expect(filteredLeases).toHaveLength(2)
+    assert(result)
+    const [current, upcoming] = result
+
+    expect(current?.leaseId).toBe('102-003-01-0403/08')
+    expect(upcoming).toBeUndefined()
+  })
+
+  it("shouldn't choose a housing contract that is about to end as currentHousingContract", async () => {
+    const currentDate = new Date()
+    const soonToBeTerminatedHousingContract = factory.lease
+      .params({
+        leaseId: '211-141-02-1005/02',
+        leaseNumber: '02',
+        rentalPropertyId: '211-141-02-1005',
+        type: 'Bostadskontrakt               ',
+        leaseStartDate: new Date('2024-07-01T00:00:00.000Z'),
+        leaseEndDate: undefined,
+        status: 2,
+        tenantContactIds: [],
+        tenants: [],
+        rentalProperty: undefined,
+        rentInfo: undefined,
+        address: undefined,
+        noticeGivenBy: 'G',
+        noticeDate: new Date('2024-11-21T00:00:00.000Z'),
+        noticeTimeTenant: '3',
+        preferredMoveOutDate: new Date('2025-01-31T00:00:00.000Z'),
+        terminationDate: undefined,
+        contractDate: new Date('2024-04-10T00:00:00.000Z'),
+        lastDebitDate: new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate() + 3
+        ),
+        approvalDate: new Date('2024-04-10T00:00:00.000Z'),
+        residentialArea: { code: 'BÄC', caption: 'Bäckby' },
+      })
+      .build()
+
+    const anotherActiveHousingContract = factory.lease
+      .params({
+        leaseId: '102-003-01-0403/08',
+        leaseNumber: '08',
+        rentalPropertyId: '102-003-01-0403',
+        type: 'Bostadskontrakt               ',
+        leaseStartDate: new Date('2025-02-01T00:00:00.000Z'),
+        leaseEndDate: undefined,
+        status: 0,
+        tenantContactIds: [],
+        tenants: [],
+        rentalProperty: undefined,
+        rentInfo: undefined,
+        address: undefined,
+        noticeGivenBy: undefined,
+        noticeDate: undefined,
+        noticeTimeTenant: '3',
+        preferredMoveOutDate: undefined,
+        terminationDate: undefined,
+        contractDate: new Date('2024-11-21T00:00:00.000Z'),
+        lastDebitDate: undefined,
+        approvalDate: new Date('2024-11-21T00:00:00.000Z'),
         residentialArea: { code: 'CEN', caption: 'Centrum' },
       })
       .build()
