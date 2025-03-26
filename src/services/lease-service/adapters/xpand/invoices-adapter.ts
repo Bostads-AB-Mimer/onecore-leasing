@@ -89,10 +89,6 @@ const getInvoicesByContactCode = async (
         }
       })
       .map(transformFromDbInvoice)
-    logger.info(
-      { contactCode: contactKey },
-      'Getting invoices by contact code from Xpand DB completed'
-    )
     return invoices
   }
 

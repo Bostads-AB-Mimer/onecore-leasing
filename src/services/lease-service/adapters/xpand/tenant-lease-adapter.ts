@@ -308,7 +308,12 @@ const getContactsDataBySearchQuery = async (
 
 const getContactsByContactCodes = async (
   contactCodes: string[]
-): Promise<AdapterResult<Array<Contact>, 'internal-error'>> => {
+): Promise<
+  AdapterResult<
+    { contacts: Array<Contact>; errors: string[] },
+    'internal-error'
+  >
+> => {
   try {
     // Almost a duplicate of getContactQuery, but queue fields need to
     // be omitted since they generate one row per queue for each contact
@@ -337,22 +342,24 @@ const getContactsByContactCodes = async (
     const rows = await contactQuery
       .distinct()
       .where('cmadr.keycmtyp', 'adrfakt')
-      .where('cmeml.main', '1')
       .andWhere((query) => {
-        query
-          .where((query) => {
-            query.whereNull('cmadr.fdate').whereNull('cmadr.tdate')
-          })
-          .orWhere((query) => {
-            query
-              .whereNull('cmadr.fdate')
-              .andWhereRaw('cmadr.tdate > getdate()')
-          })
-          .orWhere((query) => {
-            query
-              .whereNull('cmadr.tdate')
-              .andWhereRaw('cmadr.fdate < getdate()')
-          })
+        query.where('cmeml.main', '1').orWhereNull('cmeml.main')
+      })
+      .andWhere((query) => {
+        query.whereNull('cmadr.keycmtyp').orWhere((query) => {
+          query
+            .where('cmadr.keycmtyp', 'adrfakt')
+            .andWhere((query) => {
+              query
+                .whereNull('cmadr.fdate')
+                .orWhereRaw('cmadr.fdate < getdate()')
+            })
+            .andWhere((query) => {
+              query
+                .whereNull('cmadr.tdate')
+                .orWhereRaw('cmadr.tdate > getdate()')
+            })
+        })
       })
       .whereIn('cmctc.cmctckod', contactCodes)
 
@@ -360,7 +367,17 @@ const getContactsByContactCodes = async (
       return transformFromDbContact([row], [], [])
     })
 
-    return { ok: true, data: contacts }
+    const errors: string[] = []
+    contactCodes.forEach((contactCode) => {
+      const exists = contacts.find((contact) => {
+        return contact.contactCode == contactCode
+      })
+      if (!exists) {
+        errors.push(`${contactCode}`)
+      }
+    })
+
+    return { ok: true, data: { contacts, errors } }
   } catch (err) {
     logger.error({ err }, 'tenant-lease-adapter.getContactsByContactCodes')
     return {
