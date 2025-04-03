@@ -86,21 +86,12 @@ const createLease = async (
 }
 
 const addApplicantToToWaitingList = async (
-  nationalRegistrationNumber: string,
   contactCode: string,
   waitingListType: WaitingListType.ParkingSpace
 ) => {
   if (waitingListType == WaitingListType.ParkingSpace) {
-    await addToWaitingList(
-      nationalRegistrationNumber,
-      contactCode,
-      'Bilplats (intern)'
-    )
-    await addToWaitingList(
-      nationalRegistrationNumber,
-      contactCode,
-      'Bilplats (extern)'
-    )
+    await addToWaitingList(contactCode, 'Bilplats (intern)')
+    await addToWaitingList(contactCode, 'Bilplats (extern)')
     return
   }
   logger.error(
@@ -113,7 +104,6 @@ const addApplicantToToWaitingList = async (
 }
 
 const addToWaitingList = async (
-  nationalRegistrationNumber: string,
   contactCode: string,
   waitingListTypeCaption: string
 ) => {
@@ -124,7 +114,6 @@ const addToWaitingList = async (
    <soap:Header xmlns:wsa='http://www.w3.org/2005/08/addressing'><wsa:Action>http://incit.xpand.eu/service/AddApplicantWaitingListTime/AddApplicantWaitingListTime</wsa:Action><wsa:To>${Config.xpandSoap.url}</wsa:To></soap:Header>
      <soap:Body>
         <ser:AddApplicantWaitingListTimeRequest>
-        <inc:CivicNumber>${nationalRegistrationNumber}</inc:CivicNumber>
         <inc:Code>${contactCode}</inc:Code>
         <inc:CompanyCode>001</inc:CompanyCode>
         <inc:MessageCulture>${Config.xpandSoap.messageCulture}</inc:MessageCulture>
@@ -169,22 +158,15 @@ const addToWaitingList = async (
   }
 }
 
+//TODO: testa att hämta, lägga till och ta bort från kö utan att skicka med personnummer
+//TODO 2: Testa hela flödet med användare utan personnummer både från medarbetarportalen och Mimer.nu
 const removeApplicantFromWaitingList = async (
-  nationalRegistrationNumber: string,
   contactCode: string,
   waitingListType: WaitingListType
 ): Promise<AdapterResult<undefined, 'not-in-waiting-list' | 'unknown'>> => {
   if (waitingListType == WaitingListType.ParkingSpace) {
-    await removeFromWaitingList(
-      nationalRegistrationNumber,
-      contactCode,
-      'Bilplats (intern)'
-    )
-    return await removeFromWaitingList(
-      nationalRegistrationNumber,
-      contactCode,
-      'Bilplats (extern)'
-    )
+    await removeFromWaitingList(contactCode, 'Bilplats (intern)')
+    return await removeFromWaitingList(contactCode, 'Bilplats (extern)')
   }
   logger.error(
     `Remove from Waiting list type ${waitingListType} not implemented yet`
@@ -195,7 +177,6 @@ const removeApplicantFromWaitingList = async (
   )
 }
 const removeFromWaitingList = async (
-  nationalRegistrationNumber: string,
   contactCode: string,
   waitingListTypeCaption: string
 ): Promise<AdapterResult<undefined, 'not-in-waiting-list' | 'unknown'>> => {
@@ -206,7 +187,6 @@ const removeFromWaitingList = async (
    <soap:Header xmlns:wsa='http://www.w3.org/2005/08/addressing'><wsa:Action>http://incit.xpand.eu/service/RemoveApplicantWaitingListTime/RemoveApplicantWaitingListTime</wsa:Action><wsa:To>${Config.xpandSoap.url}</wsa:To></soap:Header>
      <soap:Body>
         <ser:RemoveApplicantWaitingListTimeRequest>
-          <inc:CivicNumber>${nationalRegistrationNumber}</inc:CivicNumber>
           <inc:Code>${contactCode}</inc:Code>
           <inc:CompanyCode>001</inc:CompanyCode>
           <inc:MessageCulture>${Config.xpandSoap.messageCulture}</inc:MessageCulture>

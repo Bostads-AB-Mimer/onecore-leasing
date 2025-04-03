@@ -130,7 +130,7 @@ const getLeasesForNationalRegistrationNumber = async (
     })
     .limit(1)
 
-  if (contact != undefined) {
+  if (contact != undefined && contact.length > 0) {
     const leases = await getLeasesByContactKey(contact[0].contactKey)
 
     logger.info(
