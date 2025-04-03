@@ -88,15 +88,11 @@ export const routes = (router: KoaRouter) => {
   }
 
   router.post('(.*)/contacts/by-contact-codes', async (ctx) => {
-    console.log('by-contact-codes')
-
     const metadata = generateRouteMetadata(ctx)
 
     const result = await getContactsByContactCodes(
       (<GetContactsByContactCodeRequest>ctx.request.body)['contactCodes']
     )
-
-    console.log('by-contact-codes', result)
 
     if (!result.ok) {
       ctx.status = 500
