@@ -158,8 +158,6 @@ const addToWaitingList = async (
   }
 }
 
-//TODO: testa att hämta, lägga till och ta bort från kö utan att skicka med personnummer
-//TODO 2: Testa hela flödet med användare utan personnummer både från medarbetarportalen och Mimer.nu
 const removeApplicantFromWaitingList = async (
   contactCode: string,
   waitingListType: WaitingListType
