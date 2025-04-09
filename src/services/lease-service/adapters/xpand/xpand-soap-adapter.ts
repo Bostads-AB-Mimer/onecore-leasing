@@ -88,25 +88,46 @@ const createLease = async (
 const addApplicantToToWaitingList = async (
   contactCode: string,
   waitingListType: WaitingListType.ParkingSpace
-) => {
+): Promise<
+  AdapterResult<
+    undefined,
+    'already-in-waiting-list' | 'unknown' | 'waiting-list-type-not-implemented'
+  >
+> => {
   if (waitingListType == WaitingListType.ParkingSpace) {
-    await addToWaitingList(contactCode, 'Bilplats (intern)')
-    await addToWaitingList(contactCode, 'Bilplats (extern)')
-    return
+    const resultInternalParkingSpace = await addToWaitingList(
+      contactCode,
+      'Bilplats (intern)'
+    )
+    const resultExternalParkingSpace = await addToWaitingList(
+      contactCode,
+      'Bilplats (extern)'
+    )
+
+    if (resultInternalParkingSpace.ok && resultExternalParkingSpace.ok)
+      return { ok: true, data: undefined }
+    if (!resultInternalParkingSpace.ok) return resultInternalParkingSpace
+    if (!resultExternalParkingSpace.ok) return resultExternalParkingSpace
   }
   logger.error(
     `Add to Waiting list type ${waitingListType} not implemented yet`
   )
-  throw createHttpError(
-    500,
-    `Add to Waiting list type ${waitingListType} not implemented yet`
-  )
+  return { ok: false, err: 'waiting-list-type-not-implemented' }
+  // throw createHttpError(
+  //   500,
+  //   `Add to Waiting list type ${waitingListType} not implemented yet`
+  // )
 }
 
 const addToWaitingList = async (
   contactCode: string,
   waitingListTypeCaption: string
-) => {
+): Promise<
+  AdapterResult<
+    undefined,
+    'already-in-waiting-list' | 'unknown' | 'waiting-list-type-not-implemented'
+  >
+> => {
   const headers = getHeaders()
 
   const xml = `
@@ -140,39 +161,61 @@ const addToWaitingList = async (
     const parsedResponse = parser.parse(body)['Envelope']['Body']['ResultBase']
 
     if (parsedResponse.Success) {
-      return
+      return { ok: true, data: undefined }
     } else if (parsedResponse['Message'] == 'Kötyp finns redan') {
-      throw createHttpError(409, 'Applicant already in waiting list')
-    } else {
-      throw createHttpError(
-        500,
-        `unknown error when adding applicant to waiting list: ${parsedResponse['Message']}`
+      logger.error(
+        `Add to waiting list failed for ${waitingListTypeCaption}: ${parsedResponse['Message']}`
       )
+      return { ok: false, err: 'already-in-waiting-list' }
+      // throw createHttpError(409, 'Applicant already in waiting list')
+    } else {
+      logger.error(
+        `Add to waiting list failed with unknown error for ${waitingListTypeCaption}: ${parsedResponse['Message']}`
+      )
+      return { ok: false, err: 'unknown' }
+      // throw createHttpError(
+      //   500,
+      //   `unknown error when adding applicant to waiting list: ${parsedResponse['Message']}`
+      // )
     }
   } catch (error) {
     logger.error(
       error,
-      'Error adding applicant to waitinglist using Xpand SOAP API'
+      'Error adding applicant to waitinglist using Xpand SOAP API for list ' +
+        waitingListTypeCaption
     )
-    throw error
+    return { ok: false, err: 'unknown' }
   }
 }
 
 const removeApplicantFromWaitingList = async (
   contactCode: string,
   waitingListType: WaitingListType
-): Promise<AdapterResult<undefined, 'not-in-waiting-list' | 'unknown'>> => {
+): Promise<
+  AdapterResult<
+    undefined,
+    'not-in-waiting-list' | 'unknown' | 'waiting-list-type-not-implemented'
+  >
+> => {
   if (waitingListType == WaitingListType.ParkingSpace) {
-    await removeFromWaitingList(contactCode, 'Bilplats (intern)')
-    return await removeFromWaitingList(contactCode, 'Bilplats (extern)')
+    const resultInternalParkingSpace = await removeFromWaitingList(
+      contactCode,
+      'Bilplats (intern)'
+    )
+    const resultExternalParkingSpace = await removeFromWaitingList(
+      contactCode,
+      'Bilplats (extern)'
+    )
+
+    if (resultInternalParkingSpace.ok && resultExternalParkingSpace.ok)
+      return { ok: true, data: undefined }
+    if (!resultInternalParkingSpace.ok) return resultInternalParkingSpace
+    if (!resultExternalParkingSpace.ok) return resultExternalParkingSpace
   }
   logger.error(
     `Remove from Waiting list type ${waitingListType} not implemented yet`
   )
-  throw createHttpError(
-    500,
-    `Remove from Waiting list type ${waitingListType} not implemented yet`
-  )
+  return { ok: false, err: 'waiting-list-type-not-implemented' }
 }
 const removeFromWaitingList = async (
   contactCode: string,
@@ -211,15 +254,24 @@ const removeFromWaitingList = async (
     const parsedResponse = parser.parse(body)['Envelope']['Body']['ResultBase']
 
     if (parsedResponse.Success) return { ok: true, data: undefined }
-    else if (parsedResponse['Message'] == 'Kötid saknas')
+    else if (parsedResponse['Message'] == 'Kötid saknas') {
+      logger.error(
+        `Remove from waiting list failed for ${waitingListTypeCaption}: ${parsedResponse['Message']}`
+      )
       return { ok: false, err: 'not-in-waiting-list' }
-    else return { ok: false, err: 'unknown' }
+    } else {
+      logger.error(
+        `Remove from waiting list failed with unkown error ${waitingListTypeCaption}: ${parsedResponse['Message']}`
+      )
+      return { ok: false, err: 'unknown' }
+    }
   } catch (error) {
     logger.error(
       error,
-      'Error adding applicant to waitinglist using Xpand SOAP API'
+      'Error removing applicant from waitinglist using Xpand SOAP API. waitingListTypeCaption: ' +
+        waitingListTypeCaption
     )
-    throw error
+    return { ok: false, err: 'unknown' }
   }
 }
 

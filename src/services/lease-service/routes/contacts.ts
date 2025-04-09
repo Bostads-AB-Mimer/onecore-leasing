@@ -19,6 +19,7 @@ import { getTenant } from '../get-tenant'
 import { db } from '../adapters/db'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
 import { updateOrCreateApplicationProfile } from '../update-or-create-application-profile'
+import { error } from 'node:console'
 
 /**
  * @swagger
@@ -477,14 +478,22 @@ export const routes = (router: KoaRouter) => {
         request.waitingListType
       )
 
-      if (!res.ok) {
-        ctx.status = res.err == 'not-in-waiting-list' ? 404 : 500
-        ctx.body = {
-          error:
-            res.err == 'not-in-waiting-list'
-              ? 'Contact Not In Waiting List'
-              : 'Unknown error',
-        }
+      //vill jag verkligen returnera ett fel om add misslyckas för att man inte är i väntalista? Nej, för det viktiga är att lägga till personen i väntelistan väl?
+      // if (!res.ok && res.err == 'not-in-waiting-list') {
+      //   ctx.status = 404
+      //   ctx.body = { error: 'Contact Not In Waiting List' }
+      //   return
+      // }
+
+      if (!res.ok && res.err == 'unknown') {
+        ctx.status = 500
+        ctx.body = { error: 'Unknown error' }
+        return
+      }
+
+      if (!res.ok && res.err == 'waiting-list-type-not-implemented') {
+        ctx.status = 404
+        ctx.body = { error: 'Waiting List Type not Implemented' }
         return
       }
 
@@ -493,6 +502,8 @@ export const routes = (router: KoaRouter) => {
         ctx.params.contactCode,
         request.waitingListType as WaitingListType
       )
+
+      //handle add-errors before returning 200
 
       ctx.status = 200
       ctx.body = {
