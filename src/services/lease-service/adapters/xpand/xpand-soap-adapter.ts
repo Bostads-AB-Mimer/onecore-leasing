@@ -113,10 +113,6 @@ const addApplicantToToWaitingList = async (
     `Add to Waiting list type ${waitingListType} not implemented yet`
   )
   return { ok: false, err: 'waiting-list-type-not-implemented' }
-  // throw createHttpError(
-  //   500,
-  //   `Add to Waiting list type ${waitingListType} not implemented yet`
-  // )
 }
 
 const addToWaitingList = async (
@@ -167,16 +163,11 @@ const addToWaitingList = async (
         `Add to waiting list failed for ${waitingListTypeCaption}: ${parsedResponse['Message']}`
       )
       return { ok: false, err: 'already-in-waiting-list' }
-      // throw createHttpError(409, 'Applicant already in waiting list')
     } else {
       logger.error(
         `Add to waiting list failed with unknown error for ${waitingListTypeCaption}: ${parsedResponse['Message']}`
       )
       return { ok: false, err: 'unknown' }
-      // throw createHttpError(
-      //   500,
-      //   `unknown error when adding applicant to waiting list: ${parsedResponse['Message']}`
-      // )
     }
   } catch (error) {
     logger.error(

@@ -415,10 +415,22 @@ export const routes = (router: KoaRouter) => {
     const metadata = generateRouteMetadata(ctx)
     const request = <CreateWaitingListRequest>ctx.request.body
     try {
-      await addApplicantToToWaitingList(
+      const res = await addApplicantToToWaitingList(
         ctx.params.contactCode,
         request.waitingListType
       )
+
+      if (!res.ok && res.err == 'unknown') {
+        ctx.status = 500
+        ctx.body = { error: 'Unknown error' }
+        return
+      }
+
+      if (!res.ok && res.err == 'waiting-list-type-not-implemented') {
+        ctx.status = 404
+        ctx.body = { error: 'Waiting List Type not Implemented' }
+        return
+      }
 
       ctx.status = 201
       ctx.body = {
@@ -478,13 +490,6 @@ export const routes = (router: KoaRouter) => {
         request.waitingListType
       )
 
-      //vill jag verkligen returnera ett fel om add misslyckas för att man inte är i väntalista? Nej, för det viktiga är att lägga till personen i väntelistan väl?
-      // if (!res.ok && res.err == 'not-in-waiting-list') {
-      //   ctx.status = 404
-      //   ctx.body = { error: 'Contact Not In Waiting List' }
-      //   return
-      // }
-
       if (!res.ok && res.err == 'unknown') {
         ctx.status = 500
         ctx.body = { error: 'Unknown error' }
@@ -503,7 +508,17 @@ export const routes = (router: KoaRouter) => {
         request.waitingListType as WaitingListType
       )
 
-      //handle add-errors before returning 200
+      if (!res.ok && res.err == 'unknown') {
+        ctx.status = 500
+        ctx.body = { error: 'Unknown error' }
+        return
+      }
+
+      if (!res.ok && res.err == 'waiting-list-type-not-implemented') {
+        ctx.status = 404
+        ctx.body = { error: 'Waiting List Type not Implemented' }
+        return
+      }
 
       ctx.status = 200
       ctx.body = {
@@ -513,7 +528,10 @@ export const routes = (router: KoaRouter) => {
         ...metadata,
       }
     } catch (error: unknown) {
-      logger.error(error, 'Error resetting waitingList for applicant')
+      logger.error(
+        error,
+        `Error resetting waitingList ${WaitingListType} for applicant ${ctx.params.contactCode}`
+      )
       ctx.status = 500
 
       if (error instanceof Error) {

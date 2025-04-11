@@ -77,13 +77,13 @@ describe('GET /contacts/search', () => {
       })
     })
 
-    it('returns status 404 upon not-in-waiting-list error from removeApplicantFromWaitingList', async () => {
+    it('returns status 200 upon not-in-waiting-list error from removeApplicantFromWaitingList', async () => {
       jest
         .spyOn(xPandSoapAdapter, 'removeApplicantFromWaitingList')
         .mockResolvedValue({ ok: false, err: 'not-in-waiting-list' })
       jest
         .spyOn(xPandSoapAdapter, 'addApplicantToToWaitingList')
-        .mockResolvedValue()
+        .mockResolvedValue({ ok: true, data: undefined })
 
       const res = await request(app.callback())
         .post('/contacts/1234567890/waitingLists/reset')
@@ -92,10 +92,7 @@ describe('GET /contacts/search', () => {
           waitingListType: WaitingListType.ParkingSpace,
         })
 
-      expect(res.status).toBe(404)
-      expect(res.body).toEqual({
-        error: 'Contact Not In Waiting List',
-      })
+      expect(res.status).toBe(200)
     })
 
     it('returns status 404 upon waiting-list-type-not-implemented error from removeApplicantFromWaitingList', async () => {
@@ -107,7 +104,10 @@ describe('GET /contacts/search', () => {
         })
       jest
         .spyOn(xPandSoapAdapter, 'addApplicantToToWaitingList')
-        .mockResolvedValue()
+        .mockResolvedValue({
+          ok: false,
+          err: 'waiting-list-type-not-implemented',
+        })
 
       const res = await request(app.callback())
         .post('/contacts/1234567890/waitingLists/reset')
@@ -128,7 +128,7 @@ describe('GET /contacts/search', () => {
         .mockResolvedValue({ ok: false, err: 'unknown' })
       jest
         .spyOn(xPandSoapAdapter, 'addApplicantToToWaitingList')
-        .mockResolvedValue()
+        .mockResolvedValue({ ok: true, data: undefined })
 
       const res = await request(app.callback())
         .post('/contacts/1234567890/waitingLists/reset')
