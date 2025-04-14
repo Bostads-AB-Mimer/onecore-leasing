@@ -103,4 +103,46 @@ export const routes = (router: KoaRouter) => {
       }
     }
   )
+
+  /**
+   * @swagger
+   * /invoices/{invoicenumber}:
+   *   get:
+   *     summary: Get unpaid invoices for contact
+   *     description: Retrieve unpaid invoices associated with a contact by contact code.
+   *     tags: [Invoices]
+   *     parameters:
+   *       - in: path
+   *         name: contactCode
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The contact code of the contact.
+   *     responses:
+   *       200:
+   *         description: Successfully retrieved unpaid invoices.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     description: Invoice details.
+   *       500:
+   *         description: Internal server error. Failed to retrieve unpaid invoices.
+   */
+  router.get('(.*)/invoices/:invoicenumber', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+    const responseData = await invoicesAdapter.getInvoice(
+      ctx.params.invoicenumber
+    )
+
+    ctx.body = {
+      content: responseData,
+      ...metadata,
+    }
+  })
 }

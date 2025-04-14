@@ -111,4 +111,8 @@ const getUnpaidInvoicesByContactCode = async (
   return unpaidInvoices
 }
 
+export const getInvoice = async (invoiceNumber: string) => {
+  const invoice = getInvoice
+}
+
 export { getInvoicesByContactCode, getUnpaidInvoicesByContactCode }
