@@ -398,6 +398,190 @@ const getContactsByLeaseId = async (leaseId: string) => {
   return contacts
 }
 
+const getAllAvailableParkingSpaces = async () => {
+  console.log('------------getAllAvailableParkingSpaces----------------')
+
+  // Subquery for ParkingSpaces
+  const parkingSpacesQuery = db
+    .from('babps')
+    .select(
+      'babps.keycmobj',
+      'babuf.hyresid as rentalpropertyid',
+      'babps.code as vehiclespacecode',
+      'babps.caption as vehiclespacecaption',
+      'babuf.cmpcode as companycode',
+      'babuf.cmpcaption as companycaption',
+      'babuf.fencode as scegcode',
+      'babuf.fencaption as scegcaption',
+      'babuf.fstcode as estatecode',
+      'babuf.fstcaption as estatecaption',
+      'babuf.bygcode as blockcode',
+      'babuf.bygcaption as blockcaption',
+      'babpt.code as vehiclespacetypecode',
+      'babpt.caption as vehiclespacetypecaption',
+      'babps.platsnr as vehiclespacenumber',
+      'cmadr.adress1 as postaladdress',
+      'cmadr.adress3 as zipcode',
+      'cmadr.adress4 as city'
+    )
+    .innerJoin('babuf', 'babuf.keycmobj', 'babps.keycmobj')
+    .innerJoin('babpt', 'babpt.keybabpt', 'babps.keybabpt')
+    .leftJoin('cmadr', function () {
+      this.on('cmadr.keycode', '=', 'babps.keycmobj')
+        .andOn('cmadr.keydbtbl', '=', db.raw('?', ['_RQA11RNMA']))
+        .andOn('cmadr.keycmtyp', '=', db.raw('?', ['adrpost']))
+    })
+    .where('babuf.cmpcode', '=', '001')
+
+  // Subquery for ActiveRentalBlocks
+  const activeRentalBlocksQuery = db
+    .from('hyspt')
+    .select(
+      'hyspt.keycmobj',
+      'hyspa.caption as blocktype',
+      'hyspt.fdate as blockstartdate',
+      'hyspt.tdate as blockenddate'
+    )
+    .innerJoin('hyspa', 'hyspa.keyhyspa', 'hyspt.keyhyspa')
+    .where(function () {
+      this.whereNull('hyspt.fdate').orWhere('hyspt.fdate', '<=', db.fn.now())
+    })
+    .andWhere(function () {
+      this.whereNull('hyspt.tdate').orWhere('hyspt.tdate', '>', db.fn.now())
+    })
+
+  // Subquery for ActiveContracts
+  const activeContractsQuery = db
+    .from('hyobj')
+    .select(
+      'hyinf.keycmobj',
+      'hyobj.hyobjben as contractid',
+      'hyobj.avtalsdat as contractdate',
+      'hyobj.fdate as fromdate',
+      'hyobj.tdate as todate',
+      'hyobj.sistadeb as lastdebitdate'
+    )
+    .innerJoin('hykop', function () {
+      this.on('hykop.keyhyobj', '=', 'hyobj.keyhyobj').andOn(
+        'hykop.ordning',
+        '=',
+        db.raw('?', [1])
+      )
+    })
+    .innerJoin('hyinf', 'hyinf.keycmobj', 'hykop.keycmobj')
+    .whereIn('hyobj.keyhyobt', ['3', '5', '_1WP0JXVK8', '_1WP0KDMOO'])
+    .whereNull('hyobj.makuldatum')
+    .andWhere('hyobj.deletemark', '=', 0)
+    .whereNull('hyobj.sistadeb')
+
+  // Main Query
+  const results = await db
+    .from(parkingSpacesQuery.as('ps'))
+    .select(
+      'ps.rentalpropertyid',
+      'ps.vehiclespacecode',
+      'ps.vehiclespacecaption',
+      'ps.companycode',
+      'ps.companycaption',
+      'ps.blockcode',
+      'ps.blockcaption',
+      'ps.vehiclespacetypecode',
+      'ps.vehiclespacetypecaption',
+      'ps.vehiclespacenumber',
+      'ps.postaladdress',
+      'ps.zipcode',
+      'ps.city',
+
+      'ps.scegcode',
+      'ps.scegcaption',
+      'ps.estatecode',
+      'ps.estatecaption',
+      db.raw(`
+        CASE
+          WHEN rb.keycmobj IS NOT NULL THEN 'Has rental block: ' + rb.blocktype
+          WHEN ac.keycmobj IS NOT NULL THEN 'Has active contract: ' + ac.contractid
+          ELSE 'VACANT'
+        END AS status
+      `),
+      'rb.blocktype',
+      'rb.blockstartdate',
+      'rb.blockenddate',
+      'ac.contractid',
+      'ac.fromdate as contractfromdate',
+      'ac.lastdebitdate'
+    )
+    .leftJoin(activeRentalBlocksQuery.as('rb'), 'rb.keycmobj', 'ps.keycmobj')
+    .leftJoin(activeContractsQuery.as('ac'), 'ac.keycmobj', 'ps.keycmobj')
+    .where(function () {
+      this.whereNull('rb.keycmobj').orWhere(
+        'rb.blockenddate',
+        '<=',
+        db.fn.now()
+      )
+    })
+    .whereNull('ac.keycmobj')
+    .orderBy('ps.blockcode', 'ps.vehiclespacenumber')
+
+  const areas = {
+    'Distrikt Mitt': [
+      'Centrum',
+      'Gryta',
+      'Skallberget',
+      'Nordanby',
+      'Vega',
+      'Hökåsen',
+    ],
+    'Distrikt Norr': [
+      'Oxbacken',
+      'Jakobsberg',
+      'Pettersberg',
+      'Vallby',
+      'Skultuna',
+    ],
+    'Distrikt Väst': [
+      'Vetterstorp',
+      'Vetterslund',
+      'Råby',
+      'Hammarby',
+      'Fredriksberg',
+      'Bäckby',
+      'Skälby',
+    ],
+    'Distrikt Öst': [
+      'Lillåudden',
+      'Gideonsberg',
+      'Hemdal',
+      'Haga',
+      'Malmaberg',
+      'Skiljebo',
+      'Viksäng',
+      'Öster Mälarstrand',
+    ],
+    'Mimer Student': ['Student'],
+  }
+  results.forEach((result) => {
+    const scegcaption = result.scegcaption.toUpperCase() // Normalize case
+    let district = 'Unknown'
+
+    for (const [key, locations] of Object.entries(areas)) {
+      if (
+        locations.some((location) =>
+          scegcaption.includes(location.toUpperCase())
+        )
+      ) {
+        district = key
+        break
+      }
+    }
+
+    result.district = district // Add district to the result
+  })
+
+  console.log('results with districts:', results.slice(0, 30)) // Log first 30 results with districts
+
+  return results
+}
+
 const getContactQuery = () => {
   return db
     .from('cmctc')
@@ -606,6 +790,7 @@ export {
   getContactByContactCode,
   getContactByPhoneNumber,
   getContactForPhoneNumber,
+  getAllAvailableParkingSpaces,
   filterLeasesByOptions,
   isLeaseActive,
   isLeaseUpcoming,
