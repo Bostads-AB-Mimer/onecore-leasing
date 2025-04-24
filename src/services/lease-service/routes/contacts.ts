@@ -18,7 +18,7 @@ import {
 import { getTenant } from '../get-tenant'
 import { db } from '../adapters/db'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
-import { updateOrCreateApplicationProfile } from '../update-or-create-application-profile'
+import { createOrUpdateApplicationProfile } from '../create-or-update-application-profile'
 import { error } from 'node:console'
 
 /**
@@ -675,7 +675,7 @@ export const routes = (router: KoaRouter) => {
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx)
 
-      const result = await updateOrCreateApplicationProfile(
+      const result = await createOrUpdateApplicationProfile(
         db,
         ctx.params.contactCode,
         ctx.request.body

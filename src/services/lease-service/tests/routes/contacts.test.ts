@@ -8,7 +8,7 @@ import { routes } from '../../routes/contacts'
 import * as tenantLeaseAdapter from '../../adapters/xpand/tenant-lease-adapter'
 import * as xPandSoapAdapter from '../../adapters/xpand/xpand-soap-adapter'
 import * as applicationProfileAdapter from '../../adapters/application-profile-adapter'
-import * as applicationProfileService from '../../update-or-create-application-profile'
+import * as applicationProfileService from '../../create-or-update-application-profile'
 import * as factories from '../../tests/factories'
 
 const app = new Koa()
@@ -214,7 +214,7 @@ describe('POST /contacts/:contactCode/application-profile', () => {
 
   it('updates application profile', async () => {
     jest
-      .spyOn(applicationProfileService, 'updateOrCreateApplicationProfile')
+      .spyOn(applicationProfileService, 'createOrUpdateApplicationProfile')
       .mockResolvedValueOnce({
         ok: true,
         data: ['updated', factories.applicationProfile.build()],
@@ -243,7 +243,7 @@ describe('POST /contacts/:contactCode/application-profile', () => {
 
   it('creates if non-existent', async () => {
     jest
-      .spyOn(applicationProfileService, 'updateOrCreateApplicationProfile')
+      .spyOn(applicationProfileService, 'createOrUpdateApplicationProfile')
       .mockResolvedValueOnce({
         ok: true,
         data: ['created', factories.applicationProfile.build()],
