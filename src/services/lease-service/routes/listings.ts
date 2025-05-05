@@ -17,6 +17,7 @@ import * as syncParkingSpacesFromXpandService from '../sync-internal-parking-spa
 import * as listingAdapter from '../adapters/listing-adapter'
 import { getTenant } from '../get-tenant'
 import { db } from '../adapters/db'
+import { getAllVacantParkingSpaces } from '../adapters/xpand/xpand-listing-adapter'
 
 /**
  * @swagger
@@ -449,6 +450,28 @@ export const routes = (router: KoaRouter) => {
 
     ctx.status = 200
     ctx.body = { content: listingsWithApplicants.data, ...metadata }
+  })
+
+  router.get('/listings/vacant-parkingspaces', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+
+    const vacantParkingSpaces = await getAllVacantParkingSpaces()
+
+    if (!vacantParkingSpaces.ok) {
+      logger.error(
+        vacantParkingSpaces.err,
+        'Error fetching vacant parking spaces:'
+      )
+      ctx.status = 500
+      ctx.body = {
+        error: 'An error occurred while fetching vacant parking spaces.',
+        ...metadata,
+      }
+      return
+    }
+
+    ctx.status = 200
+    ctx.body = { content: vacantParkingSpaces.data, ...metadata }
   })
 
   router.get('/listings/readyforoffers', async (ctx) => {
