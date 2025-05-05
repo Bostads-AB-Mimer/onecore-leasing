@@ -1,4 +1,4 @@
-import { Address } from 'onecore-types'
+import { Address, VacantParkingSpace } from 'onecore-types'
 
 import knex from 'knex'
 import Config from '../../../../common/config'
@@ -59,21 +59,6 @@ const areas = {
 
 function trimString(value: any): any {
   return typeof value === 'string' ? value.trimEnd() : value
-}
-
-export interface VacantParkingSpace {
-  rentalObjectCode: string
-  address: Address
-  rent: number
-  districtCaption?: string
-  districtCode?: string
-  blockCaption?: string
-  blockCode?: string
-  vehicleSpaceTypeCaption?: string | undefined
-  vehicleSpaceTypeCode?: string | undefined
-  vehicleSpaceCaption?: string | undefined
-  vehicleSpaceCode?: string | undefined
-  status: string
 }
 
 function transformFromXpandListing(row: any): VacantParkingSpace {
