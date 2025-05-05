@@ -10,6 +10,8 @@ import * as xPandSoapAdapter from '../../adapters/xpand/xpand-soap-adapter'
 import * as applicationProfileAdapter from '../../adapters/application-profile-adapter'
 import * as applicationProfileService from '../../create-or-update-application-profile'
 import * as factories from '../../tests/factories'
+import * as tenants from '../../get-tenant'
+import * as factory from '../factories'
 
 const app = new Koa()
 const router = new KoaRouter()

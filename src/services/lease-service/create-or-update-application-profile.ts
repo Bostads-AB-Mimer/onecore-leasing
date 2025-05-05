@@ -24,17 +24,53 @@ export async function createOrUpdateApplicationProfile(
     contactCode
   )
 
-  if (params.housingReference.expiresAt === null) {
-    if (existingProfile.ok) {
-      if (
-        existingProfile.data.housingReference.reviewStatus !==
-          params.housingReference.reviewStatus ||
-        existingProfile.data.housingType !== params.housingType
-      ) {
-        params.housingReference.expiresAt = addMonths(new Date(), 6)
+  const now = new Date()
+
+  if (!existingProfile.ok) {
+    // A new profile is created with expiresAt set to 6 months from now
+    if (params.housingReference.reviewStatus !== 'PENDING') {
+      params.expiresAt = addMonths(now, 6)
+      if (!params.housingReference.expiresAt) {
+        params.housingReference.expiresAt = addMonths(now, 6)
       }
-    } else {
-      params.housingReference.expiresAt = addMonths(new Date(), 6)
+    }
+    params.lastUpdatedAt = now
+    // If the profile already exists, we need to check if the housing reference
+  } else {
+    // or the application profile has been updated and update the expiresAts
+    // accordingly
+    const hasUpdatedReviewStatus =
+      existingProfile.data.housingReference.reviewStatus !==
+      params.housingReference.reviewStatus
+
+    const hasUpdatedApplicationProfile =
+      params.housingType !== existingProfile.data.housingType ||
+      params.housingTypeDescription !==
+        existingProfile.data.housingTypeDescription ||
+      params.landlord !== existingProfile.data.landlord
+
+    const hasUpdatedNumberOfTenants =
+      params.numAdults !== existingProfile.data.numAdults ||
+      params.numChildren !== existingProfile.data.numChildren
+
+    if (hasUpdatedApplicationProfile) {
+      params.lastUpdatedAt = now
+    }
+
+    if (hasUpdatedApplicationProfile || hasUpdatedNumberOfTenants) {
+      params.expiresAt = addMonths(now, 6)
+    }
+
+    // If housingReference.expiresAt is not set and the housingReference
+    // has been updated, we set it to 6 months from now
+    if (!params.housingReference.expiresAt) {
+      if (hasUpdatedReviewStatus) {
+        params.housingReference.expiresAt = addMonths(now, 6)
+      }
+    }
+
+    if (hasUpdatedReviewStatus) {
+      params.housingReference.reviewedAt = now
     }
   }
 

@@ -19,7 +19,6 @@ import { getTenant } from '../get-tenant'
 import { db } from '../adapters/db'
 import { parseRequestBody } from '../../../middlewares/parse-request-body'
 import { createOrUpdateApplicationProfile } from '../create-or-update-application-profile'
-import { error } from 'node:console'
 
 /**
  * @swagger
