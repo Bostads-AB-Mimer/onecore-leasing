@@ -224,11 +224,184 @@ export const routes = (router: KoaRouter) => {
    *             schema:
    *               type: object
    *               properties:
-   *                 data:
+   *                 content:
    *                   type: array
    *                   items:
    *                     type: object
-   *                     description: Lease details.
+   *                     properties:
+   *                       leaseId:
+   *                         type: string
+   *                         description: Unique identifier for the lease
+   *                       leaseNumber:
+   *                         type: string
+   *                         description: Lease reference number
+   *                       leaseStartDate:
+   *                         type: string
+   *                         format: date-time
+   *                         description: Start date of the lease
+   *                       leaseEndDate:
+   *                         type: string
+   *                         format: date-time
+   *                         nullable: true
+   *                         description: End date of the lease if applicable
+   *                       status:
+   *                         type: integer
+   *                         enum: [0, 1, 2, 3]
+   *                         description: Current status of the lease (0=Current, 1=Upcoming, 2=AboutToEnd, 3=Ended)
+   *                       tenantContactIds:
+   *                         type: array
+   *                         items:
+   *                           type: string
+   *                         nullable: true
+   *                         description: Array of tenant contact IDs
+   *                       tenants:
+   *                         type: array
+   *                         items:
+   *                           type: object
+   *                           properties:
+   *                             contactCode:
+   *                               type: string
+   *                               description: Unique contact code
+   *                             contactKey:
+   *                               type: string
+   *                               description: Contact key identifier
+   *                             leaseIds:
+   *                               type: array
+   *                               items:
+   *                                 type: string
+   *                               nullable: true
+   *                               description: Array of associated lease IDs
+   *                             firstName:
+   *                               type: string
+   *                               description: First name of the contact
+   *                             lastName:
+   *                               type: string
+   *                               description: Last name of the contact
+   *                             fullName:
+   *                               type: string
+   *                               description: Full name of the contact
+   *                             nationalRegistrationNumber:
+   *                               type: string
+   *                               description: National registration number
+   *                             birthDate:
+   *                               type: string
+   *                               format: date-time
+   *                               description: Birth date of the contact
+   *                             address:
+   *                               type: object
+   *                               nullable: true
+   *                               properties:
+   *                                 street:
+   *                                   type: string
+   *                                   description: Street name
+   *                                 number:
+   *                                   type: string
+   *                                   description: Street number
+   *                                 postalCode:
+   *                                   type: string
+   *                                   description: Postal code
+   *                                 city:
+   *                                   type: string
+   *                                   description: City name
+   *                             phoneNumbers:
+   *                               type: array
+   *                               nullable: true
+   *                               items:
+   *                                 type: object
+   *                                 properties:
+   *                                   phoneNumber:
+   *                                     type: string
+   *                                     description: Phone number
+   *                                   type:
+   *                                     type: string
+   *                                     description: Type of phone number
+   *                                   isMainNumber:
+   *                                     type: boolean
+   *                                     description: Whether this is the main contact number
+   *                             emailAddress:
+   *                               type: string
+   *                               nullable: true
+   *                               description: Email address
+   *                             isTenant:
+   *                               type: boolean
+   *                               description: Whether the contact is a tenant
+   *                             specialAttention:
+   *                               type: boolean
+   *                               nullable: true
+   *                               description: Whether the contact needs special attention
+   *                         nullable: true
+   *                       rentalPropertyId:
+   *                         type: string
+   *                         description: ID of the rental property
+   *                       type:
+   *                         type: string
+   *                         description: Type of the lease
+   *                       address:
+   *                         type: object
+   *                         nullable: true
+   *                         properties:
+   *                           street:
+   *                             type: string
+   *                             description: Street name
+   *                           number:
+   *                             type: string
+   *                             description: Street number
+   *                           postalCode:
+   *                             type: string
+   *                             description: Postal code
+   *                           city:
+   *                             type: string
+   *                             description: City name
+   *                       noticeGivenBy:
+   *                         type: string
+   *                         nullable: true
+   *                         description: Who gave the notice
+   *                       noticeDate:
+   *                         type: string
+   *                         format: date-time
+   *                         nullable: true
+   *                         description: Date when notice was given
+   *                       noticeTimeTenant:
+   *                         type: string
+   *                         nullable: true
+   *                         description: Notice time for tenant
+   *                       preferredMoveOutDate:
+   *                         type: string
+   *                         format: date-time
+   *                         nullable: true
+   *                         description: Preferred move out date
+   *                       terminationDate:
+   *                         type: string
+   *                         format: date-time
+   *                         nullable: true
+   *                         description: Date of lease termination
+   *                       contractDate:
+   *                         type: string
+   *                         format: date-time
+   *                         nullable: true
+   *                         description: Date of contract
+   *                       lastDebitDate:
+   *                         type: string
+   *                         format: date-time
+   *                         nullable: true
+   *                         description: Last debit date
+   *                       approvalDate:
+   *                         type: string
+   *                         format: date-time
+   *                         nullable: true
+   *                         description: Date of lease approval
+   *                       residentialArea:
+   *                         type: object
+   *                         nullable: true
+   *                         properties:
+   *                           code:
+   *                             type: string
+   *                             description: Residential area code
+   *                           caption:
+   *                             type: string
+   *                             description: Residential area name
+   *       400:
+   *         description: Bad request. Invalid query parameters.
    *       500:
    *         description: Internal server error. Failed to retrieve leases.
    */
