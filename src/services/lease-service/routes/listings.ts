@@ -452,6 +452,37 @@ export const routes = (router: KoaRouter) => {
     ctx.body = { content: listingsWithApplicants.data, ...metadata }
   })
 
+  /**
+   * @swagger
+   * /listings/vacant-parkingspaces:
+   *   get:
+   *     summary: Get all vacant parking spaces
+   *     description: Fetches a list of all vacant parking spaces available in the system.
+   *     tags:
+   *       - Listings
+   *     responses:
+   *       '200':
+   *         description: Successfully retrieved the list of vacant parking spaces.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 content:
+   *                   type: array
+   *                   items:
+   *                     $ref: '#/components/schemas/VacantParkingSpace'
+   *       '500':
+   *         description: Internal server error. Failed to fetch vacant parking spaces.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 error:
+   *                   type: string
+   *                   description: The error message.
+   */
   router.get('/listings/vacant-parkingspaces', async (ctx) => {
     const metadata = generateRouteMetadata(ctx)
 

@@ -1,4 +1,4 @@
-import { Address, VacantParkingSpace } from 'onecore-types'
+import { VacantParkingSpace } from 'onecore-types'
 
 import knex from 'knex'
 import Config from '../../../../common/config'
@@ -19,7 +19,7 @@ function trimRow(obj: any): any {
   )
 }
 
-const areas = {
+const districts = {
   'Distrikt Mitt': [
     'Centrum',
     'Gryta',
@@ -57,27 +57,46 @@ const areas = {
   'Mimer Student': ['Student'],
 }
 
-function trimString(value: any): any {
-  return typeof value === 'string' ? value.trimEnd() : value
-}
-
 function transformFromXpandListing(row: any): VacantParkingSpace {
+  const scegcaption = row.scegcaption?.toUpperCase() || '' // Normalize case and handle undefined
+  let district = '-'
+  let districtCode: string | undefined = undefined
+  let restidentalAreaCaption: string = '-'
+
+  // Extract district code (number before ':')
+  const match = scegcaption.match(/^(\d+):/)
+  if (match) {
+    districtCode = match[1] // Extract the number before ':'
+  }
+
+  // Determine district and restidentalAreaCaption based on scegcaption
+  for (const [key, locations] of Object.entries(districts)) {
+    const matchedLocation = locations.find((location) =>
+      scegcaption.includes(location.toUpperCase())
+    )
+    if (matchedLocation) {
+      district = key
+      restidentalAreaCaption = matchedLocation // Save the matched location (not uppercased)
+      break
+    }
+  }
+
+  // Transform the row and add district info
   return {
-    rentalObjectCode: row.rentalpropertyid,
-    address: {
-      street: trimString(row.postaladdress),
-      city: trimString(row.city),
-      postalCode: trimString(row.zipcode),
-      number: '',
-    },
-    rent: row.MonthlyRent, // TODO: Add rent info if available
+    rentalObjectCode: row.rentalObjectCode,
+    address: row.postaladdress,
+    monthlyRent: row.MonthlyRent, // TODO: Add rent info if available
     blockCaption: row.blockcaption || undefined,
     blockCode: row.blockcode || undefined,
-    vehicleSpaceTypeCaption: row.vehiclespacetypecaption || undefined,
-    vehicleSpaceTypeCode: row.vehiclespacetypecode || undefined,
+    restidentalAreaCode: row.scegcode || undefined,
+    objectTypeCaption: row.vehiclespacetypecaption || undefined,
+    objectTypeCode: row.vehiclespacetypecode || undefined,
+    vacantFrom: row.lastdebitdate || new Date(), // TODO: Add logic for vacantFrom
     vehicleSpaceCaption: row.vehiclespacecaption || undefined,
     vehicleSpaceCode: row.vehiclespacecode || undefined,
-    status: row.status,
+    districtCaption: district,
+    districtCode: districtCode,
+    restidentalAreaCaption: restidentalAreaCaption, // Add the location
   }
 }
 
@@ -90,7 +109,7 @@ const getAllVacantParkingSpaces = async (): Promise<
       .from('babps')
       .select(
         'babps.keycmobj',
-        'babuf.hyresid as rentalpropertyid',
+        'babuf.hyresid as rentalObjectCode',
         'babps.code as vehiclespacecode',
         'babps.caption as vehiclespacecaption',
         'babuf.cmpcode as companycode',
@@ -105,6 +124,7 @@ const getAllVacantParkingSpaces = async (): Promise<
         'babpt.caption as vehiclespacetypecaption',
         'babps.platsnr as vehiclespacenumber',
         'cmadr.adress1 as postaladdress',
+        'cmadr.adress2 as street',
         'cmadr.adress3 as zipcode',
         'cmadr.adress4 as city'
       )
@@ -162,7 +182,7 @@ const getAllVacantParkingSpaces = async (): Promise<
     const results = await db
       .from(parkingSpacesQuery.as('ps'))
       .select(
-        'ps.rentalpropertyid',
+        'ps.rentalObjectCode',
         'ps.vehiclespacecode',
         'ps.vehiclespacecaption',
         'ps.companycode',
@@ -176,6 +196,7 @@ const getAllVacantParkingSpaces = async (): Promise<
         'ps.zipcode',
         'ps.city',
         'ps.scegcaption',
+        'ps.scegcode',
         db.raw(`
           CASE
             WHEN rb.keycmobj IS NOT NULL THEN 'Has rental block: ' + rb.blocktype
@@ -202,38 +223,9 @@ const getAllVacantParkingSpaces = async (): Promise<
       .whereNull('ac.keycmobj')
       .orderBy('ps.blockcode', 'ps.vehiclespacenumber')
 
-    // Add district and transform each result
-    const listings: VacantParkingSpace[] = results.map((row) => {
-      const scegcaption = row.scegcaption.toUpperCase() // Normalize case
-      let district = '-'
-      let districtCode: string | undefined = undefined
-
-      // Extract district code (number before ':')
-      const match = scegcaption.match(/^(\d+):/)
-      if (match) {
-        districtCode = match[1] // Extract the number before ':'
-      }
-
-      // Determine district based on scegcaption
-      for (const [key, locations] of Object.entries(areas)) {
-        if (
-          locations.some((location) =>
-            scegcaption.includes(location.toUpperCase())
-          )
-        ) {
-          district = key
-          break
-        }
-      }
-
-      // Transform the row using transformFromXpandListing and add district info
-      const listing = trimRow(transformFromXpandListing(row))
-      return {
-        ...listing,
-        districtCaption: district,
-        districtCode: districtCode,
-      }
-    })
+    const listings: VacantParkingSpace[] = results.map((row) =>
+      trimRow(transformFromXpandListing(row))
+    )
     return { ok: true, data: listings }
   } catch (err) {
     logger.error(err, 'tenantLeaseAdapter.getAllAvailableParkingSpaces')
@@ -241,4 +233,4 @@ const getAllVacantParkingSpaces = async (): Promise<
   }
 }
 
-export { getAllVacantParkingSpaces, transformFromXpandListing, trimString, db }
+export { getAllVacantParkingSpaces, transformFromXpandListing, db }

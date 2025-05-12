@@ -47,20 +47,17 @@ describe('getAllVacantParkingSpaces', () => {
         data: [
           {
             rentalObjectCode: '924-004-99-0008',
-            address: {
-              street: 'Karl IX:s V 18',
-              city: 'SKULTUNA',
-              postalCode: '726 30',
-              number: '',
-            },
-            vehicleSpaceTypeCaption: 'Motorcykelgarage',
-            vehicleSpaceTypeCode: 'MCGAR',
+            address: 'Karl IX:s V 18',
+            objectTypeCaption: 'Motorcykelgarage',
+            objectTypeCode: 'MCGAR',
             vehicleSpaceCaption: 'KARL IX:S VÄG 18',
             vehicleSpaceCode: '0008',
-            status: 'VACANT',
             districtCaption: 'Distrikt Norr',
             districtCode: '2',
-            rent: 0,
+            monthlyRent: 0,
+            restidentalAreaCaption: 'Centrum',
+            restidentalAreaCode: 'CTR',
+            vacantFrom: new Date('2023-10-01'),
           },
         ],
       })
@@ -72,20 +69,17 @@ describe('getAllVacantParkingSpaces', () => {
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toEqual({
         rentalObjectCode: '924-004-99-0008',
-        address: {
-          street: 'Karl IX:s V 18',
-          city: 'SKULTUNA',
-          postalCode: '726 30',
-          number: '',
-        },
-        vehicleSpaceTypeCaption: 'Motorcykelgarage',
-        vehicleSpaceTypeCode: 'MCGAR',
+        address: 'Karl IX:s V 18',
+        objectTypeCaption: 'Motorcykelgarage',
+        objectTypeCode: 'MCGAR',
         vehicleSpaceCaption: 'KARL IX:S VÄG 18',
         vehicleSpaceCode: '0008',
-        status: 'VACANT',
         districtCaption: 'Distrikt Norr',
         districtCode: '2',
-        rent: 0,
+        monthlyRent: 0,
+        restidentalAreaCaption: 'Centrum',
+        restidentalAreaCode: 'CTR',
+        vacantFrom: new Date('2023-10-01'),
       })
     }
   })
