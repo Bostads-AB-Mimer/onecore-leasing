@@ -1,4 +1,4 @@
-import { VacantParkingSpace } from 'onecore-types'
+import { VacantParkingSpace, RentalObject } from 'onecore-types'
 
 import knex from 'knex'
 import Config from '../../../../common/config'
@@ -100,119 +100,138 @@ function transformFromXpandListing(row: any): VacantParkingSpace {
   }
 }
 
+const buildMainQuery = (
+  parkingSpacesQuery: any,
+  activeRentalBlocksQuery: any,
+  activeContractsQuery: any
+) => {
+  return db
+    .from(parkingSpacesQuery.as('ps'))
+    .select(
+      'ps.rentalObjectCode',
+      'ps.vehiclespacecode',
+      'ps.vehiclespacecaption',
+      'ps.companycode',
+      'ps.companycaption',
+      'ps.blockcode',
+      'ps.blockcaption',
+      'ps.vehiclespacetypecode',
+      'ps.vehiclespacetypecaption',
+      'ps.vehiclespacenumber',
+      'ps.postaladdress',
+      'ps.zipcode',
+      'ps.city',
+      'ps.scegcaption',
+      'ps.scegcode',
+      db.raw(`
+        CASE
+          WHEN rb.keycmobj IS NOT NULL THEN 'Has rental block: ' + rb.blocktype
+          WHEN ac.keycmobj IS NOT NULL THEN 'Has active contract: ' + ac.contractid
+          ELSE 'VACANT'
+        END AS status
+      `),
+      'rb.blocktype',
+      'rb.blockstartdate',
+      'rb.blockenddate',
+      'ac.contractid',
+      'ac.fromdate as contractfromdate',
+      'ac.lastdebitdate'
+    )
+    .leftJoin(activeRentalBlocksQuery.as('rb'), 'rb.keycmobj', 'ps.keycmobj')
+    .leftJoin(activeContractsQuery.as('ac'), 'ac.keycmobj', 'ps.keycmobj')
+}
+
+const buildSubQueries = () => {
+  const parkingSpacesQuery = db
+    .from('babps')
+    .select(
+      'babps.keycmobj',
+      'babuf.hyresid as rentalObjectCode',
+      'babps.code as vehiclespacecode',
+      'babps.caption as vehiclespacecaption',
+      'babuf.cmpcode as companycode',
+      'babuf.cmpcaption as companycaption',
+      'babuf.fencode as scegcode',
+      'babuf.fencaption as scegcaption',
+      'babuf.fstcode as estatecode',
+      'babuf.fstcaption as estatecaption',
+      'babuf.bygcode as blockcode',
+      'babuf.bygcaption as blockcaption',
+      'babpt.code as vehiclespacetypecode',
+      'babpt.caption as vehiclespacetypecaption',
+      'babps.platsnr as vehiclespacenumber',
+      'cmadr.adress1 as postaladdress',
+      'cmadr.adress2 as street',
+      'cmadr.adress3 as zipcode',
+      'cmadr.adress4 as city'
+    )
+    .innerJoin('babuf', 'babuf.keycmobj', 'babps.keycmobj')
+    .innerJoin('babpt', 'babpt.keybabpt', 'babps.keybabpt')
+    .leftJoin('cmadr', function () {
+      this.on('cmadr.keycode', '=', 'babps.keycmobj')
+        .andOn('cmadr.keydbtbl', '=', db.raw('?', ['_RQA11RNMA']))
+        .andOn('cmadr.keycmtyp', '=', db.raw('?', ['adrpost']))
+    })
+    .where('babuf.cmpcode', '=', '001')
+
+  const activeRentalBlocksQuery = db
+    .from('hyspt')
+    .select(
+      'hyspt.keycmobj',
+      'hyspa.caption as blocktype',
+      'hyspt.fdate as blockstartdate',
+      'hyspt.tdate as blockenddate'
+    )
+    .innerJoin('hyspa', 'hyspa.keyhyspa', 'hyspt.keyhyspa')
+    .where(function () {
+      this.whereNull('hyspt.fdate').orWhere('hyspt.fdate', '<=', db.fn.now())
+    })
+    .andWhere(function () {
+      this.whereNull('hyspt.tdate').orWhere('hyspt.tdate', '>', db.fn.now())
+    })
+
+  const activeContractsQuery = db
+    .from('hyobj')
+    .select(
+      'hyinf.keycmobj',
+      'hyobj.hyobjben as contractid',
+      'hyobj.avtalsdat as contractdate',
+      'hyobj.fdate as fromdate',
+      'hyobj.tdate as todate',
+      'hyobj.sistadeb as lastdebitdate'
+    )
+    .innerJoin('hykop', function () {
+      this.on('hykop.keyhyobj', '=', 'hyobj.keyhyobj').andOn(
+        'hykop.ordning',
+        '=',
+        db.raw('?', [1])
+      )
+    })
+    .innerJoin('hyinf', 'hyinf.keycmobj', 'hykop.keycmobj')
+    .whereIn('hyobj.keyhyobt', ['3', '5', '_1WP0JXVK8', '_1WP0KDMOO'])
+    .whereNull('hyobj.makuldatum')
+    .andWhere('hyobj.deletemark', '=', 0)
+    .whereNull('hyobj.sistadeb')
+
+  return { parkingSpacesQuery, activeRentalBlocksQuery, activeContractsQuery }
+}
+
+// Uppdaterad getAllVacantParkingSpaces
 const getAllVacantParkingSpaces = async (): Promise<
   AdapterResult<VacantParkingSpace[], unknown>
 > => {
   try {
-    // Subquery for ParkingSpaces
-    const parkingSpacesQuery = db
-      .from('babps')
-      .select(
-        'babps.keycmobj',
-        'babuf.hyresid as rentalObjectCode',
-        'babps.code as vehiclespacecode',
-        'babps.caption as vehiclespacecaption',
-        'babuf.cmpcode as companycode',
-        'babuf.cmpcaption as companycaption',
-        'babuf.fencode as scegcode',
-        'babuf.fencaption as scegcaption',
-        'babuf.fstcode as estatecode',
-        'babuf.fstcaption as estatecaption',
-        'babuf.bygcode as blockcode',
-        'babuf.bygcaption as blockcaption',
-        'babpt.code as vehiclespacetypecode',
-        'babpt.caption as vehiclespacetypecaption',
-        'babps.platsnr as vehiclespacenumber',
-        'cmadr.adress1 as postaladdress',
-        'cmadr.adress2 as street',
-        'cmadr.adress3 as zipcode',
-        'cmadr.adress4 as city'
-      )
-      .innerJoin('babuf', 'babuf.keycmobj', 'babps.keycmobj')
-      .innerJoin('babpt', 'babpt.keybabpt', 'babps.keybabpt')
-      .leftJoin('cmadr', function () {
-        this.on('cmadr.keycode', '=', 'babps.keycmobj')
-          .andOn('cmadr.keydbtbl', '=', db.raw('?', ['_RQA11RNMA']))
-          .andOn('cmadr.keycmtyp', '=', db.raw('?', ['adrpost']))
-      })
-      .where('babuf.cmpcode', '=', '001')
+    const {
+      parkingSpacesQuery,
+      activeRentalBlocksQuery,
+      activeContractsQuery,
+    } = buildSubQueries()
 
-    // Subquery for ActiveRentalBlocks
-    const activeRentalBlocksQuery = db
-      .from('hyspt')
-      .select(
-        'hyspt.keycmobj',
-        'hyspa.caption as blocktype',
-        'hyspt.fdate as blockstartdate',
-        'hyspt.tdate as blockenddate'
-      )
-      .innerJoin('hyspa', 'hyspa.keyhyspa', 'hyspt.keyhyspa')
-      .where(function () {
-        this.whereNull('hyspt.fdate').orWhere('hyspt.fdate', '<=', db.fn.now())
-      })
-      .andWhere(function () {
-        this.whereNull('hyspt.tdate').orWhere('hyspt.tdate', '>', db.fn.now())
-      })
-
-    // Subquery for ActiveContracts
-    const activeContractsQuery = db
-      .from('hyobj')
-      .select(
-        'hyinf.keycmobj',
-        'hyobj.hyobjben as contractid',
-        'hyobj.avtalsdat as contractdate',
-        'hyobj.fdate as fromdate',
-        'hyobj.tdate as todate',
-        'hyobj.sistadeb as lastdebitdate'
-      )
-      .innerJoin('hykop', function () {
-        this.on('hykop.keyhyobj', '=', 'hyobj.keyhyobj').andOn(
-          'hykop.ordning',
-          '=',
-          db.raw('?', [1])
-        )
-      })
-      .innerJoin('hyinf', 'hyinf.keycmobj', 'hykop.keycmobj')
-      .whereIn('hyobj.keyhyobt', ['3', '5', '_1WP0JXVK8', '_1WP0KDMOO'])
-      .whereNull('hyobj.makuldatum')
-      .andWhere('hyobj.deletemark', '=', 0)
-      .whereNull('hyobj.sistadeb')
-
-    // Main Query
-    const results = await db
-      .from(parkingSpacesQuery.as('ps'))
-      .select(
-        'ps.rentalObjectCode',
-        'ps.vehiclespacecode',
-        'ps.vehiclespacecaption',
-        'ps.companycode',
-        'ps.companycaption',
-        'ps.blockcode',
-        'ps.blockcaption',
-        'ps.vehiclespacetypecode',
-        'ps.vehiclespacetypecaption',
-        'ps.vehiclespacenumber',
-        'ps.postaladdress',
-        'ps.zipcode',
-        'ps.city',
-        'ps.scegcaption',
-        'ps.scegcode',
-        db.raw(`
-          CASE
-            WHEN rb.keycmobj IS NOT NULL THEN 'Has rental block: ' + rb.blocktype
-            WHEN ac.keycmobj IS NOT NULL THEN 'Has active contract: ' + ac.contractid
-            ELSE 'VACANT'
-          END AS status
-        `),
-        'rb.blocktype',
-        'rb.blockstartdate',
-        'rb.blockenddate',
-        'ac.contractid',
-        'ac.fromdate as contractfromdate',
-        'ac.lastdebitdate'
-      )
-      .leftJoin(activeRentalBlocksQuery.as('rb'), 'rb.keycmobj', 'ps.keycmobj')
-      .leftJoin(activeContractsQuery.as('ac'), 'ac.keycmobj', 'ps.keycmobj')
+    const results = await buildMainQuery(
+      parkingSpacesQuery,
+      activeRentalBlocksQuery,
+      activeContractsQuery
+    )
       .where(function () {
         this.whereNull('rb.keycmobj').orWhere(
           'rb.blockenddate',
@@ -233,4 +252,41 @@ const getAllVacantParkingSpaces = async (): Promise<
   }
 }
 
-export { getAllVacantParkingSpaces, transformFromXpandListing, db }
+//todo: behöver också hämta parking space type (ex. varmgarage, carport osv). Då behöver vi göra en ny typ "ParkingSpace" som ärver RentalObject? I så fall byta namn på funktionen till getParkingSpace istället och returnera parking spaces....
+//todo: behöver också hämta hyra
+const getRentalObject = async (
+  rentalObjectCode: string
+): Promise<AdapterResult<RentalObject, 'unknown' | 'not-found'>> => {
+  try {
+    const {
+      parkingSpacesQuery,
+      activeRentalBlocksQuery,
+      activeContractsQuery,
+    } = buildSubQueries()
+
+    const result = await buildMainQuery(
+      parkingSpacesQuery,
+      activeRentalBlocksQuery,
+      activeContractsQuery
+    )
+      .where('ps.rentalObjectCode', '=', rentalObjectCode) // Filter by rentalObjectCode
+      .first()
+
+    if (!result) {
+      return { ok: false, err: 'not-found' }
+    }
+
+    const rentalObject = trimRow(transformFromXpandListing(result))
+    return { ok: true, data: rentalObject }
+  } catch (err) {
+    logger.error(err, 'tenantLeaseAdapter.getRentalObject')
+    return { ok: false, err: 'unknown' }
+  }
+}
+
+export {
+  getAllVacantParkingSpaces,
+  getRentalObject,
+  transformFromXpandListing,
+  db,
+}

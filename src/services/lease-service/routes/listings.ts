@@ -17,7 +17,10 @@ import * as syncParkingSpacesFromXpandService from '../sync-internal-parking-spa
 import * as listingAdapter from '../adapters/listing-adapter'
 import { getTenant } from '../get-tenant'
 import { db } from '../adapters/db'
-import { getAllVacantParkingSpaces } from '../adapters/xpand/xpand-listing-adapter'
+import {
+  getAllVacantParkingSpaces,
+  getRentalObject,
+} from '../adapters/xpand/xpand-listing-adapter'
 
 /**
  * @swagger
@@ -503,6 +506,57 @@ export const routes = (router: KoaRouter) => {
 
     ctx.status = 200
     ctx.body = { content: vacantParkingSpaces.data, ...metadata }
+  })
+
+  /**
+   * @swagger
+   * /rental-object/by-code/{rentalObjectCode}:
+   *   get:
+   *     summary: Get a rental object
+   *     description: Fetches a rental object by Rental Object Code.
+   *     tags:
+   *       - RentalObject
+   *     responses:
+   *       '200':
+   *         description: Successfully retrieved the rental object.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 content:
+   *                   type: array
+   *                   items:
+   *                     $ref: '#/components/schemas/RentalObject'
+   *       '500':
+   *         description: Internal server error. Failed to fetch rental object.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 error:
+   *                   type: string
+   *                   description: The error message.
+   */
+  router.get('(.*)/rental-object/by-code/:rentalObjectCode', async (ctx) => {
+    const metadata = generateRouteMetadata(ctx)
+    const rentalObjectCode = ctx.params.rentalObjectCode
+
+    const result = await getRentalObject(rentalObjectCode)
+
+    if (!result.ok) {
+      logger.error(result.err, 'Error fetching rental object:')
+      ctx.status = 500
+      ctx.body = {
+        error: 'An error occurred while fetching rental object.',
+        ...metadata,
+      }
+      return
+    }
+
+    ctx.status = 200
+    ctx.body = { content: result.data, ...metadata }
   })
 
   router.get('/listings/readyforoffers', async (ctx) => {
