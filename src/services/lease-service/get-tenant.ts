@@ -54,8 +54,11 @@ async function fetchTenant(params: {
 
   const leases = await tenantLeaseAdapter.getLeasesForContactCode(
     contact.data.contactCode,
-    true,
-    false
+    {
+      includeUpcomingLeases: true,
+      includeTerminatedLeases: false,
+      includeContacts: false,
+    }
   )
 
   if (!leases.ok) {
@@ -137,6 +140,10 @@ async function fetchTenant(params: {
     data: {
       ...contact.data,
       address: contact.data.address,
+      isAboutToLeave:
+        !upcomingHousingContract &&
+        !!currentHousingContract &&
+        priorityListService.isLeaseAboutToEnd(currentHousingContract),
       currentHousingContract,
       upcomingHousingContract,
       parkingSpaceContracts,

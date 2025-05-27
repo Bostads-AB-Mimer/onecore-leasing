@@ -8,7 +8,8 @@ import { routes } from '../../routes/contacts'
 import * as tenantLeaseAdapter from '../../adapters/xpand/tenant-lease-adapter'
 import * as xPandSoapAdapter from '../../adapters/xpand/xpand-soap-adapter'
 import * as applicationProfileAdapter from '../../adapters/application-profile-adapter'
-import * as applicationProfileService from '../../update-or-create-application-profile'
+import * as applicationProfileService from '../../create-or-update-application-profile'
+import * as factories from '../../tests/factories'
 import * as tenants from '../../get-tenant'
 import * as factory from '../factories'
 
@@ -20,6 +21,7 @@ app.use(router.routes())
 
 jest.mock('axios')
 
+beforeEach(jest.resetAllMocks)
 describe('GET /contacts/search', () => {
   it('responds with 400 if query param is missing', async () => {
     const res = await request(app.callback()).get('/contacts/search')
@@ -60,7 +62,7 @@ describe('GET /contacts/search', () => {
         .mockResolvedValue({ ok: true, data: undefined })
       jest
         .spyOn(xPandSoapAdapter, 'addApplicantToToWaitingList')
-        .mockResolvedValue()
+        .mockResolvedValue({ ok: true, data: undefined })
 
       const res = await request(app.callback())
         .post('/contacts/1234567890/waitingLists/reset')
@@ -77,13 +79,37 @@ describe('GET /contacts/search', () => {
       })
     })
 
-    it('returns status 404 upon not-in-waiting-list error from removeApplicantFromWaitingList', async () => {
+    it('returns status 200 upon not-in-waiting-list error from removeApplicantFromWaitingList', async () => {
       jest
         .spyOn(xPandSoapAdapter, 'removeApplicantFromWaitingList')
         .mockResolvedValue({ ok: false, err: 'not-in-waiting-list' })
       jest
         .spyOn(xPandSoapAdapter, 'addApplicantToToWaitingList')
-        .mockResolvedValue()
+        .mockResolvedValue({ ok: true, data: undefined })
+
+      const res = await request(app.callback())
+        .post('/contacts/1234567890/waitingLists/reset')
+        .send({
+          contactCode: '123',
+          waitingListType: WaitingListType.ParkingSpace,
+        })
+
+      expect(res.status).toBe(200)
+    })
+
+    it('returns status 404 upon waiting-list-type-not-implemented error from removeApplicantFromWaitingList', async () => {
+      jest
+        .spyOn(xPandSoapAdapter, 'removeApplicantFromWaitingList')
+        .mockResolvedValue({
+          ok: false,
+          err: 'waiting-list-type-not-implemented',
+        })
+      jest
+        .spyOn(xPandSoapAdapter, 'addApplicantToToWaitingList')
+        .mockResolvedValue({
+          ok: false,
+          err: 'waiting-list-type-not-implemented',
+        })
 
       const res = await request(app.callback())
         .post('/contacts/1234567890/waitingLists/reset')
@@ -94,7 +120,7 @@ describe('GET /contacts/search', () => {
 
       expect(res.status).toBe(404)
       expect(res.body).toEqual({
-        error: 'Contact Not In Waiting List',
+        error: 'Waiting List Type not Implemented',
       })
     })
 
@@ -104,7 +130,7 @@ describe('GET /contacts/search', () => {
         .mockResolvedValue({ ok: false, err: 'unknown' })
       jest
         .spyOn(xPandSoapAdapter, 'addApplicantToToWaitingList')
-        .mockResolvedValue()
+        .mockResolvedValue({ ok: true, data: undefined })
 
       const res = await request(app.callback())
         .post('/contacts/1234567890/waitingLists/reset')
@@ -165,14 +191,7 @@ describe('GET /contacts/:contactCode/application-profile', () => {
       .spyOn(applicationProfileAdapter, 'getByContactCode')
       .mockResolvedValueOnce({
         ok: true,
-        data: {
-          contactCode: '1234',
-          createdAt: new Date(),
-          expiresAt: null,
-          id: 1,
-          numAdults: 0,
-          numChildren: 0,
-        },
+        data: factories.applicationProfile.build(),
       })
 
     const res = await request(app.callback()).get(
@@ -181,7 +200,7 @@ describe('GET /contacts/:contactCode/application-profile', () => {
 
     expect(res.status).toBe(200)
     expect(() =>
-      leasing.GetApplicationProfileResponseDataSchema.parse(res.body.content)
+      leasing.v1.GetApplicationProfileResponseDataSchema.parse(res.body.content)
     ).not.toThrow()
   })
 })
@@ -197,33 +216,28 @@ describe('POST /contacts/:contactCode/application-profile', () => {
 
   it('updates application profile', async () => {
     jest
-      .spyOn(applicationProfileService, 'updateOrCreateApplicationProfile')
+      .spyOn(applicationProfileService, 'createOrUpdateApplicationProfile')
       .mockResolvedValueOnce({
         ok: true,
-        data: [
-          {
-            contactCode: '1234',
-            createdAt: new Date(),
-            expiresAt: null,
-            id: 1,
-            numAdults: 0,
-            numChildren: 0,
-            housingType: undefined,
-            housingTypeDescription: undefined,
-            landlord: undefined,
-            housingReference: undefined,
-          },
-          'updated',
-        ],
+        data: ['updated', factories.applicationProfile.build()],
       })
 
     const res = await request(app.callback())
       .post('/contacts/1234/application-profile')
-      .send({ expiresAt: null, numAdults: 0, numChildren: 0 })
+      .send({
+        expiresAt: null,
+        numAdults: 0,
+        numChildren: 0,
+        housingType: 'RENTAL',
+        housingTypeDescription: null,
+        landlord: null,
+        housingReference: factories.applicationProfileHousingReference.build(),
+        lastUpdatedAt: new Date(),
+      })
 
     expect(res.status).toBe(200)
     expect(() =>
-      leasing.CreateOrUpdateApplicationProfileResponseDataSchema.parse(
+      leasing.v1.CreateOrUpdateApplicationProfileResponseDataSchema.parse(
         res.body.content
       )
     ).not.toThrow()
@@ -231,33 +245,28 @@ describe('POST /contacts/:contactCode/application-profile', () => {
 
   it('creates if non-existent', async () => {
     jest
-      .spyOn(applicationProfileService, 'updateOrCreateApplicationProfile')
+      .spyOn(applicationProfileService, 'createOrUpdateApplicationProfile')
       .mockResolvedValueOnce({
         ok: true,
-        data: [
-          {
-            contactCode: '1234',
-            createdAt: new Date(),
-            expiresAt: null,
-            id: 1,
-            numAdults: 0,
-            numChildren: 0,
-            housingType: undefined,
-            housingTypeDescription: undefined,
-            landlord: undefined,
-            housingReference: undefined,
-          },
-          'created',
-        ],
+        data: ['created', factories.applicationProfile.build()],
       })
 
     const res = await request(app.callback())
       .post('/contacts/1234/application-profile')
-      .send({ expiresAt: null, numAdults: 0, numChildren: 0 })
+      .send({
+        expiresAt: null,
+        numAdults: 0,
+        numChildren: 0,
+        housingType: 'RENTAL',
+        housingTypeDescription: null,
+        landlord: null,
+        housingReference: factories.applicationProfileHousingReference.build(),
+        lastUpdatedAt: new Date(),
+      })
 
     expect(res.status).toBe(201)
     expect(() =>
-      leasing.CreateOrUpdateApplicationProfileResponseDataSchema.parse(
+      leasing.v1.CreateOrUpdateApplicationProfileResponseDataSchema.parse(
         res.body.content
       )
     ).not.toThrow()
@@ -295,8 +304,6 @@ describe('GET /tenants/contactCode/:contactCode', () => {
     expect(res.body.type).toEqual('no-valid-housing-contract')
     expect(res.body.title).toEqual('No valid housing contract found')
     expect(res.body.status).toEqual(500)
-    expect(res.body.detail).toEqual(
-      'A housing contract needs to be current or upcoming to be a valid contract when applying for a parking space.'
-    )
+    expect(res.body.detail).toEqual('No active or upcoming contract found.')
   })
 })
