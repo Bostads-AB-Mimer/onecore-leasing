@@ -265,6 +265,37 @@ const updateApplicantStatus = async (
   }
 }
 
+const getListings = async (
+  published?: boolean,
+  rentalRule?: 'Scored' | 'NonScored',
+  dbConnection = db
+): Promise<AdapterResult<Array<Listing>, 'unknown'>> => {
+  try {
+    const now = new Date()
+
+    const query = dbConnection('listing').where((builder) => {
+      if (published) {
+        builder
+          .where('Status', '=', ListingStatus.Active)
+          .andWhere('PublishedFrom', '<=', now)
+          .andWhere('PublishedTo', '>=', now)
+      }
+      if (rentalRule) {
+        builder.andWhere('WaitingListType', '=', rentalRule)
+      }
+    })
+
+    const listings = await query
+
+    const transformedListings = listings.map(transformFromDbListing)
+
+    return { ok: true, data: transformedListings }
+  } catch (err) {
+    logger.error(err, 'listingAdapter.getListings')
+    return { ok: false, err: 'unknown' }
+  }
+}
+
 const getListingsWithApplicants = async (
   db: Knex,
   opts?: GetListingsWithApplicantsFilterParams
@@ -510,6 +541,7 @@ export {
   getListingById,
   getActiveListingByRentalObjectCode,
   getExpiredListingsWithNoOffers,
+  getListings,
   getListingsWithApplicants,
   getApplicantById,
   getApplicantsByContactCode,
