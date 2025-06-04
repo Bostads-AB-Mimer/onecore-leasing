@@ -71,10 +71,6 @@ export const routes = (router: KoaRouter) => {
     ctx.body = { content: thread, ...metadata }
   })
 
-  type AddCommentRequest = z.infer<
-    typeof leasing.v1.AddCommentRequestParamsSchema
-  >
-
   /**
    * @swagger
    * /comments/{targetType}/thread/{targetId}:
@@ -131,9 +127,22 @@ export const routes = (router: KoaRouter) => {
       targetType: ctx.params.targetType,
       targetId: Number(ctx.params.targetId),
     }
-    const comment = <AddCommentRequest>ctx.request.body
+    const parseResult = leasing.v1.AddCommentRequestParamsSchema.safeParse(
+      ctx.request.body
+    )
 
-    const result = await commentAdapter.addComment(threadId, comment)
+    if (!parseResult.success) {
+      ctx.status = 400
+      ctx.body = {
+        error: 'Invalid request body',
+        invalid: ctx.request.body,
+        detail: parseResult.error,
+        ...metadata,
+      }
+      return
+    }
+
+    const result = await commentAdapter.addComment(threadId, parseResult.data)
 
     ctx.status = 201
     ctx.body = { content: result, ...metadata }
