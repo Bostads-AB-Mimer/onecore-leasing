@@ -3,7 +3,8 @@ import { SystemHealth, ListingStatus } from 'onecore-types'
 import config from '../../common/config'
 import { healthCheck as xpandSoapApiHealthCheck } from '../lease-service/adapters/xpand/xpand-soap-adapter'
 import { healthCheck as creditSafeHealthCheck } from '../creditsafe/adapters/creditsafe-adapter'
-import knex from 'knex'
+import { db as leasingDb } from '../lease-service/adapters/db'
+import { xpandDb } from '../lease-service/adapters/xpand/estate-code-adapter'
 
 const healthChecks: Map<string, SystemHealth> = new Map()
 
@@ -69,28 +70,7 @@ const subsystems = [
         config.health.leasingDatabase.systemName,
         config.health.leasingDatabase.minimumMinutesBetweenRequests,
         async () => {
-          const db = knex({
-            client: 'mssql',
-            connection: config.leasingDatabase,
-          })
-
-          await db.table('listing').limit(1)
-        }
-      )
-    },
-  },
-  {
-    probe: async (): Promise<SystemHealth> => {
-      return await probe(
-        config.health.xpandDatabase.systemName,
-        config.health.xpandDatabase.minimumMinutesBetweenRequests,
-        async () => {
-          const db = knex({
-            client: 'mssql',
-            connection: config.xpandDatabase,
-          })
-
-          await db.table('cmctc').limit(1)
+          await leasingDb.table('listing').limit(1)
         }
       )
     },
@@ -101,11 +81,7 @@ const subsystems = [
         config.health.expiredListingsScript.systemName,
         config.health.expiredListingsScript.minimumMinutesBetweenRequests,
         async () => {
-          const db = knex({
-            client: 'mssql',
-            connection: config.leasingDatabase,
-          })
-          const expiredActiveListings = await db('listing')
+          const expiredActiveListings = await leasingDb('listing')
             .where('PublishedTo', '<', new Date(Date.now() - 86400000))
             .andWhere('Status', ListingStatus.Active)
 
@@ -116,6 +92,17 @@ const subsystems = [
           }
         },
         'All expired listings are correctly marked as expired.'
+      )
+    },
+  },
+  {
+    probe: async (): Promise<SystemHealth> => {
+      return await probe(
+        config.health.xpandDatabase.systemName,
+        config.health.xpandDatabase.minimumMinutesBetweenRequests,
+        async () => {
+          await xpandDb.table('cmctc').limit(1)
+        }
       )
     },
   },
@@ -224,5 +211,76 @@ export const routes = (router: KoaRouter) => {
     }
 
     ctx.body = health
+  })
+
+  const CONNECTIONS = [
+    {
+      name: 'leasing',
+      pool: leasingDb,
+    },
+    {
+      name: 'xpand',
+      pool: xpandDb,
+    },
+  ]
+
+  /**
+   * @openapi
+   * /health/db:
+   *   get:
+   *     summary: Database connection pool metrics
+   *     tags: [Health]
+   *     responses:
+   *       '200':
+   *         description: Connection pool stats per configured DB connection.
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 connectionPools:
+   *                   type: integer
+   *                   minimum: 0
+   *                 metrics:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       name:
+   *                         type: string
+   *                       pool:
+   *                         type: object
+   *                         properties:
+   *                           used: { type: integer, minimum: 0 }
+   *                           free: { type: integer, minimum: 0 }
+   *                           pendingCreates: { type: integer, minimum: 0 }
+   *                           pendingAcquires: { type: integer, minimum: 0 }
+   *             examples:
+   *               sample:
+   *                 value:
+   *                   connectionPools: 2
+   *                   metrics:
+   *                     - name: "primary"
+   *                       pool: { used: 3, free: 5, pendingCreates: 0, pendingAcquires: 1 }
+   *                     - name: "reporting"
+   *                       pool: { used: 0, free: 8, pendingCreates: 0, pendingAcquires: 0 }
+   */
+  router.get('(.*)/health/db', async (ctx) => {
+    ctx.body = {
+      connectionPools: CONNECTIONS.length,
+      metrics: CONNECTIONS.map((conn) => {
+        const pool = conn.pool.client.pool
+
+        return {
+          name: conn.name,
+          pool: {
+            used: pool.numUsed(),
+            free: pool.numFree(),
+            pendingCreates: pool.numPendingCreates(),
+            pendingAcquires: pool.numPendingAcquires(),
+          },
+        }
+      }),
+    }
   })
 }

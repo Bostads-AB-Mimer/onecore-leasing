@@ -1,7 +1,7 @@
 import Config from '../../../../common/config'
 import knex from 'knex'
 
-const db = knex({
+export const xpandDb = knex({
   client: 'mssql',
   connection: Config.xpandDatabase,
 })
@@ -28,7 +28,7 @@ const db = knex({
 const getEstateCodeFromXpandByRentalObjectCode = async (
   rentalObjectCode: string
 ): Promise<{ estateCode: string; type: string } | undefined> => {
-  const [row] = await db('cmobj')
+  const [row] = await xpandDb('cmobj')
     .select('babuf.fstcode as estateCode', 'cmobt.keycmobt as type')
     .innerJoin('cmobt', 'cmobj.keycmobt', 'cmobt.keycmobt')
     .innerJoin('hyinf', 'cmobj.keycmobj', 'hyinf.keycmobj')
